@@ -19,16 +19,16 @@ type Student struct {
 
 type StudentRepo interface {
 	CreateStudent(ctx context.Context, student *Student) error
-	GetAllStudent() (*[]Student, error)
-	GetStudentByID(id int) (*Student, error)
-	UpdateStudent(newDataStudent *Student) error
-	DeleteStudent(id int) error
+	GetAllStudent(ctx context.Context) (*[]Student, error)
+	GetStudentByID(ctx context.Context, id int) (*Student, error)
+	UpdateStudent(ctx context.Context, newDataStudent *Student) error
+	DeleteStudent(ctx context.Context, id int) error
 }
 
 type StudentUseCase interface {
-	CreateStudentUC(student *Student) error
-	GetAllStudentUC() (*[]Student, error)
-	GetStudentByIDUC(id int) (*Student, error)
-	UpdateStudentUC(newDataStudent *Student) error
-	DeleteStudentUC(id int) error
+	CreateStudentUC(ctx context.Context, student *Student) error
+	GetAllStudentUC(ctx context.Context) (*[]Student, error)
+	GetStudentByIDUC(ctx context.Context, id int) (*Student, error)
+	UpdateStudentUC(ctx context.Context, newDataStudent *Student) error
+	DeleteStudentUC(ctx context.Context, id int) error
 }

@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"notification/domain"
 	"time"
 )
@@ -17,22 +18,22 @@ func NewStudentUseCase(repo domain.StudentRepo, timeOut time.Duration) domain.St
 	}
 }
 
-func (sUC *studentUC) CreateStudentUC(student *domain.Student) error {
+func (sUC *studentUC) CreateStudentUC(ctx context.Context, student *domain.Student) error {
 
 }
 
-func (sUC *studentUC) GetAllStudentUC() (*[]domain.Student, error) {
+func (sUC *studentUC) GetAllStudentUC(ctx context.Context) (*[]domain.Student, error) {
 
 }
 
-func (sUC *studentUC) GetStudentByIDUC(id int) (*domain.Student, error) {
+func (sUC *studentUC) GetStudentByIDUC(ctx context.Context, id int) (*domain.Student, error) {
 
 }
 
-func (sUC *studentUC) UpdateStudentUC(newDataStudent *domain.Student) error {
+func (sUC *studentUC) UpdateStudentUC(ctx context.Context, newDataStudent *domain.Student) error {
 
 }
 
-func (sUC *studentUC) DeleteStudentUC(id int) error {
+func (sUC *studentUC) DeleteStudentUC(ctx context.Context, id int) error {
 
 }

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var pgxPool *pgxpool.Pool
@@ -24,7 +24,7 @@ func BootDB() (*pgxpool.Pool, error) {
 		return nil, fmt.Errorf("failed to parse database URL: %w", err)
 	}
 
-	dbPool, err := pgxpool.ConnectConfig(context.Background(), config)
+	dbPool, err := pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
@@ -47,7 +47,25 @@ func BootDB() (*pgxpool.Pool, error) {
 }
 
 func autoMigrate(pool *pgxpool.Pool) error {
-	query := `
+	createParentsTableQuery := `
+	CREATE TABLE IF NOT EXISTS parents (
+		id SERIAL PRIMARY KEY,
+		name VARCHAR(255) NOT NULL,
+		gender VARCHAR(15) NOT NULL,
+		telephone_number BIGINT NOT NULL,
+		email VARCHAR(255) NOT NULL,
+		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+		deleted_at TIMESTAMP WITH TIME ZONE
+	);
+	`
+	_, err := pool.Exec(context.Background(), createParentsTableQuery)
+	if err != nil {
+		fmt.Printf("Error executing parents table migration query: %v\n", err)
+		return fmt.Errorf("failed to run migrations: %w", err)
+	}
+
+	createStudentsTableQuery := `
 	CREATE TABLE IF NOT EXISTS students (
 		id SERIAL PRIMARY KEY,
 		name VARCHAR(255) NOT NULL,
@@ -61,9 +79,9 @@ func autoMigrate(pool *pgxpool.Pool) error {
 		CONSTRAINT fk_parent FOREIGN KEY (parent_id) REFERENCES parents(id)
 	);
 	`
-	_, err := pool.Exec(context.Background(), query)
+	_, err = pool.Exec(context.Background(), createStudentsTableQuery)
 	if err != nil {
-		fmt.Printf("Error executing migration query: %v\n", err)
+		fmt.Printf("Error executing students table migration query: %v\n", err)
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
 

@@ -1,23 +1,25 @@
 package repository
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 	"notification/domain"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type studentRepository struct {
-	db *sql.DB
+	db *pgxpool.Pool
 }
 
-func NewStudentRepository(database *sql.DB) domain.StudentRepo {
+func NewStudentRepository(database *pgxpool.Pool) domain.StudentRepo {
 	return &studentRepository{
 		db: database,
 	}
 }
 
-func (sp *studentRepository) CreateStudent(student *domain.Student) error {
+func (sp *studentRepository) CreateStudent(ctx context.Context, student *domain.Student) error {
 	// Check for duplicate student
 	duplicateCheckQuery := `
 		SELECT id FROM students
@@ -25,8 +27,8 @@ func (sp *studentRepository) CreateStudent(student *domain.Student) error {
 	`
 	var existingID int
 
-	err := sp.db.QueryRow(duplicateCheckQuery, student.Name, student.Class, student.Gender, student.TelephoneNumber).Scan(&existingID)
-	if err != nil && err != sql.ErrNoRows {
+	err := sp.db.QueryRow(ctx, duplicateCheckQuery, student.Name, student.Class, student.Gender, student.TelephoneNumber).Scan(&existingID)
+	if err != nil && err.Error() != "no rows in result set" {
 		return fmt.Errorf("could not check for duplicate student: %v", err)
 	}
 
@@ -44,7 +46,7 @@ func (sp *studentRepository) CreateStudent(student *domain.Student) error {
 	now := time.Now()
 
 	var id int
-	err = sp.db.QueryRow(insertQuery, student.Name, student.Class, student.Gender, student.TelephoneNumber, student.ParentID, now, now).Scan(&id)
+	err = sp.db.QueryRow(ctx, insertQuery, student.Name, student.Class, student.Gender, student.TelephoneNumber, student.ParentID, now, now).Scan(&id)
 	if err != nil {
 		return fmt.Errorf("could not insert student: %v", err)
 	}
@@ -56,14 +58,14 @@ func (sp *studentRepository) CreateStudent(student *domain.Student) error {
 	return nil
 }
 
-func (sp *studentRepository) GetAllStudent() (*[]domain.Student, error) {
+func (sp *studentRepository) GetAllStudent(ctx context.Context) (*[]domain.Student, error) {
 	query := `
 		SELECT id, name, class, gender, telephone_number, parent_id, created_at, updated_at, deleted_at
 		FROM students
 		WHERE deleted_at IS NULL;
 	`
 
-	rows, err := sp.db.Query(query)
+	rows, err := sp.db.Query(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("could not get all students: %v", err)
 	}
@@ -86,7 +88,7 @@ func (sp *studentRepository) GetAllStudent() (*[]domain.Student, error) {
 	return &students, nil
 }
 
-func (sp *studentRepository) GetStudentByID(id int) (*domain.Student, error) {
+func (sp *studentRepository) GetStudentByID(ctx context.Context, id int) (*domain.Student, error) {
 	query := `
 		SELECT id, name, class, gender, telephone_number, parent_id, created_at, updated_at, deleted_at
 		FROM students
@@ -94,9 +96,9 @@ func (sp *studentRepository) GetStudentByID(id int) (*domain.Student, error) {
 	`
 
 	var student domain.Student
-	err := sp.db.QueryRow(query, id).Scan(&student.ID, &student.Name, &student.Class, &student.Gender, &student.TelephoneNumber, &student.ParentID, &student.CreatedAt, &student.UpdatedAt, &student.DeletedAt)
+	err := sp.db.QueryRow(ctx, query, id).Scan(&student.ID, &student.Name, &student.Class, &student.Gender, &student.TelephoneNumber, &student.ParentID, &student.CreatedAt, &student.UpdatedAt, &student.DeletedAt)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err.Error() == "no rows in result set" {
 			return nil, fmt.Errorf("student not found")
 		}
 		return nil, fmt.Errorf("could not get student: %v", err)
@@ -105,7 +107,7 @@ func (sp *studentRepository) GetStudentByID(id int) (*domain.Student, error) {
 	return &student, nil
 }
 
-func (sp *studentRepository) UpdateStudent(student *domain.Student) error {
+func (sp *studentRepository) UpdateStudent(ctx context.Context, student *domain.Student) error {
 	query := `
 		UPDATE students
 		SET name = $1, class = $2, gender = $3, telephone_number = $4, parent_id = $5, updated_at = $6
@@ -113,7 +115,7 @@ func (sp *studentRepository) UpdateStudent(student *domain.Student) error {
 	`
 
 	now := time.Now()
-	_, err := sp.db.Exec(query, student.Name, student.Class, student.Gender, student.TelephoneNumber, student.ParentID, now, student.ID)
+	_, err := sp.db.Exec(ctx, query, student.Name, student.Class, student.Gender, student.TelephoneNumber, student.ParentID, now, student.ID)
 	if err != nil {
 		return fmt.Errorf("could not update student: %v", err)
 	}
@@ -122,7 +124,7 @@ func (sp *studentRepository) UpdateStudent(student *domain.Student) error {
 	return nil
 }
 
-func (sp *studentRepository) DeleteStudent(id int) error {
+func (sp *studentRepository) DeleteStudent(ctx context.Context, id int) error {
 	query := `
 		UPDATE students
 		SET deleted_at = $1
@@ -130,7 +132,7 @@ func (sp *studentRepository) DeleteStudent(id int) error {
 	`
 
 	now := time.Now()
-	_, err := sp.db.Exec(query, now, id)
+	_, err := sp.db.Exec(ctx, query, now, id)
 	if err != nil {
 		return fmt.Errorf("could not delete student: %v", err)
 	}
