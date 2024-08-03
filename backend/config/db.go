@@ -10,7 +10,6 @@ import (
 
 var sqlDB *sql.DB
 
-// fungsi get full url db from env
 func GetDatabaseURL() string {
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_USER"),
@@ -18,7 +17,6 @@ func GetDatabaseURL() string {
 	return dsn
 }
 
-// fungsi booting db
 func BootDB() (*sql.DB, error) {
 	url := GetDatabaseURL()
 	// fmt.Println("Connecting to database with URL:", url)
