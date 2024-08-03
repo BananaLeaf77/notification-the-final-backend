@@ -1,6 +1,9 @@
 package domain
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 type Student struct {
 	ID              int        `json:"id"`
@@ -15,7 +18,7 @@ type Student struct {
 }
 
 type StudentRepo interface {
-	CreateStudent(student *Student) error
+	CreateStudent(ctx context.Context, student *Student) error
 	GetAllStudent() (*[]Student, error)
 	GetStudentByID(id int) (*Student, error)
 	UpdateStudent(newDataStudent *Student) error

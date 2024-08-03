@@ -1,14 +1,14 @@
 package config
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 	"os"
 
-	_ "github.com/lib/pq"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-var sqlDB *sql.DB
+var pgxPool *pgxpool.Pool
 
 func GetDatabaseURL() string {
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
@@ -17,52 +17,51 @@ func GetDatabaseURL() string {
 	return dsn
 }
 
-func BootDB() (*sql.DB, error) {
+func BootDB() (*pgxpool.Pool, error) {
 	url := GetDatabaseURL()
-	// fmt.Println("Connecting to database with URL:", url)
-	db, err := sql.Open("postgres", url)
+	config, err := pgxpool.ParseConfig(url)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open database connection: %w", err)
+		return nil, fmt.Errorf("failed to parse database URL: %w", err)
 	}
 
-	if err := db.Ping(); err != nil {
-		return nil, fmt.Errorf("failed to ping database: %w", err)
+	dbPool, err := pgxpool.ConnectConfig(context.Background(), config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	if sqlDB == nil {
-		sqlDB = db
+	if pgxPool == nil {
+		pgxPool = dbPool
 	}
 
-	err = sqlDB.Ping()
+	err = pgxPool.Ping(context.Background())
 	if err != nil {
 		return nil, err
 	}
 
-	err = autoMigrate(sqlDB)
+	err = autoMigrate(pgxPool)
 	if err != nil {
-		return sqlDB, err
+		return pgxPool, err
 	}
 
-	return sqlDB, nil
+	return pgxPool, nil
 }
 
-// fungsi migrate
-func autoMigrate(db *sql.DB) error {
+func autoMigrate(pool *pgxpool.Pool) error {
 	query := `
 	CREATE TABLE IF NOT EXISTS students (
 		id SERIAL PRIMARY KEY,
 		name VARCHAR(255) NOT NULL,
 		class VARCHAR(10) NOT NULL,
 		gender VARCHAR(15) NOT NULL,
-		telephone_number INT NOT NULL,
+		telephone_number BIGINT NOT NULL,
 		parent_id INTEGER,
 		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 		updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 		deleted_at TIMESTAMP WITH TIME ZONE,
-		CONSTRAINT fk_parent FOREIGN KEY (parent_id) REFERENCES parents(id) -- Assuming there's a parents table
+		CONSTRAINT fk_parent FOREIGN KEY (parent_id) REFERENCES parents(id)
 	);
 	`
-	_, err := db.Exec(query)
+	_, err := pool.Exec(context.Background(), query)
 	if err != nil {
 		fmt.Printf("Error executing migration query: %v\n", err)
 		return fmt.Errorf("failed to run migrations: %w", err)
