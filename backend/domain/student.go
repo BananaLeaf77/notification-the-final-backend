@@ -7,10 +7,10 @@ import (
 
 type Student struct {
 	ID              int        `json:"id"`
-	Name            string     `json:"name"`
-	Class           string     `json:"class"`
-	Gender          string     `json:"gender"`
-	TelephoneNumber int64      `json:"telephone_number"`
+	Name            string     `json:"name" valid:"required~Name is required"`
+	Class           string     `json:"class" valid:"required~Class is required"`
+	Gender          string     `json:"gender" valid:"required~Gender is required"`
+	TelephoneNumber int64      `json:"telephone_number" valid:"required~Telephone Number is required"`
 	ParentID        int        `json:"parent_id"`
 	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at"`
