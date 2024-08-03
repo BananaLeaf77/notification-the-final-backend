@@ -50,11 +50,16 @@ func BootDB() (*sql.DB, error) {
 func autoMigrate(db *sql.DB) error {
 	query := `
 	CREATE TABLE IF NOT EXISTS students (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    class VARCHAR(10) NOT NULL,
-    gender VARCHAR(15) NOT NULL,
-    telephone_number BIGINT NOT NULL
+		id SERIAL PRIMARY KEY,
+		name VARCHAR(255) NOT NULL,
+		class VARCHAR(10) NOT NULL,
+		gender VARCHAR(15) NOT NULL,
+		telephone_number INT NOT NULL,
+		parent_id INTEGER,
+		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+		deleted_at TIMESTAMP WITH TIME ZONE,
+		CONSTRAINT fk_parent FOREIGN KEY (parent_id) REFERENCES parents(id) -- Assuming there's a parents table
 	);
 	`
 	_, err := db.Exec(query)

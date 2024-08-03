@@ -52,6 +52,7 @@ func (sp *studentRepository) CreateStudent(student *domain.Student) error {
 	student.ID = id
 	student.CreatedAt = now
 	student.UpdatedAt = now
+
 	return nil
 }
 
