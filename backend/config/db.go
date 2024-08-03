@@ -38,10 +38,10 @@ func BootDB() (*sql.DB, error) {
 		return nil, err
 	}
 
-	// err = autoMigrate(sqlDB)
-	// if err != nil {
-	// 	return sqlDB, err
-	// }
+	err = autoMigrate(sqlDB)
+	if err != nil {
+		return sqlDB, err
+	}
 
 	return sqlDB, nil
 }
@@ -49,18 +49,12 @@ func BootDB() (*sql.DB, error) {
 // fungsi migrate
 func autoMigrate(db *sql.DB) error {
 	query := `
-
-	CREATE TABLE IF NOT EXISTS nama_tabel (
-	    id SERIAL PRIMARY KEY,
-	    sepeda_id INTEGER NOT NULL,
-	    old_size INTEGER,
-	    old_type VARCHAR(100),
-	    old_quantity INTEGER,
-	    new_size INTEGER,
-	    new_type VARCHAR(100),
-	    new_quantity INTEGER,
-	    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-	    FOREIGN KEY (sepeda_id) REFERENCES sepeda(id)
+	CREATE TABLE IF NOT EXISTS students (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    class VARCHAR(10) NOT NULL,
+    gender VARCHAR(15) NOT NULL,
+    telephone_number BIGINT NOT NULL
 	);
 	`
 	_, err := db.Exec(query)
