@@ -32,30 +32,25 @@ func BootDB() (*sql.DB, error) {
 	if sqlDB == nil {
 		sqlDB = db
 	}
-	// call migrasi
-	err = migrateEm(sqlDB)
+
+	err = sqlDB.Ping()
 	if err != nil {
-		return sqlDB, err
+		return nil, err
 	}
+
+	// err = autoMigrate(sqlDB)
+	// if err != nil {
+	// 	return sqlDB, err
+	// }
 
 	return sqlDB, nil
 }
 
 // fungsi migrate
-func migrateEm(db *sql.DB) error {
+func autoMigrate(db *sql.DB) error {
 	query := `
-	CREATE TABLE IF NOT EXISTS sepeda (
-	    id SERIAL PRIMARY KEY,
-	    brand VARCHAR(50) NOT NULL,
-	    size INTEGER NOT NULL,
-	    type VARCHAR(100) NOT NULL,
-	    quantity INTEGER NOT NULL,
-	    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-	    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-	    deleted_at TIMESTAMP WITH TIME ZONE
-	);
 
-	CREATE TABLE IF NOT EXISTS update_history (
+	CREATE TABLE IF NOT EXISTS nama_tabel (
 	    id SERIAL PRIMARY KEY,
 	    sepeda_id INTEGER NOT NULL,
 	    old_size INTEGER,
@@ -73,5 +68,6 @@ func migrateEm(db *sql.DB) error {
 		fmt.Printf("Error executing migration query: %v\n", err)
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
+
 	return nil
 }
