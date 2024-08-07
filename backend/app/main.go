@@ -2,9 +2,14 @@ package main
 
 import (
 	"notification/config"
+	"notification/services/notification/delivery"
+	"notification/services/notification/repository"
+	"notification/services/notification/usecase"
 	"os"
 	"os/signal"
 	"sync"
+	"syscall"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -42,9 +47,12 @@ func startHTTP() {
 		return
 	}
 
-	// Regis repo and Usecase Here
+	// Register repository and Usecase here
+	studentParentRepo := repository.NewStudentParentRepository(db)
+	studentParentUC := usecase.NewStudentParentUseCase(studentParentRepo, 30*time.Second)
 
-	// delivery here
+	// Register delivery here
+	delivery.NewStudentParentHandler(app, studentParentUC)
 
 	wg.Add(1)
 	go func() {
@@ -56,7 +64,7 @@ func startHTTP() {
 	}()
 
 	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt, os.Kill)
+	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
 
 	<-signalChan
 

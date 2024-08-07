@@ -35,7 +35,7 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 
 	now := time.Now()
 	var parentID int
-	err = tx.QueryRow(ctx, parentInsertQuery, req.Parent.Name, req.Parent.Gender, req.Parent.TelephoneNumber, req.Parent.Email, now, now).Scan(&parentID)
+	err = tx.QueryRow(ctx, parentInsertQuery, req.Parent.Name, req.Parent.Gender, req.Parent.Telephone, req.Parent.Email, now, now).Scan(&parentID)
 	if err != nil {
 		return fmt.Errorf("could not insert parent: %v", err)
 	}
@@ -52,7 +52,7 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 	`
 
 	var studentID int
-	err = tx.QueryRow(ctx, studentInsertQuery, req.Student.Name, req.Student.Class, req.Student.Gender, req.Student.TelephoneNumber, parentID, now, now).Scan(&studentID)
+	err = tx.QueryRow(ctx, studentInsertQuery, req.Student.Name, req.Student.Class, req.Student.Gender, req.Student.Telephone, parentID, now, now).Scan(&studentID)
 	if err != nil {
 		return fmt.Errorf("could not insert student: %v", err)
 	}

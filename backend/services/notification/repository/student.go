@@ -26,7 +26,7 @@ func (sp *studentRepository) CreateStudent(ctx context.Context, student *domain.
 	`
 	var existingID int
 
-	err := sp.db.QueryRow(ctx, duplicateCheckQuery, student.Name, student.Class, student.Gender, student.TelephoneNumber).Scan(&existingID)
+	err := sp.db.QueryRow(ctx, duplicateCheckQuery, student.Name, student.Class, student.Gender, student.Telephone).Scan(&existingID)
 	if err != nil && err.Error() != "no rows in result set" {
 		return fmt.Errorf("could not check for duplicate student: %v", err)
 	}
@@ -44,7 +44,7 @@ func (sp *studentRepository) CreateStudent(ctx context.Context, student *domain.
 	now := time.Now()
 
 	var id int
-	err = sp.db.QueryRow(ctx, insertQuery, student.Name, student.Class, student.Gender, student.TelephoneNumber, student.ParentID, now, now).Scan(&id)
+	err = sp.db.QueryRow(ctx, insertQuery, student.Name, student.Class, student.Gender, student.Telephone, student.ParentID, now, now).Scan(&id)
 	if err != nil {
 		return fmt.Errorf("could not insert student: %v", err)
 	}
@@ -72,7 +72,7 @@ func (sp *studentRepository) GetAllStudent(ctx context.Context) (*[]domain.Stude
 	var students []domain.Student
 	for rows.Next() {
 		var student domain.Student
-		err := rows.Scan(&student.ID, &student.Name, &student.Class, &student.Gender, &student.TelephoneNumber, &student.ParentID, &student.CreatedAt, &student.UpdatedAt, &student.DeletedAt)
+		err := rows.Scan(&student.ID, &student.Name, &student.Class, &student.Gender, &student.Telephone, &student.ParentID, &student.CreatedAt, &student.UpdatedAt, &student.DeletedAt)
 		if err != nil {
 			return nil, fmt.Errorf("could not scan student: %v", err)
 		}
@@ -94,7 +94,7 @@ func (sp *studentRepository) GetStudentByID(ctx context.Context, id int) (*domai
 	`
 
 	var student domain.Student
-	err := sp.db.QueryRow(ctx, query, id).Scan(&student.ID, &student.Name, &student.Class, &student.Gender, &student.TelephoneNumber, &student.ParentID, &student.CreatedAt, &student.UpdatedAt, &student.DeletedAt)
+	err := sp.db.QueryRow(ctx, query, id).Scan(&student.ID, &student.Name, &student.Class, &student.Gender, &student.Telephone, &student.ParentID, &student.CreatedAt, &student.UpdatedAt, &student.DeletedAt)
 	if err != nil {
 		if err.Error() == "no rows in result set" {
 			return nil, fmt.Errorf("student not found")
@@ -113,7 +113,7 @@ func (sp *studentRepository) UpdateStudent(ctx context.Context, student *domain.
 	`
 
 	now := time.Now()
-	_, err := sp.db.Exec(ctx, query, student.Name, student.Class, student.Gender, student.TelephoneNumber, student.ParentID, now, student.ID)
+	_, err := sp.db.Exec(ctx, query, student.Name, student.Class, student.Gender, student.Telephone, student.ParentID, now, student.ID)
 	if err != nil {
 		return fmt.Errorf("could not update student: %v", err)
 	}
