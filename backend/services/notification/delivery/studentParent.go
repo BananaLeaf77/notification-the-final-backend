@@ -6,6 +6,7 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/log"
 )
 
 type studentParentHandler struct {
@@ -30,6 +31,7 @@ func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
 			"message": "Invalid request body",
 		})
 	}
+	log.Info("Passed Body Parser", req.Student.Telephone)
 
 	// Validate Student
 	if _, err := govalidator.ValidateStruct(req.Student); err != nil {
