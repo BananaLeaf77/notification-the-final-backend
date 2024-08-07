@@ -20,7 +20,6 @@ func NewStudentRepository(database *pgxpool.Pool) domain.StudentRepo {
 }
 
 func (sp *studentRepository) CreateStudent(ctx context.Context, student *domain.Student) error {
-	// Check for duplicate student
 	duplicateCheckQuery := `
 		SELECT id FROM students
 		WHERE name = $1 AND class = $2 AND gender = $3 AND telephone_number = $4;
@@ -36,7 +35,6 @@ func (sp *studentRepository) CreateStudent(ctx context.Context, student *domain.
 		return fmt.Errorf("student already exists with ID: %d", existingID)
 	}
 
-	// Insert new student
 	insertQuery := `
 		INSERT INTO students (name, class, gender, telephone_number, parent_id, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
