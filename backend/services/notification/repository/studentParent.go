@@ -28,7 +28,7 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 
 	// Insert parent
 	parentInsertQuery := `
-		INSERT INTO parents (name, gender, telephone_number, email, created_at, updated_at)
+		INSERT INTO parents (name, gender, telephone, email, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id;
 	`
@@ -46,7 +46,7 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 
 	// Insert student
 	studentInsertQuery := `
-		INSERT INTO students (name, class, gender, telephone_number, parent_id, created_at, updated_at)
+		INSERT INTO students (name, class, gender, telephone, parent_id, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id;
 	`

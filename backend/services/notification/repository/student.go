@@ -22,7 +22,7 @@ func NewStudentRepository(database *pgxpool.Pool) domain.StudentRepo {
 func (sp *studentRepository) CreateStudent(ctx context.Context, student *domain.Student) error {
 	duplicateCheckQuery := `
 		SELECT id FROM students
-		WHERE name = $1 AND class = $2 AND gender = $3 AND telephone_number = $4;
+		WHERE name = $1 AND class = $2 AND gender = $3 AND telephone = $4;
 	`
 	var existingID int
 
@@ -36,7 +36,7 @@ func (sp *studentRepository) CreateStudent(ctx context.Context, student *domain.
 	}
 
 	insertQuery := `
-		INSERT INTO students (name, class, gender, telephone_number, parent_id, created_at, updated_at)
+		INSERT INTO students (name, class, gender, telephone, parent_id, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id;
 	`
@@ -58,7 +58,7 @@ func (sp *studentRepository) CreateStudent(ctx context.Context, student *domain.
 
 func (sp *studentRepository) GetAllStudent(ctx context.Context) (*[]domain.Student, error) {
 	query := `
-		SELECT id, name, class, gender, telephone_number, parent_id, created_at, updated_at, deleted_at
+		SELECT id, name, class, gender, telephone, parent_id, created_at, updated_at, deleted_at
 		FROM students
 		WHERE deleted_at IS NULL;
 	`
@@ -88,7 +88,7 @@ func (sp *studentRepository) GetAllStudent(ctx context.Context) (*[]domain.Stude
 
 func (sp *studentRepository) GetStudentByID(ctx context.Context, id int) (*domain.Student, error) {
 	query := `
-		SELECT id, name, class, gender, telephone_number, parent_id, created_at, updated_at, deleted_at
+		SELECT id, name, class, gender, telephone, parent_id, created_at, updated_at, deleted_at
 		FROM students
 		WHERE id = $1 AND deleted_at IS NULL;
 	`
@@ -108,7 +108,7 @@ func (sp *studentRepository) GetStudentByID(ctx context.Context, id int) (*domai
 func (sp *studentRepository) UpdateStudent(ctx context.Context, student *domain.Student) error {
 	query := `
 		UPDATE students
-		SET name = $1, class = $2, gender = $3, telephone_number = $4, parent_id = $5, updated_at = $6
+		SET name = $1, class = $2, gender = $3, telephone = $4, parent_id = $5, updated_at = $6
 		WHERE id = $7 AND deleted_at IS NULL;
 	`
 
