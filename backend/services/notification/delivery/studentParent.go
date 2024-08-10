@@ -83,7 +83,7 @@ func (sph *studentParentHandler) UploadCSV(c *fiber.Ctx) error {
 	}
 
 	// Define upload directory
-	uploadDir := "../../../uploads"
+	uploadDir := "../uploads"
 	// Ensure upload directory exists
 	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
 		os.MkdirAll(uploadDir, os.ModePerm)
@@ -141,7 +141,7 @@ func (sph *studentParentHandler) processCSVFile(filePath string) error {
 			Class:     row[1],
 			Gender:    row[2],
 			Telephone: row[3],
-			ParentID:  0, // This will be updated after inserting the parent
+			ParentID:  0,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
