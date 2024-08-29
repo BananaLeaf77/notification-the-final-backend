@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"notification/config"
 	"notification/services/notification/delivery"
 	"notification/services/notification/repository"
@@ -14,6 +15,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/joho/godotenv"
+	"github.com/mailgun/mailgun-go/v4"
 	"github.com/sirupsen/logrus"
 )
 
@@ -26,6 +28,8 @@ func main() {
 	}
 
 	log = config.GetLogrusInstance()
+
+	
 
 	startHTTP()
 }
@@ -47,9 +51,19 @@ func startHTTP() {
 		return
 	}
 
+	// INIT SERVICES
+	mClient, schoolPhone, err := config.InitMailgun()
+	if err != nil{
+		fmt.Println(err)
+		panic(err)
+	}
+
 	// Register repository and Usecase here
 	studentParentRepo := repository.NewStudentParentRepository(db)
 	studentParentUC := usecase.NewStudentParentUseCase(studentParentRepo, 30*time.Second)
+
+	mailGunRepo := repository.NewMailgunRepository(mClient, *schoolPhone)
+	mailgunUC := usecase.NewMailGunUseCase(mailGunRepo, 30*time.Second)
 
 	// Register delivery here
 	delivery.NewStudentParentHandler(app, studentParentUC)
