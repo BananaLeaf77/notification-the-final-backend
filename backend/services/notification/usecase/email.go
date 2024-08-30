@@ -6,23 +6,23 @@ import (
 	"time"
 )
 
-type mailgunUC struct {
-	mailGunRepo domain.MailGunRepo
-	TimeOut     time.Duration
+type emailSMTPUC struct {
+	emailSMTPRepo domain.EmailSMTPUseCase
+	TimeOut       time.Duration
 }
 
-func NewMailGunUseCase(repo domain.MailGunRepo, timeOut time.Duration) domain.MailGunUseCase {
-	return &mailgunUC{
-		mailGunRepo: repo,
-		TimeOut:     timeOut,
+func NewMailSMTPUseCase(repo domain.EmailSMTPRepo, timeOut time.Duration) domain.EmailSMTPUseCase {
+	return &emailSMTPUC{
+		emailSMTPRepo: repo,
+		TimeOut:       timeOut,
 	}
 }
 
-func (mUC *mailgunUC) SendMass(ctx context.Context, studentName, parentName, emailAddress string) error {
+func (mUC *emailSMTPUC) SendMass(ctx context.Context, payload *[]domain.EmailSMTPData) error {
 	ctx, cancel := context.WithTimeout(ctx, mUC.TimeOut)
 	defer cancel()
 
-	err := mUC.mailGunRepo.SendMass(ctx, studentName, parentName, emailAddress)
+	err := mUC.emailSMTPRepo.SendMass(ctx, payload)
 	if err != nil {
 		return err
 	}

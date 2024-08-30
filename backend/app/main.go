@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net/smtp"
 	"notification/config"
 	"notification/services/notification/delivery"
 	"notification/services/notification/repository"
@@ -19,6 +20,7 @@ import (
 
 var log *logrus.Logger
 var wg sync.WaitGroup
+var emailClient *smtp.Auth
 
 func main() {
 	if err := godotenv.Load(); err != nil {
