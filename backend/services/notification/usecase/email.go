@@ -19,8 +19,8 @@ func NewMailSMTPUseCase(repo domain.EmailSMTPRepo, timeOut time.Duration) domain
 }
 
 func (mUC *emailSMTPUC) SendMass(ctx context.Context, payload *[]domain.EmailSMTPData) error {
-	ctx, cancel := context.WithTimeout(ctx, mUC.TimeOut)
-	defer cancel()
+	// ctx, cancel := context.WithTimeout(ctx, mUC.TimeOut)
+	// defer cancel()
 
 	err := mUC.emailSMTPRepo.SendMass(ctx, payload)
 	if err != nil {

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"net/smtp"
+	"fmt"
 	"notification/config"
 	"notification/services/notification/delivery"
 	"notification/services/notification/repository"
@@ -20,7 +20,6 @@ import (
 
 var log *logrus.Logger
 var wg sync.WaitGroup
-var emailClient *smtp.Auth
 
 func main() {
 	if err := godotenv.Load(); err != nil {
@@ -49,12 +48,23 @@ func startHTTP() {
 		return
 	}
 
+	eAuth, eAdress, schoolPhone, emailSender, err := config.InitMailSMTP()
+	if err != nil {
+		fmt.Println(err)
+		log.Fatal("Failed to boot Email SMTP Service")
+		return
+	}
+
 	// Register repository and Usecase here
 	studentParentRepo := repository.NewStudentParentRepository(db)
 	studentParentUC := usecase.NewStudentParentUseCase(studentParentRepo, 30*time.Second)
 
+	emailerRepo := repository.NewEmailSMTPRepository(eAuth, *eAdress, *schoolPhone, *emailSender)
+	emailerUc := usecase.NewMailSMTPUseCase(emailerRepo, 30*time.Second)
+
 	// Register delivery here
 	delivery.NewStudentParentHandler(app, studentParentUC)
+	delivery.NewEmailerDelivery(app, emailerUc)
 
 	wg.Add(1)
 	go func() {
