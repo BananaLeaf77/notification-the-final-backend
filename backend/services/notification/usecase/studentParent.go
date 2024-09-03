@@ -29,7 +29,7 @@ func (spu *studentParentUseCase) CreateStudentAndParentUC(ctx context.Context, r
 	return nil
 }
 
-func (spu *studentParentUseCase) GetStudentAndParent(ctx context.Context, studentID string) (*domain.StudentAndParent, error){
+func (spu *studentParentUseCase) GetStudentAndParent(ctx context.Context, studentID string) (*domain.StudentAndParent, error) {
 	ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
 	defer cancel()
 
@@ -38,4 +38,15 @@ func (spu *studentParentUseCase) GetStudentAndParent(ctx context.Context, studen
 		return nil, err
 	}
 	return data, nil
+}
+
+func (spu *studentParentUseCase) ImportCSV(ctx context.Context, payload *[]domain.StudentAndParent) error{
+	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
+	// defer cancel()
+
+	err := spu.repo.ImportCSV(ctx, payload)
+	if err != nil {
+		return err
+	}
+	return nil
 }

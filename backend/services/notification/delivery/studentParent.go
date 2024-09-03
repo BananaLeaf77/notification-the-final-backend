@@ -116,6 +116,9 @@ func (sph *studentParentHandler) UploadCSV(c *fiber.Ctx) error {
 }
 
 func (sph *studentParentHandler) processCSVFile(filePath string) error {
+
+	var listStudentAndParent []domain.StudentAndParent
+
 	file, err := os.Open(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to open CSV file: %v", err)
@@ -146,6 +149,11 @@ func (sph *studentParentHandler) processCSVFile(filePath string) error {
 			UpdatedAt: time.Now(),
 		}
 
+		_, err := govalidator.ValidateStruct(student)
+		if err != nil {
+			return err
+		}
+
 		// Process parent data
 		parent := domain.Parent{
 			Name:      row[4],
@@ -156,12 +164,24 @@ func (sph *studentParentHandler) processCSVFile(filePath string) error {
 			UpdatedAt: time.Now(),
 		}
 
-		ctx := context.Background()
-		err := sph.uc.CreateStudentAndParentUC(ctx, &domain.StudentAndParent{
+		_, err = govalidator.ValidateStruct(parent)
+		if err != nil {
+			return err
+		}
+
+		// Combine student and parent into a single struct
+		studNParent := domain.StudentAndParent{
 			Student: student,
 			Parent:  parent,
-		})
-		
+		}
+
+		// Corrected append usage
+		listStudentAndParent = append(listStudentAndParent, studNParent)
+
+		// Use case logic for creating Student and Parent
+		ctx := context.Background()
+
+		err = sph.uc.ImportCSV(ctx, &listStudentAndParent)
 		if err != nil {
 			log.Printf("Failed to insert row %d: %v", i+2, err)
 		}
