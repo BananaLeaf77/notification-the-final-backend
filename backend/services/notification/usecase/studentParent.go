@@ -18,7 +18,7 @@ func NewStudentParentUseCase(repo domain.StudentParentRepo, to time.Duration) do
 	}
 }
 
-func (spu *studentParentUseCase) CreateStudentAndParentUC(ctx context.Context, req *domain.CreateStudentParentRequest) error {
+func (spu *studentParentUseCase) CreateStudentAndParentUC(ctx context.Context, req *domain.StudentAndParent) error {
 	ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
 	defer cancel()
 
@@ -27,4 +27,15 @@ func (spu *studentParentUseCase) CreateStudentAndParentUC(ctx context.Context, r
 		return err
 	}
 	return nil
+}
+
+func (spu *studentParentUseCase) GetStudentAndParent(ctx context.Context, studentID string) (*domain.StudentAndParent, error){
+	ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
+	defer cancel()
+
+	data, err := spu.repo.GetStudentAndParent(ctx, studentID)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }

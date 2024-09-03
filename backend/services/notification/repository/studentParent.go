@@ -19,11 +19,11 @@ func NewStudentParentRepository(database *pgxpool.Pool) domain.StudentParentRepo
 	}
 }
 
-func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, req *domain.CreateStudentParentRequest) error {
+func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, req *domain.StudentAndParent) error {
 	tx, err := spr.db.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("could not begin transaction: %v", err)
-	}
+	}	
 	defer tx.Rollback(ctx)
 
 	// Insert parent
@@ -67,4 +67,8 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 	}
 
 	return nil
+}
+
+func (spr *studentParentRepository) GetStudentAndParent(ctx context.Context, studentID string) (*domain.StudentAndParent, error){
+
 }

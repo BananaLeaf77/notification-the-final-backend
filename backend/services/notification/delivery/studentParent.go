@@ -29,7 +29,7 @@ func NewStudentParentHandler(app *fiber.App, useCase domain.StudentParentUseCase
 }
 
 func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
-	var req domain.CreateStudentParentRequest
+	var req domain.StudentAndParent
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
@@ -157,10 +157,11 @@ func (sph *studentParentHandler) processCSVFile(filePath string) error {
 		}
 
 		ctx := context.Background()
-		err := sph.uc.CreateStudentAndParentUC(ctx, &domain.CreateStudentParentRequest{
+		err := sph.uc.CreateStudentAndParentUC(ctx, &domain.StudentAndParent{
 			Student: student,
 			Parent:  parent,
 		})
+		
 		if err != nil {
 			log.Printf("Failed to insert row %d: %v", i+2, err)
 		}
