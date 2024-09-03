@@ -25,7 +25,7 @@ func NewStudentParentHandler(app *fiber.App, useCase domain.StudentParentUseCase
 
 	route := app.Group("/student_and_parent")
 	route.Post("/insert", handler.CreateStudentAndParent)
-	route.Post("/upload", handler.UploadCSV)
+	route.Post("/import", handler.UploadAndImport)
 }
 
 func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
@@ -71,7 +71,7 @@ func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
 	})
 }
 
-func (sph *studentParentHandler) UploadCSV(c *fiber.Ctx) error {
+func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
 	// Handle file upload
 	file, err := c.FormFile("file")
 	if err != nil {
@@ -100,8 +100,9 @@ func (sph *studentParentHandler) UploadCSV(c *fiber.Ctx) error {
 		})
 	}
 
-	// Process the CSV file
-	if err := sph.processCSVFile(filePath); err != nil {
+	// Process the CSV file and get duplicate records
+	duplicates, err := sph.processCSVFile(filePath)
+	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"error":   err.Error(),
@@ -110,30 +111,31 @@ func (sph *studentParentHandler) UploadCSV(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"success": true,
-		"message": "File processed successfully",
+		"success":   true,
+		"message":   "File processed successfully",
+		"duplicates": duplicates, // Include duplicate information in the response
 	})
 }
 
-func (sph *studentParentHandler) processCSVFile(filePath string) error {
-
+func (sph *studentParentHandler) processCSVFile(filePath string) ([]string, error) {
 	var listStudentAndParent []domain.StudentAndParent
+	var duplicateMessages []string // Store messages about duplicates
 
 	file, err := os.Open(filePath)
 	if err != nil {
-		return fmt.Errorf("failed to open CSV file: %v", err)
+		return nil, fmt.Errorf("failed to open CSV file: %v", err)
 	}
 	defer file.Close()
 
 	reader := csv.NewReader(file)
 	records, err := reader.ReadAll()
 	if err != nil {
-		return fmt.Errorf("failed to read CSV file: %v", err)
+		return nil, fmt.Errorf("failed to read CSV file: %v", err)
 	}
 
 	// Assume the first row contains headers, so start processing from row 2
 	for i, row := range records[1:] {
-		if len(row) < 8 { // Updated to account for the required columns
+		if len(row) < 8 { // Ensure enough columns
 			log.Printf("Skipping row %d due to insufficient columns", i+2)
 			continue
 		}
@@ -151,7 +153,7 @@ func (sph *studentParentHandler) processCSVFile(filePath string) error {
 
 		_, err := govalidator.ValidateStruct(student)
 		if err != nil {
-			return err
+			return nil, fmt.Errorf("row %d: error validating student: %v", i+2, err)
 		}
 
 		// Process parent data
@@ -166,7 +168,7 @@ func (sph *studentParentHandler) processCSVFile(filePath string) error {
 
 		_, err = govalidator.ValidateStruct(parent)
 		if err != nil {
-			return err
+			return nil, fmt.Errorf("row %d: error validating parent: %v", i+2, err)
 		}
 
 		// Combine student and parent into a single struct
@@ -175,17 +177,21 @@ func (sph *studentParentHandler) processCSVFile(filePath string) error {
 			Parent:  parent,
 		}
 
-		// Corrected append usage
+		// Append to the list
 		listStudentAndParent = append(listStudentAndParent, studNParent)
-
-		// Use case logic for creating Student and Parent
-		ctx := context.Background()
-
-		err = sph.uc.ImportCSV(ctx, &listStudentAndParent)
-		if err != nil {
-			log.Printf("Failed to insert row %d: %v", i+2, err)
-		}
 	}
 
-	return nil
+	// Use case logic for importing students and parents in bulk
+	ctx := context.Background()
+	duplicates, err := sph.uc.ImportCSV(ctx, &listStudentAndParent)
+	if err != nil {
+		return nil, fmt.Errorf("error importing CSV data: %v", err)
+	}
+
+	// Collect duplicates messages
+	if len(*duplicates) > 0 {
+		duplicateMessages = append(duplicateMessages, *duplicates...)
+	}
+
+	return duplicateMessages, nil
 }

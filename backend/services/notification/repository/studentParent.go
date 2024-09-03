@@ -6,6 +6,7 @@ import (
 	"notification/domain"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -73,12 +74,12 @@ func (spr *studentParentRepository) GetStudentAndParent(ctx context.Context, stu
 	return nil, nil
 }
 
-func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]domain.StudentAndParent) error {
+func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]domain.StudentAndParent) (*[]string, error) {
 	tx, err := spr.db.Begin(ctx)
 	if err != nil {
-		return fmt.Errorf("could not begin transaction: %v", err)
+		return nil, fmt.Errorf("could not begin transaction: %v", err)
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback(ctx) // Ensure rollback on error
 
 	now := time.Now()
 
@@ -96,32 +97,45 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 
 	// Queries to check if parent or student already exists
 	checkParentExistsQuery := `
-		SELECT id FROM parents WHERE telephone = $1 OR email = $2 AND deleted_at = NULL;
+		SELECT id FROM parents WHERE (telephone = $1 OR email = $2) AND deleted_at IS NULL;
 	`
 	checkStudentExistsQuery := `
-		SELECT id FROM students WHERE telephone = $1 AND deleted_at = NULL;
+		SELECT id FROM students WHERE telephone = $1 AND deleted_at IS NULL;
 	`
 
-	for _, record := range *payload {
+	// Slice to store duplicate messages
+	var duplicateMessages []string
+
+	for index, record := range *payload {
 		// Check if parent already exists
 		var parentExistsID int
-		found := tx.QueryRow(ctx, checkParentExistsQuery, record.Parent.Telephone, record.Parent.Email).Scan(&parentExistsID)
-		if found == nil {
-			return fmt.Errorf("parent with telephone %s or email %s already exists", record.Parent.Telephone, record.Parent.Email)
+		err := tx.QueryRow(ctx, checkParentExistsQuery, record.Parent.Telephone, record.Parent.Email).Scan(&parentExistsID)
+		if err == nil {
+			// Parent already exists, add a message to duplicates and continue
+			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with telephone %s or email %s already exists", index+1, record.Parent.Telephone, record.Parent.Email))
+			continue
+		} else if err != pgx.ErrNoRows {
+			// If there's an error other than "no rows", we should handle it
+			return nil, fmt.Errorf("row %d: error checking if parent exists: %v", index+1, err)
 		}
 
 		// Check if student already exists
 		var studentExistsID int
-		found = tx.QueryRow(ctx, checkStudentExistsQuery, record.Student.Telephone).Scan(&studentExistsID)
-		if found == nil {
-			return fmt.Errorf("student with telephone %s already exists", record.Student.Telephone)
+		err = tx.QueryRow(ctx, checkStudentExistsQuery, record.Student.Telephone).Scan(&studentExistsID)
+		if err == nil {
+			// Student already exists, add a message to duplicates and continue
+			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student with telephone %s already exists", index+1, record.Student.Telephone))
+			continue
+		} else if err != pgx.ErrNoRows {
+			// If there's an error other than "no rows", we should handle it
+			return nil, fmt.Errorf("row %d: error checking if student exists: %v", index+1, err)
 		}
 
 		// Insert parent
 		var parentID int
 		err = tx.QueryRow(ctx, parentInsertQuery, record.Parent.Name, record.Parent.Gender, record.Parent.Telephone, record.Parent.Email, now, now).Scan(&parentID)
 		if err != nil {
-			return fmt.Errorf("could not insert parent: %v", err)
+			return nil, fmt.Errorf("row %d: could not insert parent: %v", index+1, err)
 		}
 
 		// Update ParentID in record
@@ -133,7 +147,7 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 		var studentID int
 		err = tx.QueryRow(ctx, studentInsertQuery, record.Student.Name, record.Student.Class, record.Student.Gender, record.Student.Telephone, parentID, now, now).Scan(&studentID)
 		if err != nil {
-			return fmt.Errorf("could not insert student: %v", err)
+			return nil, fmt.Errorf("row %d: could not insert student: %v", index+1, err)
 		}
 
 		// Update StudentID in record
@@ -142,10 +156,11 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 		record.Student.UpdatedAt = now
 	}
 
-	// Commit transaction if all inserts are successful
+	// If there are any successful inserts, commit the transaction
 	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("could not commit transaction: %v", err)
+		return nil, fmt.Errorf("could not commit transaction: %v", err)
 	}
 
-	return nil
+	return &duplicateMessages, nil
 }
+

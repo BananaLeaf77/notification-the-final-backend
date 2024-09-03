@@ -40,13 +40,13 @@ func (spu *studentParentUseCase) GetStudentAndParent(ctx context.Context, studen
 	return data, nil
 }
 
-func (spu *studentParentUseCase) ImportCSV(ctx context.Context, payload *[]domain.StudentAndParent) error{
+func (spu *studentParentUseCase) ImportCSV(ctx context.Context, payload *[]domain.StudentAndParent) (*[]string, error){
 	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
 	// defer cancel()
 
-	err := spu.repo.ImportCSV(ctx, payload)
+	data, err := spu.repo.ImportCSV(ctx, payload)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return data, nil
 }

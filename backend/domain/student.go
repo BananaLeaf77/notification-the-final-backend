@@ -10,12 +10,12 @@ type Student struct {
 	Name      string     `json:"name" valid:"required~Name is required"`
 	Class     string     `json:"class" valid:"required~Class is required"`
 	Gender    string     `json:"gender" valid:"required~Gender is required"`
-	Telephone string     `json:"telephone" valid:"required~Telephone Number is required,numeric~Telephone must be a number"`
+	Telephone string     `json:"telephone"`
 	ParentID  int        `json:"parent_id"`
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`
 	DeletedAt *time.Time `json:"deleted_at"`
-}	
+}
 
 type StudentRepo interface {
 	CreateStudent(ctx context.Context, student *Student) error
