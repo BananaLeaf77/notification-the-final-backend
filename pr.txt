@@ -1,0 +1,4 @@
+di delivery jangan ditambahin 0 dlu karena Telephone INT
+pas di repo insert baru tambahin dah tu jadiin string tambah 0 depan
+
+delivery -> list invalid type of parent telephone
