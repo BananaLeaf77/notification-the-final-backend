@@ -94,7 +94,7 @@ func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
 	filePath := filepath.Join(uploadDir, file.Filename)
 	err = c.SaveFile(file, filePath)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"error":   err.Error(),
 			"message": "Failed to save file",
@@ -102,37 +102,50 @@ func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
 	}
 
 	// Process the CSV file and get duplicate records
-	duplicates, err := sph.processCSVFile(filePath)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"success": false,
-			"error":   err.Error(),
-			"message": "Failed to process CSV file",
+	resDupe, invalidTelephones, err := sph.processCSVFile(filePath)
+
+	if invalidTelephones != nil && err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success":            false,
+			"error":              err.Error(),
+			"message":            "Failed to process CSV file",
+			"invalid_telephones": invalidTelephones,
 		})
 	}
 
+	if resDupe != nil && err == nil {
+		fmt.Println(err)
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"success":    false,
+			"message":    "File processed successfully, but some duplicates were found.",
+			"duplicates": resDupe,
+		})
+	}
+
+	// If no errors and no duplicates, return success
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"success":    true,
-		"message":    "File processed successfully",
-		"duplicates": duplicates, // Include duplicate information in the response
+		"success": true,
+		"message": "File processed successfully",
 	})
+
 }
 
-func (sph *studentParentHandler) processCSVFile(filePath string) ([]string, error) {
+func (sph *studentParentHandler) processCSVFile(filePath string) (*[]string, *[]string, error) {
 	var listStudentAndParent []domain.StudentAndParent
-	var duplicateMessages []string // Store messages about duplicates
-	var duplicateParentTelephones []string
+	var invalidTelephoneType []string
+	var parentDataHolder domain.Parent
+	var studentDataHolder domain.Student
 
 	file, err := os.Open(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open CSV file: %v", err)
+		return nil, nil, fmt.Errorf("failed to open CSV file: %v", err)
 	}
 	defer file.Close()
 
 	reader := csv.NewReader(file)
 	records, err := reader.ReadAll()
 	if err != nil {
-		return nil, fmt.Errorf("failed to read CSV file: %v", err)
+		return nil, nil, fmt.Errorf("failed to read CSV file: %v", err)
 	}
 
 	// Assume the first row contains headers, so start processing from row 2
@@ -142,73 +155,80 @@ func (sph *studentParentHandler) processCSVFile(filePath string) ([]string, erro
 			continue
 		}
 
-		convertStudTelephone, err := strconv.Atoi(row[3])
-		if err != nil {
-			txt := fmt.Sprintf("Telephone should be number, Found : %s", row[3])
-			duplicateParentTelephones = append(duplicateParentTelephones, txt)
+		convertStudTelephone, errStudentConvert := strconv.Atoi(row[3])
+		if errStudentConvert != nil {
+			txt := fmt.Sprintf("Student telephone should be a number, Found : %s", row[3])
+			invalidTelephoneType = append(invalidTelephoneType, txt)
 		}
 
-		// Process student data
-		student := domain.Student{
-			Name:      row[0],
-			Class:     row[1],
-			Gender:    row[2],
-			Telephone: convertStudTelephone,
-			ParentID:  0,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+		if errStudentConvert == nil {
+			// Process student data
+			studentDataHolder = domain.Student{
+				Name:      row[0],
+				Class:     row[1],
+				Gender:    row[2],
+				Telephone: convertStudTelephone,
+				ParentID:  0,
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			}
+
+			_, err = govalidator.ValidateStruct(studentDataHolder)
+			if err != nil {
+				return nil, nil, fmt.Errorf("row %d: error validating student: %v", i+2, err)
+			}
+
 		}
 
-		_, err = govalidator.ValidateStruct(student)
-		if err != nil {
-			return nil, fmt.Errorf("row %d: error validating student: %v", i+2, err)
+		convertParentTelephone, errParentConvert := strconv.Atoi(row[6])
+		if errParentConvert != nil {
+			txt := fmt.Sprintf("Parent telephone should be a number, Found : %s", row[6])
+			invalidTelephoneType = append(invalidTelephoneType, txt)
 		}
 
-		convertParentTelephone, err := strconv.Atoi(row[6])
-		if err != nil {
-			return nil, fmt.Errorf("Telephone should be number, Found : %s", row[6])
-		}
-		// Process parent data
-		parent := domain.Parent{
-			Name:      row[4],
-			Gender:    row[5],
-			Telephone: convertParentTelephone,
-			Email:     row[7],
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+		if errParentConvert == nil {
+			// Process parent data
+			parentDataHolder = domain.Parent{
+				Name:      row[4],
+				Gender:    row[5],
+				Telephone: convertParentTelephone,
+				Email:     row[7],
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			}
+
+			_, err = govalidator.ValidateStruct(parentDataHolder)
+			if err != nil {
+				return nil, nil, fmt.Errorf("row %d: error validating parent: %v", i+2, err)
+			}
 		}
 
-		_, err = govalidator.ValidateStruct(parent)
-		if err != nil {
-			return nil, fmt.Errorf("row %d: error validating parent: %v", i+2, err)
+		if errStudentConvert == nil && errParentConvert == nil {
+			// Combine student and parent into a single struct
+			studNParent := domain.StudentAndParent{
+				Student: studentDataHolder,
+				Parent:  parentDataHolder,
+			}
+			// Append to the list
+			listStudentAndParent = append(listStudentAndParent, studNParent)
 		}
-
-		// Combine student and parent into a single struct
-		studNParent := domain.StudentAndParent{
-			Student: student,
-			Parent:  parent,
-		}
-
-		// Append to the list
-		listStudentAndParent = append(listStudentAndParent, studNParent)
-		
 	}
-	
-	if len(duplicateParentTelephones) > 0 {
-		return duplicateParentTelephones, fmt.Errorf("Found parent duplicate telephone numbers")
+
+	if len(invalidTelephoneType) > 0 {
+		return nil, &invalidTelephoneType, fmt.Errorf("Invalid type of telephones found")
 	}
 
 	// Use case logic for importing students and parents in bulk
 	ctx := context.Background()
 	duplicates, err := sph.uc.ImportCSV(ctx, &listStudentAndParent)
 	if err != nil {
-		return nil, fmt.Errorf("error importing CSV data: %v", err)
+		return nil, nil, fmt.Errorf("error importing CSV data: %v", err)
 	}
 
-	// Collect duplicates messages
 	if len(*duplicates) > 0 {
-		duplicateMessages = append(duplicateMessages, *duplicates...)
+		return duplicates, nil, nil
 	}
 
-	return duplicateMessages, err
+	return nil, nil, nil
+
 }
