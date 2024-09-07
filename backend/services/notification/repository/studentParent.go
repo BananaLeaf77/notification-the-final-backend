@@ -137,7 +137,6 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 
 	// check jika panjang  var duplikat msg lebih dari 0 (ada)
 	if len(duplicateMessages) > 0 {
-		fmt.Println("masuk error > 0")
 		return &duplicateMessages, nil
 	}
 

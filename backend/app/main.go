@@ -63,7 +63,7 @@ func startHTTP() {
 	studentRepo := repository.NewStudentRepository(db)
 	studentUC := usecase.NewStudentUseCase(studentRepo, 100*time.Second)
 	// Emailer
-	emailerRepo := repository.NewEmailSMTPRepository(eAuth, *eAdress, *schoolPhone, *emailSender)
+	emailerRepo := repository.NewEmailSMTPRepository(db, eAuth, *eAdress, *schoolPhone, *emailSender)
 	emailerUc := usecase.NewMailSMTPUseCase(emailerRepo, 30*time.Second)
 
 	// Register delivery here

@@ -1,7 +1,6 @@
 package delivery
 
 import (
-	"context"
 	"notification/config"
 	"notification/domain"
 	"strconv"
@@ -41,8 +40,7 @@ func (sh *studentHandler) deliveryInsertStudent(c *fiber.Ctx) error {
 		})
 	}
 
-	ctx := context.Background()
-	if err := sh.suc.CreateStudentUC(ctx, &student); err != nil {
+	if err := sh.suc.CreateStudentUC(c.Context(), &student); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"message": "Failed to create student",
@@ -58,8 +56,7 @@ func (sh *studentHandler) deliveryInsertStudent(c *fiber.Ctx) error {
 }
 
 func (sh *studentHandler) deliveryGetAllStudent(c *fiber.Ctx) error {
-	ctx := context.Background()
-	students, err := sh.suc.GetAllStudentUC(ctx)
+	students, err := sh.suc.GetAllStudentUC(c.Context())
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
@@ -85,8 +82,7 @@ func (sh *studentHandler) deliveryGetStudentByID(c *fiber.Ctx) error {
 		})
 	}
 
-	ctx := context.Background()
-	student, err := sh.suc.GetStudentByIDUC(ctx, id)
+	student, err := sh.suc.GetStudentByIDUC(c.Context(), id)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
@@ -122,8 +118,7 @@ func (sh *studentHandler) deliveryModifyStudent(c *fiber.Ctx) error {
 	}
 	student.ID = id
 
-	ctx := context.Background()
-	if err := sh.suc.UpdateStudentUC(ctx, &student); err != nil {
+	if err := sh.suc.UpdateStudentUC(c.Context(), &student); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"message": "Failed to update student",

@@ -3,15 +3,14 @@ package domain
 import "context"
 
 type EmailSMTPData struct {
-	StudentName  string `json:"student_name"`
-	ParentName   string `json:"parent_name"`
-	EmailAddress string `json:"email"`
+	Student Student `json:"student"`
+	Parent  Parent  `json:"parent"`
 }
 
 type EmailSMTPRepo interface {
-	SendMass(ctx context.Context, payloadList *[]EmailSMTPData) error
+	SendMass(ctx context.Context, idList *[]int) error
 }
 
 type EmailSMTPUseCase interface {
-	SendMass(ctx context.Context, payloadList *[]EmailSMTPData) error
+	SendMass(ctx context.Context, idList *[]int) error
 }

@@ -18,11 +18,11 @@ func NewMailSMTPUseCase(repo domain.EmailSMTPRepo, timeOut time.Duration) domain
 	}
 }
 
-func (mUC *emailSMTPUC) SendMass(ctx context.Context, payload *[]domain.EmailSMTPData) error {
+func (mUC *emailSMTPUC) SendMass(ctx context.Context, idList *[]int) error {
 	// ctx, cancel := context.WithTimeout(ctx, mUC.TimeOut)
 	// defer cancel()
 
-	err := mUC.emailSMTPRepo.SendMass(ctx, payload)
+	err := mUC.emailSMTPRepo.SendMass(ctx, idList)
 	if err != nil {
 		return err
 	}

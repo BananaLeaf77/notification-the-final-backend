@@ -30,6 +30,9 @@ func NewStudentParentHandler(app *fiber.App, useCase domain.StudentParentUseCase
 }
 
 func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
+	wg.Add(1)
+	defer wg.Done()
+
 	var req domain.StudentAndParent
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -57,8 +60,7 @@ func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
 		})
 	}
 
-	ctx := context.Background()
-	if err := sph.uc.CreateStudentAndParentUC(ctx, &req); err != nil {
+	if err := sph.uc.CreateStudentAndParentUC(c.Context(), &req); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"error":   err.Error(),
@@ -73,6 +75,8 @@ func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
 }
 
 func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
+	wg.Add(1)
+	defer wg.Done()
 	// Handle file upload
 	file, err := c.FormFile("file")
 	if err != nil {
@@ -102,7 +106,7 @@ func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
 	}
 
 	// Process the CSV file and get duplicate records
-	resDupe, invalidTelephones, err := sph.processCSVFile(filePath)
+	resDupe, invalidTelephones, err := sph.processCSVFile(c.Context(), filePath)
 
 	if invalidTelephones != nil && err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -114,7 +118,6 @@ func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
 	}
 
 	if resDupe != nil && err == nil {
-		fmt.Println(err)
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"success":    false,
 			"message":    "File processed successfully, but some duplicates were found.",
@@ -130,7 +133,7 @@ func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
 
 }
 
-func (sph *studentParentHandler) processCSVFile(filePath string) (*[]string, *[]string, error) {
+func (sph *studentParentHandler) processCSVFile(c context.Context, filePath string) (*[]string, *[]string, error) {
 	var listStudentAndParent []domain.StudentAndParent
 	var invalidTelephoneType []string
 	var parentDataHolder domain.Parent
@@ -219,8 +222,7 @@ func (sph *studentParentHandler) processCSVFile(filePath string) (*[]string, *[]
 	}
 
 	// Use case logic for importing students and parents in bulk
-	ctx := context.Background()
-	duplicates, err := sph.uc.ImportCSV(ctx, &listStudentAndParent)
+	duplicates, err := sph.uc.ImportCSV(c, &listStudentAndParent)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error importing CSV data: %v", err)
 	}

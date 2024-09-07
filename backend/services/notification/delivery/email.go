@@ -21,18 +21,22 @@ func NewEmailerDelivery(app *fiber.App, uc domain.EmailSMTPUseCase) {
 }
 
 func (h *emailSenderHandler) sendMassHandler(c *fiber.Ctx) error {
+
 	wg.Add(1)
 	defer wg.Done()
 
-	var payloadList []domain.EmailSMTPData
+	var payload struct {
+		IDs []int `json:"ids"`
+	}
 
-	if err := c.BodyParser(&payloadList); err != nil {
+	if err := c.BodyParser(&payload); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "invalid request body",
 		})
 	}
 
-	if err := h.suc.SendMass(c.Context(), &payloadList); err != nil {
+	// Call the use case with the parsed ID list.
+	if err := h.suc.SendMass(c.Context(), &payload.IDs); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":  "failed to send emails",
 			"detail": err.Error(),
