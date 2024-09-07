@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"notification/domain"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -122,17 +123,68 @@ func (sp *studentRepository) UpdateStudent(ctx context.Context, student *domain.
 	return nil
 }
 
+// Deleting student would delete the parent too
 func (sp *studentRepository) DeleteStudent(ctx context.Context, id int) error {
+
+	var student domain.Student
+
 	query := `
 		UPDATE students
 		SET deleted_at = $1
 		WHERE id = $2 AND deleted_at IS NULL;
 	`
+	query2 := `UPDATE parents
+		SET deleted_at = $1
+		WHERE id = $2 AND deleted_at IS NULL`
+
+	query3 := `
+		SELECT id, name, class, gender, telephone, parent_id, created_at, updated_at, deleted_at
+		FROM students
+		WHERE id = $1 AND deleted_at IS NULL;
+	`
 
 	now := time.Now()
-	_, err := sp.db.Exec(ctx, query, now, id)
+
+	var telephoneStr string
+
+	// Find student first
+	err := sp.db.QueryRow(ctx, query3, id).Scan(
+		&student.ID,
+		&student.Name,
+		&student.Class,
+		&student.Gender,
+		&telephoneStr,
+		&student.ParentID,
+		&student.CreatedAt,
+		&student.UpdatedAt,
+		&student.DeletedAt,
+	)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return fmt.Errorf("student not found")
+		}
+		return fmt.Errorf("could not get student: %v", err)
+	}
+
+	// Convert telephone to int
+	convertedValue, err := strconv.Atoi(telephoneStr)
+
+	student.Telephone = convertedValue
+
+	if err != nil {
+		return fmt.Errorf("invalid telephone format: %v", err)
+	}
+
+	// Query delete student
+	_, err = sp.db.Exec(ctx, query, now, id)
 	if err != nil {
 		return fmt.Errorf("could not delete student: %v", err)
+	}
+
+	// Query delete parent
+	_, err = sp.db.Exec(ctx, query2, now, student.ParentID)
+	if err != nil {
+		return fmt.Errorf("could not delete parent: %v", err)
 	}
 
 	return nil

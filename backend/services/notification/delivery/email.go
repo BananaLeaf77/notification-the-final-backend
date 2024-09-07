@@ -21,6 +21,9 @@ func NewEmailerDelivery(app *fiber.App, uc domain.EmailSMTPUseCase) {
 }
 
 func (h *emailSenderHandler) sendMassHandler(c *fiber.Ctx) error {
+	wg.Add(1)
+	defer wg.Done()
+
 	var payloadList []domain.EmailSMTPData
 
 	if err := c.BodyParser(&payloadList); err != nil {

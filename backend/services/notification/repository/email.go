@@ -32,7 +32,7 @@ func (m *emailSMTPRepository) SendMass(ctx context.Context, payloadList *[]domai
 	errorChan := make(chan error, len(*payloadList))
 
 	for _, payload := range *payloadList {
-		wg.Add(1) // Increment the WaitGroup counter
+		wg.Add(1) 
 		go func(payload domain.EmailSMTPData) {
 			defer wg.Done() // Decrement the counter when the goroutine completes
 

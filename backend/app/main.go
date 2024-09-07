@@ -56,15 +56,20 @@ func startHTTP() {
 	}
 
 	// Register repository and Usecase here
+	// StudentParent
 	studentParentRepo := repository.NewStudentParentRepository(db)
 	studentParentUC := usecase.NewStudentParentUseCase(studentParentRepo, 30*time.Second)
-
+	// Student
+	studentRepo := repository.NewStudentRepository(db)
+	studentUC := usecase.NewStudentUseCase(studentRepo, 100*time.Second)
+	// Emailer
 	emailerRepo := repository.NewEmailSMTPRepository(eAuth, *eAdress, *schoolPhone, *emailSender)
 	emailerUc := usecase.NewMailSMTPUseCase(emailerRepo, 30*time.Second)
 
 	// Register delivery here
 	delivery.NewStudentParentHandler(app, studentParentUC)
 	delivery.NewEmailerDelivery(app, emailerUc)
+	delivery.NewStudentDelivery(app, studentUC)
 
 	wg.Add(1)
 	go func() {

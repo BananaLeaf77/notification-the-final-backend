@@ -2,11 +2,15 @@ package delivery
 
 import (
 	"context"
+	"notification/config"
 	"notification/domain"
 	"strconv"
+	"sync"
 
 	"github.com/gofiber/fiber/v2"
 )
+
+var wg *sync.WaitGroup = config.GetWaitGroupInstance()
 
 type studentHandler struct {
 	suc domain.StudentUseCase
@@ -26,6 +30,8 @@ func NewStudentDelivery(app *fiber.App, uc domain.StudentUseCase) {
 }
 
 func (sh *studentHandler) deliveryInsertStudent(c *fiber.Ctx) error {
+	wg.Add(1)
+	defer wg.Done()
 	var student domain.Student
 	if err := c.BodyParser(&student); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -133,6 +139,9 @@ func (sh *studentHandler) deliveryModifyStudent(c *fiber.Ctx) error {
 }
 
 func (sh *studentHandler) deliveryDeleteStudent(c *fiber.Ctx) error {
+	wg.Add(1)
+	defer wg.Done()
+
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -142,8 +151,7 @@ func (sh *studentHandler) deliveryDeleteStudent(c *fiber.Ctx) error {
 		})
 	}
 
-	ctx := context.Background()
-	if err := sh.suc.DeleteStudentUC(ctx, id); err != nil {
+	if err := sh.suc.DeleteStudentUC(c.Context(), id); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"message": "Failed to delete student",
