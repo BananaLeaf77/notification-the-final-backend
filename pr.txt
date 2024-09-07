@@ -4,3 +4,27 @@ pas di repo insert baru tambahin dah tu jadiin string tambah 0 depan
 delivery -> list invalid type of parent telephone
 
 (New!) Init twillio / Api buat send ke whatsapp
+
+//Error to a list
+func (m *emailSMTPRepository) SendMass(ctx context.Context, idList *[]int) error {
+	var errorList []string
+
+	for _, id := range *idList {
+		student, err := m.fetchStudentDetails(ctx, id)
+		if err != nil {
+			errorList = append(errorList, fmt.Sprintf("failed to fetch student details for ID %d: %v", id, err))
+			continue
+		}
+
+		if err := m.sendEmail(student); err != nil {
+			errorList = append(errorList, fmt.Sprintf("failed to send email to %s: %v", student.Parent.Email, err))
+			continue
+		}
+	}
+
+	if len(errorList) > 0 {
+		return fmt.Errorf("errors occurred: %s", strings.Join(errorList, "; "))
+	}
+
+	return nil
+}
