@@ -40,7 +40,7 @@ func (sUC *studentUC) GetAllStudentUC(ctx context.Context) (*[]domain.Student, e
 	return students, nil
 }
 
-func (sUC *studentUC) GetStudentByIDUC(ctx context.Context, id int) (*domain.Student, error) {
+func (sUC *studentUC) GetStudentByIDUC(ctx context.Context, id int) (*domain.StudentAndParent, error) {
 	ctx, cancel := context.WithTimeout(ctx, sUC.TimeOut)
 	defer cancel()
 

@@ -87,23 +87,45 @@ func (sp *studentRepository) GetAllStudent(ctx context.Context) (*[]domain.Stude
 	return &students, nil
 }
 
-func (sp *studentRepository) GetStudentByID(ctx context.Context, id int) (*domain.Student, error) {
+func (sp *studentRepository) GetStudentByID(ctx context.Context, id int) (*domain.StudentAndParent, error) {
 	query := `
-		SELECT id, name, class, gender, telephone, parent_id, created_at, updated_at, deleted_at
-		FROM students
-		WHERE id = $1 AND deleted_at IS NULL;
+		SELECT s.id, s.name, s.class, s.gender, s.telephone, s.parent_id, s.created_at, s.updated_at, s.deleted_at,
+		p.id, p.name, p.gender, p.telephone, p.email, p.created_at, p.updated_at, p.deleted_at
+		FROM students s
+		JOIN parents p ON s.parent_id = p.id
+		WHERE s.id = $1 AND s.deleted_at IS NULL AND p.deleted_at IS NULL;
 	`
 
-	var student domain.Student
-	err := sp.db.QueryRow(ctx, query, id).Scan(&student.ID, &student.Name, &student.Class, &student.Gender, &student.Telephone, &student.ParentID, &student.CreatedAt, &student.UpdatedAt, &student.DeletedAt)
+	var result domain.StudentAndParent
+	var pTelephone string
+	var sTelephone string
+
+	err := sp.db.QueryRow(ctx, query, id).Scan(
+		&result.Student.ID, &result.Student.Name, &result.Student.Class, &result.Student.Gender, &sTelephone, &result.Student.ParentID, &result.Student.CreatedAt, &result.Student.UpdatedAt, &result.Student.DeletedAt,
+		&result.Parent.ID, &result.Parent.Name, &result.Parent.Gender, &pTelephone, &result.Parent.Email, &result.Parent.CreatedAt, &result.Parent.UpdatedAt, &result.Parent.DeletedAt,
+	)
 	if err != nil {
 		if err.Error() == "no rows in result set" {
 			return nil, fmt.Errorf("student not found")
 		}
-		return nil, fmt.Errorf("could not get student: %v", err)
+		return nil, fmt.Errorf("could not get student and parent details: %v", err)
 	}
 
-	return &student, nil
+	v, err := strconv.Atoi(pTelephone)
+	if err != nil {
+		return nil, err
+	}
+
+	result.Parent.Telephone = v
+
+	vs, err := strconv.Atoi(sTelephone)
+	if err != nil {
+		return nil, err
+	}
+
+	result.Student.Telephone = vs
+
+	return &result, nil
 }
 
 func (sp *studentRepository) UpdateStudent(ctx context.Context, student *domain.Student) error {
