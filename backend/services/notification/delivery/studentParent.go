@@ -195,7 +195,7 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 				Name:      row[4],
 				Gender:    row[5],
 				Telephone: convertParentTelephone,
-				Email:     row[7],
+				Email:     &row[7],
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
 			}

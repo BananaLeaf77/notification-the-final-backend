@@ -40,7 +40,7 @@ func (m *emailSMTPRepository) SendMass(ctx context.Context, idList *[]int) error
 		}
 
 		if err := m.sendEmail(student); err != nil {
-			finalErr = fmt.Errorf("failed to send email to %s: %w", student.Parent.Email, err)
+			finalErr = fmt.Errorf("failed to send email to %s: %w", *student.Parent.Email, err)
 			continue
 		}
 	}
@@ -120,18 +120,18 @@ Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Stu
 
 	if payload.Parent.Gender == "Female" {
 		msg = "From: " + m.emailSender + "\n" +
-			"To: " + payload.Parent.Email + "\n" +
+			"To: " + *payload.Parent.Email + "\n" +
 			"Subject: " + subject + "\n\n" +
 			bodyFemale
 	} else if payload.Parent.Gender == "Male" {
 		msg = "From: " + m.emailSender + "\n" +
-			"To: " + payload.Parent.Email + "\n" +
+			"To: " + *payload.Parent.Email + "\n" +
 			"Subject: " + subject + "\n\n" +
 			bodyMale
 	}
 
 	// Send the email.
-	err = smtp.SendMail(m.smtpAdress, m.client, m.emailSender, []string{payload.Parent.Email}, []byte(msg))
+	err = smtp.SendMail(m.smtpAdress, m.client, m.emailSender, []string{*payload.Parent.Email}, []byte(msg))
 	if err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}

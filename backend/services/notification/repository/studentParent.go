@@ -117,7 +117,7 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 		// Check if parent already exists by email
 		err = spr.db.QueryRow(ctx, checkParentExistsByEmailQuery, record.Parent.Email).Scan(&parentExistsID)
 		if err == nil {
-			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with email %s already exists", index+1, record.Parent.Email))
+			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with email %s already exists", index+1, *record.Parent.Email))
 		} else if err != pgx.ErrNoRows {
 			return nil, fmt.Errorf("row %d: error checking if parent exists by email: %v", index+1, err)
 		}
