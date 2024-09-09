@@ -6,21 +6,21 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type emailSenderHandler struct {
-	suc domain.EmailSMTPUseCase
+type senderHandler struct {
+	suc domain.SenderUseCase
 }
 
 // NewEmailerDelivery sets up the route for the email sender handler
-func NewEmailerDelivery(app *fiber.App, uc domain.EmailSMTPUseCase) {
-	handler := &emailSenderHandler{
+func NewSenderDelivery(app *fiber.App, uc domain.SenderUseCase) {
+	handler := &senderHandler{
 		suc: uc,
 	}
 
-	route := app.Group("/email")
+	route := app.Group("/sender")
 	route.Post("/send-mass", handler.sendMassHandler)
 }
 
-func (h *emailSenderHandler) sendMassHandler(c *fiber.Ctx) error {
+func (h *senderHandler) sendMassHandler(c *fiber.Ctx) error {
 
 	wg.Add(1)
 	defer wg.Done()

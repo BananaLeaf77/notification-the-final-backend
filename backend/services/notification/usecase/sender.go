@@ -6,19 +6,19 @@ import (
 	"time"
 )
 
-type emailSMTPUC struct {
-	emailSMTPRepo domain.EmailSMTPUseCase
+type senderUC struct {
+	emailSMTPRepo domain.SenderRepo
 	TimeOut       time.Duration
 }
 
-func NewMailSMTPUseCase(repo domain.EmailSMTPRepo, timeOut time.Duration) domain.EmailSMTPUseCase {
-	return &emailSMTPUC{
+func NewSenderUseCase(repo domain.SenderRepo, timeOut time.Duration) domain.SenderRepo {
+	return &senderUC{
 		emailSMTPRepo: repo,
 		TimeOut:       timeOut,
 	}
 }
 
-func (mUC *emailSMTPUC) SendMass(ctx context.Context, idList *[]int) error {
+func (mUC *senderUC) SendMass(ctx context.Context, idList *[]int) error {
 	// ctx, cancel := context.WithTimeout(ctx, mUC.TimeOut)
 	// defer cancel()
 

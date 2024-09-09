@@ -48,10 +48,10 @@ func startHTTP() {
 		return
 	}
 
-	eAuth, eAdress, schoolPhone, emailSender, err := config.InitMailSMTP()
+	twillioClient, eAuth, eAdress, schoolPhone, emailSender, err := config.InitMessenger()
 	if err != nil {
 		fmt.Println(err)
-		log.Fatal("Failed to boot Email SMTP Service")
+		log.Fatal("Failed to boot Sender Service")
 		return
 	}
 
@@ -62,13 +62,13 @@ func startHTTP() {
 	// Student
 	studentRepo := repository.NewStudentRepository(db)
 	studentUC := usecase.NewStudentUseCase(studentRepo, 100*time.Second)
-	// Emailer
-	emailerRepo := repository.NewEmailSMTPRepository(db, eAuth, *eAdress, *schoolPhone, *emailSender)
-	emailerUc := usecase.NewMailSMTPUseCase(emailerRepo, 30*time.Second)
+	// Sender
+	senderRepo := repository.NewSenderRepository(db, eAuth, *eAdress, *schoolPhone, *emailSender, twillioClient)
+	senderUC := usecase.NewSenderUseCase(senderRepo, 30*time.Second)
 
 	// Register delivery here
 	delivery.NewStudentParentHandler(app, studentParentUC)
-	delivery.NewEmailerDelivery(app, emailerUc)
+	delivery.NewSenderDelivery(app, senderUC)
 	delivery.NewStudentDelivery(app, studentUC)
 
 	wg.Add(1)

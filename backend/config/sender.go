@@ -4,40 +4,51 @@ import (
 	"fmt"
 	"net/smtp"
 	"os"
+
+	"github.com/twilio/twilio-go"
 )
 
-func InitMailSMTP() (smtp.Auth, *string, *string, *string, error) {
+func InitMessenger() (*twilio.RestClient, smtp.Auth, *string, *string, *string, error) {
+	// SMTP Emailer
 	emailSender, err := getSender()
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 
 	emailPassword, err := getPassword()
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 
 	smtpHost, err := getHost()
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 
 	smtpPort, err := getSMTPPort()
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 
 	schoolPhone, err := getSchoolPhone()
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 
 	smtpAuth := smtp.PlainAuth("", *emailSender, *emailPassword, *smtpHost)
 
 	smtpAddr := fmt.Sprintf("%s:%s", *smtpHost, *smtpPort)
 
-	return smtpAuth, &smtpAddr, schoolPhone, emailSender, nil
+	// Twillio
+	twillioClient := twilio.NewRestClient()
+	if twillioClient == nil {
+		return nil, nil, nil, nil, nil, fmt.Errorf("Failed to initialize twillio")
+	}
+
+	return twillioClient, smtpAuth, &smtpAddr, schoolPhone, emailSender, nil
 }
+
+// For SMTP Emailer
 
 func getSender() (*string, error) {
 	sender := os.Getenv("EMAIL_SENDER")
@@ -77,4 +88,30 @@ func getSMTPPort() (*string, error) {
 		return nil, fmt.Errorf("smtp port invalid, value : %s", port)
 	}
 	return &port, nil
+}
+
+// For Twillio
+
+func getAccountSID() (*string, error) {
+	sid := os.Getenv("TWILIO_ACCOUNT_SID")
+	if sid == "" {
+		return nil, fmt.Errorf("Twilio Account SID is missing, value: %s", sid)
+	}
+	return &sid, nil
+}
+
+func getAuthToken() (*string, error) {
+	token := os.Getenv("TWILIO_AUTH_TOKEN")
+	if token == "" {
+		return nil, fmt.Errorf("Twilio Auth Token is missing, value: %s", token)
+	}
+	return &token, nil
+}
+
+func getFromNumber() (*string, error) {
+	number := os.Getenv("TWILIO_FROM_NUMBER")
+	if number == "" {
+		return nil, fmt.Errorf("Twilio From Number is missing, value: %s", number)
+	}
+	return &number, nil
 }

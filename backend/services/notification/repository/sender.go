@@ -9,27 +9,30 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/twilio/twilio-go"
 )
 
-type emailSMTPRepository struct {
-	db          *pgxpool.Pool
-	client      smtp.Auth
-	emailSender string
-	schoolPhone string
-	smtpAdress  string
+type senderRepository struct {
+	db            *pgxpool.Pool
+	client        smtp.Auth
+	emailSender   string
+	schoolPhone   string
+	smtpAdress    string
+	twillioClient *twilio.RestClient
 }
 
-func NewEmailSMTPRepository(db *pgxpool.Pool, client smtp.Auth, smtpAddress, schoolPhone, emailSender string) domain.EmailSMTPRepo {
-	return &emailSMTPRepository{
-		db:          db,
-		client:      client,
-		emailSender: emailSender,
-		schoolPhone: schoolPhone,
-		smtpAdress:  smtpAddress,
+func NewSenderRepository(db *pgxpool.Pool, client smtp.Auth, smtpAddress, schoolPhone, emailSender string, tClient *twilio.RestClient) domain.SenderRepo {
+	return &senderRepository{
+		db:            db,
+		client:        client,
+		emailSender:   emailSender,
+		schoolPhone:   schoolPhone,
+		smtpAdress:    smtpAddress,
+		twillioClient: tClient,
 	}
 }
 
-func (m *emailSMTPRepository) SendMass(ctx context.Context, idList *[]int) error {
+func (m *senderRepository) SendMass(ctx context.Context, idList *[]int) error {
 	var finalErr error
 
 	for _, id := range *idList {
@@ -43,18 +46,19 @@ func (m *emailSMTPRepository) SendMass(ctx context.Context, idList *[]int) error
 			finalErr = fmt.Errorf("failed to send email to %s: %w", *student.Parent.Email, err)
 			continue
 		}
+
 	}
 
 	return finalErr
 }
 
 // Fetches student details including parent email from the database.
-func (m *emailSMTPRepository) fetchStudentDetails(ctx context.Context, studentID int) (domain.EmailSMTPData, error) {
-	var stuctHolder domain.EmailSMTPData
+func (m *senderRepository) fetchStudentDetails(ctx context.Context, studentID int) (domain.StudentAndParent, error) {
+	var stuctHolder domain.StudentAndParent
 
 	// SQL query to fetch student and parent details.
 	query := `
-		SELECT s.name, p.email, p.name, p.gender
+		SELECT s.name, p.email, p.name, p.gender, p.telephone
 		FROM students s
 		JOIN parents p ON s.parent_id = p.id 
 		WHERE s.id = $1 AND s.deleted_at IS NULL AND p.deleted_at IS NULL;
@@ -69,14 +73,14 @@ func (m *emailSMTPRepository) fetchStudentDetails(ctx context.Context, studentID
 	)
 
 	if err != nil {
-		return domain.EmailSMTPData{}, fmt.Errorf("could not fetch student details: %v", err)
+		return domain.StudentAndParent{}, fmt.Errorf("could not fetch student details: %v", err)
 	}
 
 	return stuctHolder, nil
 }
 
 // Sends an email to the provided email address.
-func (m *emailSMTPRepository) sendEmail(payload domain.EmailSMTPData) error {
+func (m *senderRepository) sendEmail(payload domain.StudentAndParent) error {
 	tNow := time.Now()
 	formattedDate := tNow.Format("02/01/2006")
 	hourOnly := tNow.Format("15")

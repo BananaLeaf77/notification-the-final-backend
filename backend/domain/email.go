@@ -2,15 +2,10 @@ package domain
 
 import "context"
 
-type EmailSMTPData struct {
-	Student Student `json:"student"`
-	Parent  Parent  `json:"parent"`
-}
-
-type EmailSMTPRepo interface {
+type SenderRepo interface {
 	SendMass(ctx context.Context, idList *[]int) error
 }
 
-type EmailSMTPUseCase interface {
+type SenderUseCase interface {
 	SendMass(ctx context.Context, idList *[]int) error
 }
