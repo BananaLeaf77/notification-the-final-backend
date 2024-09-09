@@ -10,7 +10,14 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/twilio/twilio-go"
+	api "github.com/twilio/twilio-go/rest/api/v2010"
 )
+
+// init var
+var bodyMale string
+var bodyFemale string
+var tNow time.Time
+var subject string
 
 type senderRepository struct {
 	db            *pgxpool.Pool
@@ -35,16 +42,31 @@ func NewSenderRepository(db *pgxpool.Pool, client smtp.Auth, smtpAddress, school
 func (m *senderRepository) SendMass(ctx context.Context, idList *[]int) error {
 	var finalErr error
 
+	tNow = time.Now()
+
 	for _, id := range *idList {
 		student, err := m.fetchStudentDetails(ctx, id)
 		if err != nil {
 			finalErr = fmt.Errorf("failed to fetch student details for ID %d: %w", id, err)
+			err := m.initText(student)
+			if err != nil {
+				return err
+			}
 			continue
 		}
 
-		if err := m.sendEmail(student); err != nil {
-			finalErr = fmt.Errorf("failed to send email to %s: %w", *student.Parent.Email, err)
-			continue
+		if student.Parent.Email != nil {
+			if err := m.sendEmail(student); err != nil {
+				finalErr = fmt.Errorf("failed to send email to %s: %w", *student.Parent.Email, err)
+				continue
+			}
+
+			// Add to history table
+
+		}
+
+		if err = m.sendWA(student); err != nil {
+
 		}
 
 	}
@@ -53,9 +75,9 @@ func (m *senderRepository) SendMass(ctx context.Context, idList *[]int) error {
 }
 
 // Fetches student details including parent email from the database.
-func (m *senderRepository) fetchStudentDetails(ctx context.Context, studentID int) (domain.StudentAndParent, error) {
+func (m *senderRepository) fetchStudentDetails(ctx context.Context, studentID int) (*domain.StudentAndParent, error) {
 	var stuctHolder domain.StudentAndParent
-
+	var ptHolder string
 	// SQL query to fetch student and parent details.
 	query := `
 		SELECT s.name, p.email, p.name, p.gender, p.telephone
@@ -70,55 +92,25 @@ func (m *senderRepository) fetchStudentDetails(ctx context.Context, studentID in
 		&stuctHolder.Parent.Email,
 		&stuctHolder.Parent.Name,
 		&stuctHolder.Parent.Gender,
+		&ptHolder,
 	)
 
 	if err != nil {
-		return domain.StudentAndParent{}, fmt.Errorf("could not fetch student details: %v", err)
+		return &domain.StudentAndParent{}, fmt.Errorf("could not fetch student details: %v", err)
 	}
 
-	return stuctHolder, nil
+	v, err := strconv.Atoi(ptHolder)
+	if err != nil {
+		return nil, err
+	}
+
+	stuctHolder.Parent.Telephone = v
+
+	return &stuctHolder, nil
 }
 
 // Sends an email to the provided email address.
-func (m *senderRepository) sendEmail(payload domain.StudentAndParent) error {
-	tNow := time.Now()
-	formattedDate := tNow.Format("02/01/2006")
-	hourOnly := tNow.Format("15")
-	hourAndMinute := tNow.Format("15:04")
-
-	intHourOnly, err := strconv.Atoi(hourOnly)
-	if err != nil {
-		return err
-	}
-
-	isAM := "AM"
-	if intHourOnly >= 12 {
-		isAM = "PM"
-	}
-
-	// Email subject.
-	subject := fmt.Sprintf("Pemberitahuan Ketidakhadiran %s pada %s %s, tanggal %s", payload.Student.Name, hourAndMinute, isAM, formattedDate)
-
-	// Email body.
-	bodyMale := fmt.Sprintf(`Kepada Yth. Bapak %s,
-
-Kami ingin memberitahukan bahwa anak Bapak, %s, tidak hadir di sekolah pada tanggal %s pukul %s %s.
-
-Alasan ketidakhadiran belum kami terima hingga saat ini. Kami berharap Bapak dapat memberikan konfirmasi atau informasi lebih lanjut mengenai kondisi anak Bapak.
-
-Jika terdapat pertanyaan atau memerlukan bantuan lebih lanjut, Bapak dapat menghubungi kami di %s.
-
-Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Student.Name, formattedDate, hourAndMinute, isAM, m.schoolPhone)
-
-	bodyFemale := fmt.Sprintf(`Kepada Yth. Ibu %s,
-
-Kami ingin memberitahukan bahwa anak Ibu, %s, tidak hadir di sekolah pada tanggal %s pukul %s %s.
-
-Alasan ketidakhadiran belum kami terima hingga saat ini. Kami berharap Ibu dapat memberikan konfirmasi atau informasi lebih lanjut mengenai kondisi anak Ibu.
-
-Jika terdapat pertanyaan atau memerlukan bantuan lebih lanjut, Ibu dapat menghubungi kami di %s.
-
-Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Student.Name, formattedDate, hourAndMinute, isAM, m.schoolPhone)
+func (m *senderRepository) sendEmail(payload *domain.StudentAndParent) error {
 
 	var msg string
 
@@ -135,9 +127,56 @@ Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Stu
 	}
 
 	// Send the email.
-	err = smtp.SendMail(m.smtpAdress, m.client, m.emailSender, []string{*payload.Parent.Email}, []byte(msg))
+	err := smtp.SendMail(m.smtpAdress, m.client, m.emailSender, []string{*payload.Parent.Email}, []byte(msg))
 	if err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
+	return nil
+}
+
+func (m *senderRepository) sendWA(payload *domain.StudentAndParent) error {
+	params := api.CreateMessageParams{}
+	params.SetTo(fmt.Sprintf("whatsapp:+62%d", payload.Parent.Telephone))
+	params.
+	return nil
+}
+
+func (m *senderRepository) initText(payload *domain.StudentAndParent) error {
+	formattedDate := tNow.Format("02/01/2006")
+	hourOnly := tNow.Format("15")
+	hourAndMinute := tNow.Format("15:04")
+
+	intHourOnly, err := strconv.Atoi(hourOnly)
+	if err != nil {
+		return err
+	}
+
+	isAM := "AM"
+	if intHourOnly >= 12 {
+		isAM = "PM"
+	}
+
+	subject = fmt.Sprintf("Pemberitahuan Ketidakhadiran %s pada %s %s, tanggal %s", payload.Student.Name, hourAndMinute, isAM, formattedDate)
+
+	bodyMale = fmt.Sprintf(`Kepada Yth. Bapak %s,
+
+Kami ingin memberitahukan bahwa anak Bapak, %s, tidak hadir di sekolah pada tanggal %s pukul %s %s.
+
+Alasan ketidakhadiran belum kami terima hingga saat ini. Kami berharap Bapak dapat memberikan konfirmasi atau informasi lebih lanjut mengenai kondisi anak Bapak.
+
+Jika terdapat pertanyaan atau memerlukan bantuan lebih lanjut, Bapak dapat menghubungi kami di %s.
+
+Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Student.Name, formattedDate, hourAndMinute, isAM, m.schoolPhone)
+
+	bodyFemale = fmt.Sprintf(`Kepada Yth. Ibu %s,
+
+Kami ingin memberitahukan bahwa anak Ibu, %s, tidak hadir di sekolah pada tanggal %s pukul %s %s.
+
+Alasan ketidakhadiran belum kami terima hingga saat ini. Kami berharap Ibu dapat memberikan konfirmasi atau informasi lebih lanjut mengenai kondisi anak Ibu.
+
+Jika terdapat pertanyaan atau memerlukan bantuan lebih lanjut, Ibu dapat menghubungi kami di %s.
+
+Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Student.Name, formattedDate, hourAndMinute, isAM, m.schoolPhone)
+
 	return nil
 }
