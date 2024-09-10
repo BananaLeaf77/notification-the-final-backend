@@ -72,9 +72,9 @@ func (m *senderRepository) SendMass(ctx context.Context, idList *[]int) error {
 			// Add to history table
 		}
 
-		if err = m.sendWA(student); err != nil {
-			return err
-		}
+		// if err = m.sendWA(student); err != nil {
+		// 	return err
+		// }
 	}
 
 	return finalErr
