@@ -18,6 +18,7 @@ var bodyMale string
 var bodyFemale string
 var tNow time.Time
 var subject string
+var schoolPhoneINT int
 
 type senderRepository struct {
 	db            *pgxpool.Pool
@@ -41,6 +42,12 @@ func NewSenderRepository(db *pgxpool.Pool, client smtp.Auth, smtpAddress, school
 
 func (m *senderRepository) SendMass(ctx context.Context, idList *[]int) error {
 	var finalErr error
+	intValue, err := strconv.Atoi(m.schoolPhone)
+	if err != nil {
+		return err
+	}
+
+	schoolPhoneINT = intValue
 
 	tNow = time.Now()
 
@@ -48,27 +55,26 @@ func (m *senderRepository) SendMass(ctx context.Context, idList *[]int) error {
 		student, err := m.fetchStudentDetails(ctx, id)
 		if err != nil {
 			finalErr = fmt.Errorf("failed to fetch student details for ID %d: %w", id, err)
-			err := m.initText(student)
-			if err != nil {
-				return err
-			}
 			continue
 		}
 
-		if student.Parent.Email != nil {
+		err = m.initText(student)
+		if err != nil {
+			return err
+		}
+
+		if *student.Parent.Email != "" {
 			if err := m.sendEmail(student); err != nil {
 				finalErr = fmt.Errorf("failed to send email to %s: %w", *student.Parent.Email, err)
 				continue
 			}
 
 			// Add to history table
-
 		}
 
 		if err = m.sendWA(student); err != nil {
-
+			return err
 		}
-
 	}
 
 	return finalErr
@@ -136,9 +142,23 @@ func (m *senderRepository) sendEmail(payload *domain.StudentAndParent) error {
 
 func (m *senderRepository) sendWA(payload *domain.StudentAndParent) error {
 	params := api.CreateMessageParams{}
+	params.SetFrom(fmt.Sprintf("whatsapp:+%d", schoolPhoneINT))
+	// params.SetTo(fmt.Sprintf("whatsapp:+62895412377187"))
 	params.SetTo(fmt.Sprintf("whatsapp:+62%d", payload.Parent.Telephone))
-	params.
+	if payload.Parent.Gender == "Female" {
+		params.SetBody(bodyFemale)
+	} else if payload.Parent.Gender == "Male" {
+		params.SetBody(bodyMale)
+	}
+
+	api, err := m.twillioClient.Api.CreateMessage(&params)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("WhatsApp message sent successfully! SID: %s\n", *api.Sid)
 	return nil
+
 }
 
 func (m *senderRepository) initText(payload *domain.StudentAndParent) error {

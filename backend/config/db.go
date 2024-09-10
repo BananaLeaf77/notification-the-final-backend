@@ -53,7 +53,7 @@ func autoMigrate(pool *pgxpool.Pool) error {
 		name VARCHAR(255) NOT NULL,
 		gender VARCHAR(15) NOT NULL,
 		telephone VARCHAR(15) NOT NULL,
-		email VARCHAR(255),
+		email VARCHAR(255),	
 		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 		updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 		deleted_at TIMESTAMP WITH TIME ZONE

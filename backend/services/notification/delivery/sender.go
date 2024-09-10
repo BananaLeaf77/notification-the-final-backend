@@ -21,7 +21,6 @@ func NewSenderDelivery(app *fiber.App, uc domain.SenderUseCase) {
 }
 
 func (h *senderHandler) sendMassHandler(c *fiber.Ctx) error {
-
 	wg.Add(1)
 	defer wg.Done()
 
@@ -38,12 +37,12 @@ func (h *senderHandler) sendMassHandler(c *fiber.Ctx) error {
 	// Call the use case with the parsed ID list.
 	if err := h.suc.SendMass(c.Context(), &payload.IDs); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":  "failed to send emails",
+			"error":  "failed to send notifications",
 			"detail": err.Error(),
 		})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "emails sent successfully",
+		"message": "notifications sent successfully",
 	})
 }
