@@ -143,7 +143,6 @@ func (m *senderRepository) sendEmail(payload *domain.StudentAndParent) error {
 func (m *senderRepository) sendWA(payload *domain.StudentAndParent) error {
 	params := api.CreateMessageParams{}
 	params.SetFrom(fmt.Sprintf("whatsapp:+%d", schoolPhoneINT))
-	// params.SetTo(fmt.Sprintf("whatsapp:+62895412377187"))
 	params.SetTo(fmt.Sprintf("whatsapp:+62%d", payload.Parent.Telephone))
 	if payload.Parent.Gender == "Female" {
 		params.SetBody(bodyFemale)
