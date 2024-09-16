@@ -16,12 +16,10 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
-	"go.mau.fi/whatsmeow"
 )
 
 var log *logrus.Logger
 var wg sync.WaitGroup
-var meowMeow *whatsmeow.Client
 
 func main() {
 	if err := godotenv.Load(); err != nil {
@@ -50,13 +48,12 @@ func startHTTP() {
 		return
 	}
 
-	eAuth, eAdress, schoolPhone, emailSender, err := config.InitSender()
+	meow, eAuth, eAdress, schoolPhone, emailSender, err := config.InitSender()
 	if err != nil {
 		fmt.Println(err)
 		log.Fatal("Failed to boot Sender Service")
 		return
 	}
-
 
 	// Register repository and Usecase here
 	// StudentParent
@@ -68,7 +65,6 @@ func startHTTP() {
 	// Sender
 	senderRepo := repository.NewSenderRepository(db, eAuth, *eAdress, *schoolPhone, *emailSender, meow)
 	senderUC := usecase.NewSenderUseCase(senderRepo, 30*time.Second)
-
 	// Register delivery here
 	delivery.NewStudentParentHandler(app, studentParentUC)
 	delivery.NewSenderDelivery(app, senderUC)

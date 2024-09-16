@@ -34,3 +34,6 @@ func (m *emailSMTPRepository) SendMass(ctx context.Context, idList *[]int) error
 (PR!) Endpoint Clear Whatsapp admin session !!!!!!! Important
 
 (PR!) SMTP SENDMAIL MIGHT BE SENDING TO MASS EMAIL SHOULD I CHANGE IT?
+
+Change the fiber config !!!!
+Check di project magang di main nge defer db.close sing?

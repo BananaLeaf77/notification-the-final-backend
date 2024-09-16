@@ -42,7 +42,7 @@ func BootDB() (*pgxpool.Pool, error) {
 	if err != nil {
 		return pgxPool, err
 	}
-
+	fmt.Println("DB initialized")
 	return pgxPool, nil
 }
 

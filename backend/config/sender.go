@@ -2,10 +2,13 @@ package config
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"net/smtp"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"sync"
 
 	_ "github.com/lib/pq"
 
@@ -13,7 +16,11 @@ import (
 	"go.mau.fi/whatsmeow/store/sqlstore"
 )
 
-var meowWhatsapp *whatsmeow.Client
+var (
+	meowWhatsapp *whatsmeow.Client
+	qrCodeSent   bool
+	mu           sync.Mutex
+)
 
 func InitSender() (*whatsmeow.Client, smtp.Auth, *string, *string, *string, error) {
 	// SMTP Emailer
@@ -45,6 +52,8 @@ func InitSender() (*whatsmeow.Client, smtp.Auth, *string, *string, *string, erro
 	smtpAuth := smtp.PlainAuth("", *emailSender, *emailPassword, *smtpHost)
 
 	smtpAddr := fmt.Sprintf("%s:%s", *smtpHost, *smtpPort)
+
+	fmt.Println("SMTP initialized")
 
 	//Meow
 	dbms, err := getDBMS()
@@ -87,27 +96,34 @@ func InitSender() (*whatsmeow.Client, smtp.Auth, *string, *string, *string, erro
 		if err != nil {
 			panic(err)
 		}
-		// If there is no stored session, show the QR code to log in.
+
+		// Process QR code
 		for evt := range qrChan {
 			if evt.Event == "code" {
+				mu.Lock()
+				if !qrCodeSent {
+					fmt.Println("")
+					fmt.Println("IMPORTANT no WhatsApp session was found !!")
+					fmt.Println("Need admin to scan the QR code for the server to run properly!")
+					// fmt.Println("==============   QR CODE   ==============")
+					// fmt.Println(evt.Code)
+					fmt.Println("Loading...")
 
-				fmt.Println("")
-				fmt.Println("IMPORTANT no Whatsapp session was found !!")
-				fmt.Println("Need admin to scan the qr code for the server to run properly!")
-				fmt.Println("==============   QR CODE   ==============")
-				fmt.Println(evt.Code)
-				fmt.Println("")
+					err := generateQRCode(evt.Code, "qrcode.png")
+					if err != nil {
+						panic(err)
+					}
 
-				err := generateQRCode(evt.Code, "qrcode.png")
-				if err != nil {
-					panic(err)
+					err = SendQRtoEmail(smtpAddr, &smtpAuth, *emailSender, "qrcode.png")
+					if err != nil {
+						panic(err)
+					}
+					fmt.Printf("Image of QR Code is sent to %s, go ahead and scan them :)\n", *emailSender)
+					fmt.Println("")
+
+					qrCodeSent = true
 				}
-
-				// send em through SMTP
-
-				fmt.Println("Image of QR Code is sent to @dognub61@gmail.com, go ahead and scan them :)")
-
-				fmt.Println("")
+				mu.Unlock()
 			} else {
 				fmt.Println("Login event:", evt.Event)
 			}
@@ -117,12 +133,11 @@ func InitSender() (*whatsmeow.Client, smtp.Auth, *string, *string, *string, erro
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println("Login success")
+		fmt.Println("WhatsMeow initialized")
 	}
 
 	return meowWhatsapp, smtpAuth, &smtpAddr, schoolPhone, emailSender, nil
 }
-
 func getSender() (*string, error) {
 	sender := os.Getenv("EMAIL_SENDER")
 	if sender == "" {
@@ -174,7 +189,7 @@ func getDBMS() (*string, error) {
 func getDBUser() (*string, error) {
 	v := os.Getenv("DB_USER")
 	if v == "" {
-		return nil, fmt.Errorf("Database User is missing, value: %s", v)
+		return nil, fmt.Errorf("DATABASE User is missing, value: %s", v)
 	}
 	return &v, nil
 }
@@ -182,7 +197,7 @@ func getDBUser() (*string, error) {
 func getDBPassword() (*string, error) {
 	v := os.Getenv("DB_PASSWORD")
 	if v == "" {
-		return nil, fmt.Errorf("Database Password is missing, value: %s", v)
+		return nil, fmt.Errorf("DATABASE Password is missing, value: %s", v)
 	}
 	return &v, nil
 }
@@ -205,21 +220,49 @@ func generateQRCode(data, filePath string) error {
 	return nil
 }
 
-func SendQRtoEmail(smtpAddr string, smtpAuth *smtp.Auth, emailSender string) error {
-
+func SendQRtoEmail(smtpAddr string, smtpAuth *smtp.Auth, emailSender string, qrFilePath string) error {
+	// Subject and body of the email
 	subject := "Subject: QR Code Login\n"
 	body := "Please find the attached QR code for login.\n\n"
 
+	// Open the QR code file
+	fileData, err := os.ReadFile(qrFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to read QR code file: %v", err)
+	}
+
+	// Get the file name and MIME boundary
+	fileName := filepath.Base(qrFilePath)
+	boundary := "my-boundary-12345"
+
+	// Create the email header with MIME boundary
 	msg := []byte("From: " + emailSender + "\n" +
 		"To: " + emailSender + "\n" +
 		subject +
+		"MIME-Version: 1.0\n" +
+		"Content-Type: multipart/mixed; boundary=" + boundary + "\n\n" +
+		"--" + boundary + "\n" +
 		"Content-Type: text/plain; charset=\"utf-8\"\n\n" +
-		body +
-		"\n\n")
+		body + "\n\n" +
+		"--" + boundary + "\n" +
+		"Content-Type: image/png\n" +
+		"Content-Disposition: attachment; filename=\"" + fileName + "\"\n" +
+		"Content-Transfer-Encoding: base64\n\n")
 
-	// Send email
-	err := smtp.SendMail(smtpAddr, *smtpAuth, emailSender, []string{emailSender}, msg)
+	// Encode the file content to base64 and append it to the message
+	msg = append(msg, []byte(encodeBase64(fileData))...)
+	msg = append(msg, []byte("\n--"+boundary+"--")...)
+
+	// Send the email with the attachment
+	err = smtp.SendMail(smtpAddr, *smtpAuth, emailSender, []string{emailSender}, msg)
 	if err != nil {
 		return fmt.Errorf("failed to send email: %v", err)
 	}
+
+	return nil
+}
+
+// Helper function to encode file content to base64
+func encodeBase64(data []byte) string {
+	return base64.StdEncoding.EncodeToString(data)
 }
