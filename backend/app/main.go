@@ -48,10 +48,17 @@ func startHTTP() {
 		return
 	}
 
-	twillioClient, eAuth, eAdress, schoolPhone, emailSender, err := config.InitMessenger()
+	eAuth, eAdress, schoolPhone, emailSender, err := config.InitSMTPEmailer()
 	if err != nil {
 		fmt.Println(err)
-		log.Fatal("Failed to boot Sender Service")
+		log.Fatal("Failed to boot SMTP EMailer Service")
+		return
+	}
+
+	meow, err := config.InitMeow()
+	if err != nil {
+		fmt.Println(err)
+		log.Fatal("Failed to boot WhatsMeow Service!")
 		return
 	}
 
@@ -63,7 +70,7 @@ func startHTTP() {
 	studentRepo := repository.NewStudentRepository(db)
 	studentUC := usecase.NewStudentUseCase(studentRepo, 100*time.Second)
 	// Sender
-	senderRepo := repository.NewSenderRepository(db, eAuth, *eAdress, *schoolPhone, *emailSender, twillioClient)
+	senderRepo := repository.NewSenderRepository(db, eAuth, *eAdress, *schoolPhone, *emailSender, meow)
 	senderUC := usecase.NewSenderUseCase(senderRepo, 30*time.Second)
 
 	// Register delivery here
@@ -74,7 +81,7 @@ func startHTTP() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		log.Infof("Starting HTTP server for Public on port %s", config.GetFiberHttpPort())
+		log.Infof("Starting HTTP server on port %s", config.GetFiberHttpPort())
 		if err := app.Listen(config.GetFiberListenAddress()); err != nil {
 			log.Fatalf("Error starting server: %v", err)
 		}

@@ -9,8 +9,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/twilio/twilio-go"
-	api "github.com/twilio/twilio-go/rest/api/v2010"
+	"go.mau.fi/whatsmeow"
 )
 
 // init var
@@ -21,22 +20,22 @@ var subject string
 var schoolPhoneINT int
 
 type senderRepository struct {
-	db            *pgxpool.Pool
-	client        smtp.Auth
-	emailSender   string
-	schoolPhone   string
-	smtpAdress    string
-	twillioClient *twilio.RestClient
+	db          *pgxpool.Pool
+	client      smtp.Auth
+	emailSender string
+	schoolPhone string
+	smtpAdress  string
+	meowClient  *whatsmeow.Client
 }
 
-func NewSenderRepository(db *pgxpool.Pool, client smtp.Auth, smtpAddress, schoolPhone, emailSender string, tClient *twilio.RestClient) domain.SenderRepo {
+func NewSenderRepository(db *pgxpool.Pool, client smtp.Auth, smtpAddress, schoolPhone, emailSender string, meow *whatsmeow.Client) domain.SenderRepo {
 	return &senderRepository{
-		db:            db,
-		client:        client,
-		emailSender:   emailSender,
-		schoolPhone:   schoolPhone,
-		smtpAdress:    smtpAddress,
-		twillioClient: tClient,
+		db:          db,
+		client:      client,
+		emailSender: emailSender,
+		schoolPhone: schoolPhone,
+		smtpAdress:  smtpAddress,
+		meowClient:  meow,
 	}
 }
 
@@ -140,25 +139,25 @@ func (m *senderRepository) sendEmail(payload *domain.StudentAndParent) error {
 	return nil
 }
 
-func (m *senderRepository) sendWA(payload *domain.StudentAndParent) error {
-	params := api.CreateMessageParams{}
-	params.SetFrom(fmt.Sprintf("whatsapp:+%d", schoolPhoneINT))
-	params.SetTo(fmt.Sprintf("whatsapp:+62%d", payload.Parent.Telephone))
-	if payload.Parent.Gender == "Female" {
-		params.SetBody(bodyFemale)
-	} else if payload.Parent.Gender == "Male" {
-		params.SetBody(bodyMale)
-	}
+// func (m *senderRepository) sendWA(payload *domain.StudentAndParent) error {
+// 	params := api.CreateMessageParams{}
+// 	params.SetFrom(fmt.Sprintf("whatsapp:+%d", schoolPhoneINT))
+// 	params.SetTo(fmt.Sprintf("whatsapp:+62%d", payload.Parent.Telephone))
+// 	if payload.Parent.Gender == "Female" {
+// 		params.SetBody(bodyFemale)
+// 	} else if payload.Parent.Gender == "Male" {
+// 		params.SetBody(bodyMale)
+// 	}
 
-	api, err := m.twillioClient.Api.CreateMessage(&params)
-	if err != nil {
-		return err
-	}
+// 	api, err := m.meowClient.Api.CreateMessage(&params)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	fmt.Printf("WhatsApp message sent successfully! SID: %s\n", *api.Sid)
-	return nil
+// 	fmt.Printf("WhatsApp message sent successfully! SID: %s\n", *api.Sid)
+// 	return nil
 
-}
+// }
 
 func (m *senderRepository) initText(payload *domain.StudentAndParent) error {
 	formattedDate := tNow.Format("02/01/2006")
