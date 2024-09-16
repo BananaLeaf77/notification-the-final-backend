@@ -16,10 +16,12 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
+	"go.mau.fi/whatsmeow"
 )
 
 var log *logrus.Logger
 var wg sync.WaitGroup
+var meowMeow *whatsmeow.Client
 
 func main() {
 	if err := godotenv.Load(); err != nil {
@@ -48,19 +50,13 @@ func startHTTP() {
 		return
 	}
 
-	eAuth, eAdress, schoolPhone, emailSender, err := config.InitSMTPEmailer()
+	eAuth, eAdress, schoolPhone, emailSender, err := config.InitSender()
 	if err != nil {
 		fmt.Println(err)
-		log.Fatal("Failed to boot SMTP EMailer Service")
+		log.Fatal("Failed to boot Sender Service")
 		return
 	}
 
-	meow, err := config.InitMeow()
-	if err != nil {
-		fmt.Println(err)
-		log.Fatal("Failed to boot WhatsMeow Service!")
-		return
-	}
 
 	// Register repository and Usecase here
 	// StudentParent

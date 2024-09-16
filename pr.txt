@@ -32,3 +32,5 @@ func (m *emailSMTPRepository) SendMass(ctx context.Context, idList *[]int) error
 (New!) Update student and parent data
 (New!) Send Notif -> Email and Whatsapp
 (PR!) Endpoint Clear Whatsapp admin session !!!!!!! Important
+
+(PR!) SMTP SENDMAIL MIGHT BE SENDING TO MASS EMAIL SHOULD I CHANGE IT?

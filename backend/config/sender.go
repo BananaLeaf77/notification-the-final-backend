@@ -9,54 +9,119 @@ import (
 
 	_ "github.com/lib/pq"
 
-	"github.com/twilio/twilio-go"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/store/sqlstore"
 )
 
 var meowWhatsapp *whatsmeow.Client
 
-func InitSMTPEmailer() (smtp.Auth, *string, *string, *string, error) {
+func InitSender() (*whatsmeow.Client, smtp.Auth, *string, *string, *string, error) {
 	// SMTP Emailer
 	emailSender, err := getSender()
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 
 	emailPassword, err := getPassword()
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 
 	smtpHost, err := getHost()
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 
 	smtpPort, err := getSMTPPort()
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 
 	schoolPhone, err := getSchoolPhone()
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 
 	smtpAuth := smtp.PlainAuth("", *emailSender, *emailPassword, *smtpHost)
 
 	smtpAddr := fmt.Sprintf("%s:%s", *smtpHost, *smtpPort)
 
-	// Twillio
-	twillioClient := twilio.NewRestClient()
-	if twillioClient == nil {
-		return nil, nil, nil, nil, fmt.Errorf("Failed to initialize twillio")
+	//Meow
+	dbms, err := getDBMS()
+	if err != nil {
+		return nil, nil, nil, nil, nil, err
 	}
 
-	return smtpAuth, &smtpAddr, schoolPhone, emailSender, nil
-}
+	user, err := getDBUser()
+	if err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
 
-// For SMTP Emailer
+	pass, err := getDBPassword()
+	if err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
+
+	dbname, err := getDBName()
+	if err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
+
+	meowAddress := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable", *user, *pass, *dbname)
+
+	container, err := sqlstore.New(*dbms, meowAddress, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	deviceStore, err := container.GetFirstDevice()
+	if err != nil {
+		panic(err)
+	}
+	mClient := whatsmeow.NewClient(deviceStore, nil)
+	meowWhatsapp = mClient
+
+	if meowWhatsapp.Store.ID == nil {
+		qrChan, _ := meowWhatsapp.GetQRChannel(context.Background())
+		err = meowWhatsapp.Connect()
+		if err != nil {
+			panic(err)
+		}
+		// If there is no stored session, show the QR code to log in.
+		for evt := range qrChan {
+			if evt.Event == "code" {
+
+				fmt.Println("")
+				fmt.Println("IMPORTANT no Whatsapp session was found !!")
+				fmt.Println("Need admin to scan the qr code for the server to run properly!")
+				fmt.Println("==============   QR CODE   ==============")
+				fmt.Println(evt.Code)
+				fmt.Println("")
+
+				err := generateQRCode(evt.Code, "qrcode.png")
+				if err != nil {
+					panic(err)
+				}
+
+				// send em through SMTP
+
+				fmt.Println("Image of QR Code is sent to @dognub61@gmail.com, go ahead and scan them :)")
+
+				fmt.Println("")
+			} else {
+				fmt.Println("Login event:", evt.Event)
+			}
+		}
+	} else {
+		err = meowWhatsapp.Connect()
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println("Login success")
+	}
+
+	return meowWhatsapp, smtpAuth, &smtpAddr, schoolPhone, emailSender, nil
+}
 
 func getSender() (*string, error) {
 	sender := os.Getenv("EMAIL_SENDER")
@@ -98,32 +163,6 @@ func getSMTPPort() (*string, error) {
 	return &port, nil
 }
 
-// For Twillio
-
-func getAccountSID() (*string, error) {
-	sid := os.Getenv("TWILIO_ACCOUNT_SID")
-	if sid == "" {
-		return nil, fmt.Errorf("Twilio Account SID is missing, value: %s", sid)
-	}
-	return &sid, nil
-}
-
-func getAuthToken() (*string, error) {
-	token := os.Getenv("TWILIO_AUTH_TOKEN")
-	if token == "" {
-		return nil, fmt.Errorf("Twilio Auth Token is missing, value: %s", token)
-	}
-	return &token, nil
-}
-
-func getFromNumber() (*string, error) {
-	number := os.Getenv("TWILIO_FROM_NUMBER")
-	if number == "" {
-		return nil, fmt.Errorf("Twilio From Number is missing, value: %s", number)
-	}
-	return &number, nil
-}
-
 func getDBMS() (*string, error) {
 	dbms := os.Getenv("DBMS")
 	if dbms == "" {
@@ -156,78 +195,6 @@ func getDBName() (*string, error) {
 	return &v, nil
 }
 
-func InitMeow() (*whatsmeow.Client, error) {
-
-	dbms, err := getDBMS()
-	if err != nil {
-		return nil, err
-	}
-
-	user, err := getDBUser()
-	if err != nil {
-		return nil, err
-	}
-
-	pass, err := getDBPassword()
-	if err != nil {
-		return nil, err
-	}
-
-	dbname, err := getDBName()
-	if err != nil {
-		return nil, err
-	}
-
-	meowAddress := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable", *user, *pass, *dbname)
-
-	container, err := sqlstore.New(*dbms, meowAddress, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	deviceStore, err := container.GetFirstDevice()
-	if err != nil {
-		panic(err)
-	}
-	client := whatsmeow.NewClient(deviceStore, nil)
-	meowWhatsapp = client
-
-	if meowWhatsapp.Store.ID == nil {
-		qrChan, _ := meowWhatsapp.GetQRChannel(context.Background())
-		err = meowWhatsapp.Connect()
-		if err != nil {
-			panic(err)
-		}
-		// If there is no stored session, show the QR code to log in.
-		for evt := range qrChan {
-			if evt.Event == "code" {
-				fmt.Println("")
-				fmt.Println("Need admin to scan the qr code for the server to run properly!")
-				fmt.Println("==============   QR CODE   ==============")
-				fmt.Println(evt.Code)
-				fmt.Println("QR CODE image is sent to @dognub61@gmail.com, go ahead and scan them :)")
-
-				err := generateQRCode(evt.Code, "qrcode.png")
-				if err != nil {
-					panic(err)
-				}
-
-				fmt.Println("")
-			} else {
-				fmt.Println("Login event:", evt.Event)
-			}
-		}
-	} else {
-		err = meowWhatsapp.Connect()
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println("Login success")
-	}
-
-	return meowWhatsapp, nil
-}
-
 func generateQRCode(data, filePath string) error {
 	// Run the qrencode command to generate the QR code as an image
 	cmd := exec.Command("qrencode", "-o", filePath, data)
@@ -236,4 +203,23 @@ func generateQRCode(data, filePath string) error {
 		return fmt.Errorf("failed to generate QR code: %v", err)
 	}
 	return nil
+}
+
+func SendQRtoEmail(smtpAddr string, smtpAuth *smtp.Auth, emailSender string) error {
+
+	subject := "Subject: QR Code Login\n"
+	body := "Please find the attached QR code for login.\n\n"
+
+	msg := []byte("From: " + emailSender + "\n" +
+		"To: " + emailSender + "\n" +
+		subject +
+		"Content-Type: text/plain; charset=\"utf-8\"\n\n" +
+		body +
+		"\n\n")
+
+	// Send email
+	err := smtp.SendMail(smtpAddr, *smtpAuth, emailSender, []string{emailSender}, msg)
+	if err != nil {
+		return fmt.Errorf("failed to send email: %v", err)
+	}
 }
