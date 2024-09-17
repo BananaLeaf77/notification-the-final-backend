@@ -26,6 +26,7 @@ func NewStudentDelivery(app *fiber.App, uc domain.StudentUseCase) {
 	route.Get("/get/:id", handler.deliveryGetStudentByID)
 	route.Put("/modify/:id", handler.deliveryModifyStudent)
 	route.Delete("/rm/:id", handler.deliveryDeleteStudent)
+	route.Get("/download_input_template", handler.deliveryDownloadTemplate)
 }
 
 func (sh *studentHandler) deliveryInsertStudent(c *fiber.Ctx) error {
@@ -158,4 +159,21 @@ func (sh *studentHandler) deliveryDeleteStudent(c *fiber.Ctx) error {
 		"success": true,
 		"message": "Student deleted successfully",
 	})
+}
+
+func (sh *studentHandler) deliveryDownloadTemplate(c *fiber.Ctx) error {
+
+	filePath, err := sh.suc.DownloadInputDataTemplate(c.Context())
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Failed to get the input data template",
+			"error":   err.Error(),
+		})
+	}
+
+	c.Set("Content-Disposition", "attachment; filename=input_data_template.csv")
+	c.Set("Content-Type", "text/csv")
+
+	return c.SendFile(*filePath)
 }

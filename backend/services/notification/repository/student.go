@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"notification/domain"
+	"os"
 	"strconv"
 	"time"
 
@@ -211,4 +212,16 @@ func (sp *studentRepository) DeleteStudent(ctx context.Context, id int) error {
 	}
 
 	return nil
+}
+
+func (sp *studentRepository) DownloadInputDataTemplate(ctx context.Context) (*string, error) {
+	filePath := "./template/input_data_template.csv"
+
+	// Check if the file exists
+	if _, err := os.Stat(filePath); err != nil {
+		if os.IsNotExist(err) {
+			return nil, err
+		}
+	}
+	return &filePath, nil
 }

@@ -72,3 +72,14 @@ func (sUC *studentUC) DeleteStudentUC(ctx context.Context, id int) error {
 	}
 	return nil
 }
+
+func (sUC *studentUC) DownloadInputDataTemplate(ctx context.Context) (*string, error) {
+	ctx, cancel := context.WithTimeout(ctx, sUC.TimeOut)
+	defer cancel()
+
+	filepath, err := sUC.studentRepo.DownloadInputDataTemplate(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return filepath, nil
+}

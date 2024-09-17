@@ -17,13 +17,13 @@ type Student struct {
 	DeletedAt *time.Time `json:"deleted_at"`
 }
 
-
 type StudentRepo interface {
 	CreateStudent(ctx context.Context, student *Student) error
 	GetAllStudent(ctx context.Context) (*[]Student, error)
 	GetStudentByID(ctx context.Context, id int) (*StudentAndParent, error)
 	UpdateStudent(ctx context.Context, newDataStudent *Student) error
 	DeleteStudent(ctx context.Context, id int) error
+	DownloadInputDataTemplate(ctx context.Context) (*string, error)
 }
 
 type StudentUseCase interface {
@@ -32,4 +32,5 @@ type StudentUseCase interface {
 	GetStudentByIDUC(ctx context.Context, id int) (*StudentAndParent, error)
 	UpdateStudentUC(ctx context.Context, newDataStudent *Student) error
 	DeleteStudentUC(ctx context.Context, id int) error
+	DownloadInputDataTemplate(ctx context.Context) (*string, error)
 }
