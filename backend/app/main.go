@@ -33,7 +33,7 @@ func main() {
 
 func startHTTP() {
 	log.Info("Starting HTTP")
-	app := fiber.New()
+	app := fiber.New(config.GetFiberConfig())
 
 	// CORS Middleware
 	app.Use(cors.New(cors.Config{
@@ -41,6 +41,10 @@ func startHTTP() {
 		AllowMethods: "GET,POST,PUT,DELETE",
 		AllowHeaders: "Origin, Content-Type, Accept",
 	}))
+
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.Status(fiber.StatusOK).SendString("OK")
+	})
 
 	db, err := config.BootDB()
 	if err != nil {

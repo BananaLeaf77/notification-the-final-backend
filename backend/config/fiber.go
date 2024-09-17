@@ -1,10 +1,11 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -14,9 +15,24 @@ func GetFiberListenAddress() string {
 
 func GetFiberConfig() fiber.Config {
 	return fiber.Config{
-		JSONEncoder: json.Marshal,
-		JSONDecoder: json.Unmarshal,
+		DisableStartupMessage: false,
+		JSONEncoder:           sonic.Marshal,
+		JSONDecoder:           sonic.Unmarshal,
+		Prefork:               false,
+		ServerHeader:          "BTW Edutech",
+		AppName:               GetAppName(),
+		ReadTimeout:           time.Second * 60,
+		CaseSensitive:         true,
 	}
+}
+
+func GetAppName() string {
+	v := os.Getenv("APP_NAME")
+	if v == "" {
+		return "SINOAN"
+	}
+
+	return v
 }
 
 func GetFiberHttpHost() string {

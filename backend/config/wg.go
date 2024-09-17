@@ -1,6 +1,8 @@
 package config
 
-import "sync"
+import (
+	"sync"
+)
 
 var waitGroupInstance *sync.WaitGroup
 
