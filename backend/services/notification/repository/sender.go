@@ -10,14 +10,19 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.mau.fi/whatsmeow"
+	"go.mau.fi/whatsmeow/proto/waE2E"
+	"go.mau.fi/whatsmeow/types"
 )
 
 // init var
-var bodyMale string
-var bodyFemale string
-var tNow time.Time
-var subject string
-var schoolPhoneINT int
+var (
+	bodyMale       string
+	bodyFemale     string
+	tNow           time.Time
+	subject        string
+	schoolPhoneINT int
+	JID            types.JID
+)
 
 type senderRepository struct {
 	db          *pgxpool.Pool
@@ -41,13 +46,6 @@ func NewSenderRepository(db *pgxpool.Pool, client smtp.Auth, smtpAddress, school
 
 func (m *senderRepository) SendMass(ctx context.Context, idList *[]int) error {
 	var finalErr error
-	intValue, err := strconv.Atoi(m.schoolPhone)
-	if err != nil {
-		return err
-	}
-
-	schoolPhoneINT = intValue
-
 	tNow = time.Now()
 
 	for _, id := range *idList {
@@ -69,11 +67,15 @@ func (m *senderRepository) SendMass(ctx context.Context, idList *[]int) error {
 			}
 
 			// Add to history table
+
 		}
 
-		// if err = m.sendWA(student); err != nil {
-		// 	return err
-		// }
+		err = m.sendWA(ctx, student)
+		if err != nil {
+			finalErr = fmt.Errorf("failed to send Whatsapp text to %s: %w", *&student.Parent.Telephone, err)
+			continue
+		}
+
 	}
 
 	return finalErr
@@ -116,7 +118,6 @@ func (m *senderRepository) fetchStudentDetails(ctx context.Context, studentID in
 
 // Sends an email to the provided email address.
 func (m *senderRepository) sendEmail(payload *domain.StudentAndParent) error {
-
 	var msg string
 
 	if payload.Parent.Gender == "Female" {
@@ -139,25 +140,31 @@ func (m *senderRepository) sendEmail(payload *domain.StudentAndParent) error {
 	return nil
 }
 
-// func (m *senderRepository) sendWA(payload *domain.StudentAndParent) error {
-// 	params := api.CreateMessageParams{}
-// 	params.SetFrom(fmt.Sprintf("whatsapp:+%d", schoolPhoneINT))
-// 	params.SetTo(fmt.Sprintf("whatsapp:+62%d", payload.Parent.Telephone))
-// 	if payload.Parent.Gender == "Female" {
-// 		params.SetBody(bodyFemale)
-// 	} else if payload.Parent.Gender == "Male" {
-// 		params.SetBody(bodyMale)
-// 	}
+func (m *senderRepository) sendWA(ctx context.Context, payload *domain.StudentAndParent) error {
+	var msg string
 
-// 	api, err := m.meowClient.Api.CreateMessage(&params)
-// 	if err != nil {
-// 		return err
-// 	}
+	conStr := strconv.Itoa(payload.Parent.Telephone)
+	completeFormat := fmt.Sprintf("62%s", conStr)
 
-// 	fmt.Printf("WhatsApp message sent successfully! SID: %s\n", *api.Sid)
-// 	return nil
+	jid := types.NewJID(completeFormat, types.DefaultUserServer)
 
-// }
+	if payload.Parent.Gender == "Female" {
+		msg = bodyFemale
+	} else if payload.Parent.Gender == "Male" {
+		msg = bodyMale
+	}
+
+	conversationMessage := &waE2E.Message{
+		Conversation: &msg,
+	}
+
+	_, err := m.meowClient.SendMessage(ctx, jid, conversationMessage)
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
 
 func (m *senderRepository) initText(payload *domain.StudentAndParent) error {
 	formattedDate := tNow.Format("02/01/2006")
@@ -198,4 +205,3 @@ Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Stu
 
 	return nil
 }
-

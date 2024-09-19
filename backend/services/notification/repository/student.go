@@ -193,7 +193,6 @@ func (sp *studentRepository) DeleteStudent(ctx context.Context, id int) error {
 	convertedValue, err := strconv.Atoi(telephoneStr)
 
 	student.Telephone = convertedValue
-	fmt.Printf("success converted student telephone : %d\n", student.Telephone)
 
 	if err != nil {
 		return fmt.Errorf("invalid telephone format: %v", err)

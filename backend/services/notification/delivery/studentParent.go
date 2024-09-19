@@ -88,7 +88,7 @@ func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
 	}
 
 	// Define upload directory
-	uploadDir := "../uploads"
+	uploadDir := "./uploads"
 	// Ensure upload directory exists
 	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
 		os.MkdirAll(uploadDir, os.ModePerm)

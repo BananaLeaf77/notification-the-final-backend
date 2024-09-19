@@ -19,7 +19,7 @@ func GetFiberConfig() fiber.Config {
 		JSONEncoder:           sonic.Marshal,
 		JSONDecoder:           sonic.Unmarshal,
 		Prefork:               false,
-		ServerHeader:          "BTW Edutech",
+		ServerHeader:          "SINOAN",
 		AppName:               GetAppName(),
 		ReadTimeout:           time.Second * 60,
 		CaseSensitive:         true,
