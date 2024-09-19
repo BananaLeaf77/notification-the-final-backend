@@ -74,10 +74,20 @@ func (sp *studentRepository) GetAllStudent(ctx context.Context) (*[]domain.Stude
 	var students []domain.Student
 	for rows.Next() {
 		var student domain.Student
-		err := rows.Scan(&student.ID, &student.Name, &student.Class, &student.Gender, &student.Telephone, &student.ParentID, &student.CreatedAt, &student.UpdatedAt, &student.DeletedAt)
+		var studentTelephoneINT string
+
+		err := rows.Scan(&student.ID, &student.Name, &student.Class, &student.Gender, &studentTelephoneINT, &student.ParentID, &student.CreatedAt, &student.UpdatedAt, &student.DeletedAt)
 		if err != nil {
 			return nil, fmt.Errorf("could not scan student: %v", err)
 		}
+
+		v, err := strconv.Atoi(studentTelephoneINT)
+		if err != nil {
+			return nil, err
+		}
+
+		student.Telephone = v
+
 		students = append(students, student)
 	}
 

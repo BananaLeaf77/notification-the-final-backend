@@ -144,6 +144,11 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 		return nil, nil, fmt.Errorf("failed to open CSV file: %v", err)
 	}
 	defer file.Close()
+	defer func() {
+		if err := os.Remove(filePath); err != nil {
+			log.Printf("Failed to delete file: %v", err)
+		}
+	}()
 
 	reader := csv.NewReader(file)
 	records, err := reader.ReadAll()
