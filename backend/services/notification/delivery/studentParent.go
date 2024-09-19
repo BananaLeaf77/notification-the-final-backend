@@ -27,6 +27,7 @@ func NewStudentParentHandler(app *fiber.App, useCase domain.StudentParentUseCase
 	route := app.Group("/student_and_parent")
 	route.Post("/insert", handler.CreateStudentAndParent)
 	route.Post("/import", handler.UploadAndImport)
+	route.Put("/modify/:id", handler.UpdateStudentandParent)
 }
 
 func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
@@ -238,4 +239,61 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 
 	return nil, nil, nil
 
+}
+
+func (sph *studentParentHandler) UpdateStudentandParent(c *fiber.Ctx) error {
+	// Get the ID from the URL parameters
+	id := c.Params("id")
+	if id == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "ID is required",
+		})
+	}
+
+	// Parse the request body to get the student and parent data
+	var req domain.StudentAndParent
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"error":   err.Error(),
+			"message": "Invalid request body",
+		})
+	}
+
+	// Validate Student
+	if req.Student.Name != "" || req.Student.Telephone != 0 || req.Student.Class != "" || req.Student.Gender != "" {
+		if _, err := govalidator.ValidateStruct(req.Student); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"success": false,
+				"error":   err.Error(),
+				"message": "Invalid student data",
+			})
+		}
+	}
+
+	// Validate Parent
+	if req.Parent.Name != "" || req.Parent.Telephone != 0 || req.Parent.Gender != "" || req.Parent.Email != nil {
+		if _, err := govalidator.ValidateStruct(req.Parent); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"success": false,
+				"error":   err.Error(),
+				"message": "Invalid parent data",
+			})
+		}
+	}
+
+	// Call the use case to update the student and parent
+	if err := sph.uc.UpdateStudentandParent(c.Context(), &req); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"error":   err.Error(),
+			"message": "Failed to update student and parent",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Student and Parent updated successfully",
+	})
 }

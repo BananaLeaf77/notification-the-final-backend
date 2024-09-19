@@ -40,7 +40,7 @@ func (spu *studentParentUseCase) GetStudentAndParent(ctx context.Context, studen
 	return data, nil
 }
 
-func (spu *studentParentUseCase) ImportCSV(ctx context.Context, payload *[]domain.StudentAndParent) (*[]string, error){
+func (spu *studentParentUseCase) ImportCSV(ctx context.Context, payload *[]domain.StudentAndParent) (*[]string, error) {
 	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
 	// defer cancel()
 
@@ -49,4 +49,16 @@ func (spu *studentParentUseCase) ImportCSV(ctx context.Context, payload *[]domai
 		return nil, err
 	}
 	return data, nil
+}
+
+func (spu *studentParentUseCase) UpdateStudentandParent(ctx context.Context, id int64, student domain.Student, parent domain.Parent) error {
+
+	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
+	// defer cancel()
+
+	err := spu.repo.UpdateStudentandParent(ctx, id, &student, &parent)
+	if err != nil {
+		return err
+	}
+	return nil
 }
