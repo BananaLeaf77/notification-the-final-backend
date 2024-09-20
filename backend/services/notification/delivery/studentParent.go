@@ -291,7 +291,6 @@ func (sph *studentParentHandler) UpdateStudentAndParent(c *fiber.Ctx) error {
 		}
 	}
 
-	// Call the use case to update the student and parent
 	if err := sph.uc.UpdateStudentAndParent(c.Context(), convertetID, &req); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
