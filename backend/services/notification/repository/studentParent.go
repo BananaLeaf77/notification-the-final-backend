@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"notification/domain"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -177,65 +176,6 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 	return &duplicateMessages, nil
 }
 
-func (r *studentParentRepository) UpdateStudentandParent(ctx context.Context, id int64, student domain.Student, parent domain.Parent) error {
-	var studentUpdateFields []string
-	var parentUpdateFields []string
-	var updateArgs []interface{}
-	argIndex := 1
-
-	// Update student fields
-	if student.Name != "" {
-		studentUpdateFields = append(studentUpdateFields, fmt.Sprintf("name = $%d", argIndex))
-		updateArgs = append(updateArgs, student.Name)
-		argIndex++
-	}
-	if student.Class != "" {
-		studentUpdateFields = append(studentUpdateFields, fmt.Sprintf("class = $%d", argIndex))
-		updateArgs = append(updateArgs, student.Class)
-		argIndex++
-	}
-	if student.Telephone != 0 {
-		studentUpdateFields = append(studentUpdateFields, fmt.Sprintf("telephone = $%d", argIndex))
-		updateArgs = append(updateArgs, strconv.Itoa(student.Telephone))
-		argIndex++
-	}
-
-	// Update parent fields
-	if parent.Name != "" {
-		parentUpdateFields = append(parentUpdateFields, fmt.Sprintf("name = $%d", argIndex))
-		updateArgs = append(updateArgs, parent.Name)
-		argIndex++
-	}
-	if parent.Telephone != 0 {
-		parentUpdateFields = append(parentUpdateFields, fmt.Sprintf("telephone = $%d", argIndex))
-		updateArgs = append(updateArgs, strconv.Itoa(parent.Telephone))
-		argIndex++
-	}
-	if parent.Email != nil {
-		parentUpdateFields = append(parentUpdateFields, fmt.Sprintf("email = $%d", argIndex))
-		updateArgs = append(updateArgs, *parent.Email)
-		argIndex++
-	}
-
-	// Build query for updating student and parent
-	studentUpdateQuery := "UPDATE students SET " + strings.Join(studentUpdateFields, ", ") + " WHERE id = $%d"
-	parentUpdateQuery := "UPDATE parents SET " + strings.Join(parentUpdateFields, ", ") + " WHERE id = $%d"
-
-	// First, update the student
-	_, err := r.db.Exec(ctx, studentUpdateQuery, updateArgs...)
-	if err != nil {
-		return fmt.Errorf("could not update student: %w", err)
-	}
-
-	// Reset argument index for parent updates
-	updateArgs = updateArgs[:0]
-	argIndex = 1
-
-	// Execute parent update query
-	_, err = r.db.Exec(ctx, parentUpdateQuery, updateArgs...)
-	if err != nil {
-		return fmt.Errorf("could not update parent: %w", err)
-	}
-
+func (r *studentParentRepository) UpdateStudentAndParent(ctx context.Context, id int, payload *domain.StudentAndParent) error {
 	return nil
 }

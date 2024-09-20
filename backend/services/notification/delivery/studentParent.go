@@ -27,7 +27,7 @@ func NewStudentParentHandler(app *fiber.App, useCase domain.StudentParentUseCase
 	route := app.Group("/student_and_parent")
 	route.Post("/insert", handler.CreateStudentAndParent)
 	route.Post("/import", handler.UploadAndImport)
-	route.Put("/modify/:id", handler.UpdateStudentandParent)
+	route.Put("/modify/:id", handler.UpdateStudentAndParent)
 }
 
 func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
@@ -241,13 +241,21 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 
 }
 
-func (sph *studentParentHandler) UpdateStudentandParent(c *fiber.Ctx) error {
+func (sph *studentParentHandler) UpdateStudentAndParent(c *fiber.Ctx) error {
 	// Get the ID from the URL parameters
 	id := c.Params("id")
 	if id == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"message": "ID is required",
+		})
+	}
+
+	convertetID, err := strconv.Atoi(id)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": err,
 		})
 	}
 
@@ -284,7 +292,7 @@ func (sph *studentParentHandler) UpdateStudentandParent(c *fiber.Ctx) error {
 	}
 
 	// Call the use case to update the student and parent
-	if err := sph.uc.UpdateStudentandParent(c.Context(), &req); err != nil {
+	if err := sph.uc.UpdateStudentAndParent(c.Context(), convertetID, &req); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"error":   err.Error(),

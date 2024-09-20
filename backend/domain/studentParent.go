@@ -11,12 +11,12 @@ type StudentParentRepo interface {
 	CreateStudentAndParent(ctx context.Context, req *StudentAndParent) error
 	GetStudentAndParent(ctx context.Context, studentID string) (*StudentAndParent, error)
 	ImportCSV(ctx context.Context, payload *[]StudentAndParent) (*[]string, error)
-	UpdateStudentandParent(ctx context.Context, id int64, student *Student, parent *Parent) error
+	UpdateStudentAndParent(ctx context.Context, id int, payload *StudentAndParent) error
 }
 
 type StudentParentUseCase interface {
 	CreateStudentAndParentUC(ctx context.Context, req *StudentAndParent) error
 	GetStudentAndParent(ctx context.Context, studentID string) (*StudentAndParent, error)
 	ImportCSV(ctx context.Context, payload *[]StudentAndParent) (*[]string, error)
-	UpdateStudentandParent(ctx context.Context, id int64, student *Student, parent *Parent) error
+	UpdateStudentAndParent(ctx context.Context, id int, payload *StudentAndParent) error
 }

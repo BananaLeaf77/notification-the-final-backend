@@ -201,7 +201,6 @@ func (sp *studentRepository) DeleteStudent(ctx context.Context, id int) error {
 
 	// Convert telephone to int
 	convertedValue, err := strconv.Atoi(telephoneStr)
-
 	student.Telephone = convertedValue
 
 	if err != nil {

@@ -37,3 +37,4 @@ func (m *emailSMTPRepository) SendMass(ctx context.Context, idList *[]int) error
 
 Change the fiber config !!!!
 Check di project magang di main nge defer db.close sing? SINGG!!!
+pindahin fungsi student only and student and parent bitch ass

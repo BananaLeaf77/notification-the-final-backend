@@ -51,12 +51,12 @@ func (spu *studentParentUseCase) ImportCSV(ctx context.Context, payload *[]domai
 	return data, nil
 }
 
-func (spu *studentParentUseCase) UpdateStudentandParent(ctx context.Context, id int64, student domain.Student, parent domain.Parent) error {
+func (spu *studentParentUseCase) UpdateStudentAndParent(ctx context.Context, id int, payload *domain.StudentAndParent) error {
 
 	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
 	// defer cancel()
 
-	err := spu.repo.UpdateStudentandParent(ctx, id, &student, &parent)
+	err := spu.repo.UpdateStudentAndParent(ctx, id, payload)
 	if err != nil {
 		return err
 	}
