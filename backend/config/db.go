@@ -85,5 +85,19 @@ func autoMigrate(pool *pgxpool.Pool) error {
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
 
+	createUsersTableQuery := `
+	CREATE TABLE IF NOT EXISTS users (
+		id SERIAL PRIMARY KEY,
+		username VARCHAR(255) NOT NULL,
+		password VARCHAR(255) NOT NULL,  -- increased password length to support hashed passwords
+		role VARCHAR(15) NOT NULL
+	);
+	`
+	_, err = pool.Exec(context.Background(), createUsersTableQuery)
+	if err != nil {
+		fmt.Printf("Error executing users table migration query: %v\n", err)
+		return fmt.Errorf("failed to run migrations: %w", err)
+	}
+
 	return nil
 }

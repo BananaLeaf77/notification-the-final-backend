@@ -177,42 +177,86 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 }
 
 func (r *studentParentRepository) UpdateStudentAndParent(ctx context.Context, id int, payload *domain.StudentAndParent) error {
-	// check if the email is and telephone already exist
-
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("could not begin transaction: %v", err)
 	}
 	defer tx.Rollback(ctx)
 
-	v := strconv.Itoa(payload.Student.Telephone)
-	completeStudentTelephone := fmt.Sprintf("0%s", v)
+	// Prepare formatted telephone numbers
+	studentTelephone := fmt.Sprintf("0%s", strconv.Itoa(payload.Student.Telephone))
+	parentTelephone := fmt.Sprintf("0%s", strconv.Itoa(payload.Parent.Telephone))
 
-	vp := strconv.Itoa(payload.Parent.Telephone)
-	completeParentTelephone := fmt.Sprintf("0%s", vp)
+	// Check if the student's telephone already exists, excluding the current student
+	checkStudentTelephoneQuery := `
+		SELECT COUNT(1)
+		FROM students
+		WHERE telephone = $1 AND id != $2 AND deleted_at IS NULL;
+	`
+	var studentCount int
+	err = r.db.QueryRow(ctx, checkStudentTelephoneQuery, studentTelephone, id).Scan(&studentCount)
+	if err != nil {
+		return fmt.Errorf("error checking student telephone: %v", err)
+	}
+	if studentCount > 0 {
+		return fmt.Errorf("telephone number %s already exists for another student", studentTelephone)
+	}
 
+	// Check if the parent's telephone already exists, excluding the current parent
+	checkParentTelephoneQuery := `
+		SELECT COUNT(1)
+		FROM parents
+		WHERE telephone = $1 AND id != $2 AND deleted_at IS NULL;
+	`
+	var parentCount int
+	err = r.db.QueryRow(ctx, checkParentTelephoneQuery, parentTelephone, payload.Student.ParentID).Scan(&parentCount)
+	if err != nil {
+		return fmt.Errorf("error checking parent telephone: %v", err)
+	}
+	if parentCount > 0 {
+		return fmt.Errorf("telephone number %s already exists for another parent", parentTelephone)
+	}
+
+	// Check if the parent's email already exists, excluding the current parent
+	if payload.Parent.Email != nil {
+		checkParentEmailQuery := `
+			SELECT COUNT(1)
+			FROM parents
+			WHERE email = $1 AND id != $2 AND deleted_at IS NULL;
+		`
+		var emailCount int
+		err = r.db.QueryRow(ctx, checkParentEmailQuery, *payload.Parent.Email, payload.Student.ParentID).Scan(&emailCount)
+		if err != nil {
+			return fmt.Errorf("error checking parent email: %v", err)
+		}
+		if emailCount > 0 {
+			return fmt.Errorf("email %s already exists for another parent", *payload.Parent.Email)
+		}
+	}
+
+	// Update the student
 	studentUpdateQuery := `
 		UPDATE students
 		SET name = $1, class = $2, gender = $3, telephone = $4, updated_at = $5
 		WHERE id = $6;
 	`
-
-	_, err = tx.Exec(ctx, studentUpdateQuery, payload.Student.Name, payload.Student.Class, payload.Student.Gender, completeStudentTelephone, time.Now(), id)
+	_, err = tx.Exec(ctx, studentUpdateQuery, payload.Student.Name, payload.Student.Class, payload.Student.Gender, studentTelephone, time.Now(), id)
 	if err != nil {
 		return fmt.Errorf("could not update student: %v", err)
 	}
 
+	// Update the parent
 	parentUpdateQuery := `
 		UPDATE parents
 		SET name = $1, gender = $2, telephone = $3, email = $4, updated_at = $5
 		WHERE id = $6;
 	`
-
-	_, err = tx.Exec(ctx, parentUpdateQuery, payload.Parent.Name, payload.Parent.Gender, completeParentTelephone, payload.Parent.Email, time.Now(), payload.Student.ParentID)
+	_, err = tx.Exec(ctx, parentUpdateQuery, payload.Parent.Name, payload.Parent.Gender, parentTelephone, payload.Parent.Email, time.Now(), payload.Student.ParentID)
 	if err != nil {
 		return fmt.Errorf("could not update parent: %v", err)
 	}
 
+	// Commit the transaction
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("could not commit transaction: %v", err)
 	}

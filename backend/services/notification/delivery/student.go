@@ -94,7 +94,7 @@ func (sh *studentHandler) deliveryGetStudentByID(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
-		"message": "Student retrieved successfully",
+		"message": "Student and Parent retrieved successfully",
 		"data":    student,
 	})
 }
