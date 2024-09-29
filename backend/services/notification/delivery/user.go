@@ -10,13 +10,15 @@ import (
 )
 
 type UserHandler struct {
-	userRepo domain.UserRepo
+	uc domain.UserUseCase
 }
 
-func NewUserHandler(userRepo domain.UserRepo) *UserHandler {
-	return &UserHandler{
-		userRepo: userRepo,
+func NewUserHandler(app *fiber.App, useCase domain.UserUseCase) {
+	handler := &UserHandler{
+		uc: useCase,
 	}
+
+	app.Post("/login", handler.Login)
 }
 
 func (uh *UserHandler) Login(c *fiber.Ctx) error {
@@ -31,7 +33,7 @@ func (uh *UserHandler) Login(c *fiber.Ctx) error {
 		})
 	}
 
-	user, err := uh.userRepo.FindUserByUsername(context.Background(), req.Username)
+	user, err := uh.uc.FindUserByUsername(context.Background(), req.Username)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Invalid username or password",

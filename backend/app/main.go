@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"notification/config"
+	"notification/middleware"
 	"notification/services/notification/delivery"
 	"notification/services/notification/repository"
 	"notification/services/notification/usecase"
@@ -35,12 +36,13 @@ func startHTTP() {
 	log.Info("Starting HTTP")
 	app := fiber.New(config.GetFiberConfig())
 
-	// CORS Middleware
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
 		AllowMethods: "GET,POST,PUT,DELETE",
 		AllowHeaders: "Origin, Content-Type, Accept",
 	}))
+
+	app.Use(middleware.AuthRequired)
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).SendString("OK")
@@ -60,6 +62,9 @@ func startHTTP() {
 	}
 
 	// Register repository and Usecase here
+	// User
+	userRepo := repository.NewUserRepository(db)
+	userUC := usecase.NewUserUseCase(userRepo, 100*time.Second)
 	// StudentParent
 	studentParentRepo := repository.NewStudentParentRepository(db)
 	studentParentUC := usecase.NewStudentParentUseCase(studentParentRepo, 30*time.Second)
@@ -70,6 +75,7 @@ func startHTTP() {
 	senderRepo := repository.NewSenderRepository(db, eAuth, *eAdress, *schoolPhone, *emailSender, meow)
 	senderUC := usecase.NewSenderUseCase(senderRepo, 30*time.Second)
 	// Register delivery here
+	delivery.NewUserHandler(app, userUC)
 	delivery.NewStudentParentHandler(app, studentParentUC)
 	delivery.NewSenderDelivery(app, senderUC)
 	delivery.NewStudentDelivery(app, studentUC)
