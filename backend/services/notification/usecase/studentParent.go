@@ -29,17 +29,6 @@ func (spu *studentParentUseCase) CreateStudentAndParentUC(ctx context.Context, r
 	return nil
 }
 
-func (spu *studentParentUseCase) GetStudentAndParent(ctx context.Context, studentID string) (*domain.StudentAndParent, error) {
-	ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
-	defer cancel()
-
-	data, err := spu.repo.GetStudentAndParent(ctx, studentID)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
-}
-
 func (spu *studentParentUseCase) ImportCSV(ctx context.Context, payload *[]domain.StudentAndParent) (*[]string, error) {
 	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
 	// defer cancel()

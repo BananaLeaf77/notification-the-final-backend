@@ -22,6 +22,42 @@ func NewStudentParentRepository(database *pgxpool.Pool) domain.StudentParentRepo
 }
 
 func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, req *domain.StudentAndParent) error {
+	studTelephone := strconv.Itoa(req.Student.Telephone)
+	parentTelephone := strconv.Itoa(req.Parent.Telephone)
+
+	// Check if the student telephone already exists
+	checkStudentTelephoneQuery := `SELECT id FROM students WHERE telephone = $1 AND deleted_at IS NULL;`
+	var existingStudentID int
+	err := spr.db.QueryRow(ctx, checkStudentTelephoneQuery, studTelephone).Scan(&existingStudentID)
+	if err == nil {
+		// Student with this telephone already exists
+		return fmt.Errorf("student with telephone %s already exists", studTelephone)
+	} else if err != pgx.ErrNoRows {
+		return fmt.Errorf("error checking student telephone: %v", err)
+	}
+
+	// Check if the parent telephone already exists
+	checkParentTelephoneQuery := `SELECT id FROM parents WHERE telephone = $1 AND deleted_at IS NULL;`
+	var existingParentID int
+	err = spr.db.QueryRow(ctx, checkParentTelephoneQuery, parentTelephone).Scan(&existingParentID)
+	if err == nil {
+		// Parent with this telephone already exists
+		return fmt.Errorf("parent with telephone %s already exists", parentTelephone)
+	} else if err != pgx.ErrNoRows {
+		return fmt.Errorf("error checking parent telephone: %v", err)
+	}
+
+	// Check if the parent email already exists
+	checkParentEmailQuery := `SELECT id FROM parents WHERE email = $1 AND deleted_at IS NULL;`
+	err = spr.db.QueryRow(ctx, checkParentEmailQuery, req.Parent.Email).Scan(&existingParentID)
+	if err == nil {
+		// Parent with this email already exists
+		return fmt.Errorf("parent with email %s already exists", req.Parent.Email)
+	} else if err != pgx.ErrNoRows {
+		return fmt.Errorf("error checking parent email: %v", err)
+	}
+
+	// If all checks pass, proceed with the transaction
 	tx, err := spr.db.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("could not begin transaction: %v", err)
@@ -37,7 +73,7 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 
 	now := time.Now()
 	var parentID int
-	err = tx.QueryRow(ctx, parentInsertQuery, req.Parent.Name, req.Parent.Gender, req.Parent.Telephone, req.Parent.Email, now, now).Scan(&parentID)
+	err = tx.QueryRow(ctx, parentInsertQuery, req.Parent.Name, req.Parent.Gender, parentTelephone, req.Parent.Email, now, now).Scan(&parentID)
 	if err != nil {
 		return fmt.Errorf("could not insert parent: %v", err)
 	}
@@ -54,7 +90,7 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 	`
 
 	var studentID int
-	err = tx.QueryRow(ctx, studentInsertQuery, req.Student.Name, req.Student.Class, req.Student.Gender, req.Student.Telephone, parentID, now, now).Scan(&studentID)
+	err = tx.QueryRow(ctx, studentInsertQuery, req.Student.Name, req.Student.Class, req.Student.Gender, studTelephone, parentID, now, now).Scan(&studentID)
 	if err != nil {
 		return fmt.Errorf("could not insert student: %v", err)
 	}
@@ -69,10 +105,6 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 	}
 
 	return nil
-}
-
-func (spr *studentParentRepository) GetStudentAndParent(ctx context.Context, studentID string) (*domain.StudentAndParent, error) {
-	return nil, nil
 }
 
 func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]domain.StudentAndParent) (*[]string, error) {

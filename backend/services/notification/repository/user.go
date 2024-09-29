@@ -33,3 +33,19 @@ func (ur *userRepository) FindUserByUsername(ctx context.Context, username strin
 
 	return &user, nil
 }
+
+func (ur *userRepository) CreateStaff(ctx context.Context, payload *domain.User) (*domain.User, error) {
+	query := `
+		SELECT id, username, role
+		FROM users
+		WHERE username = $1;
+	`
+
+	var user domain.User
+	err := ur.db.QueryRow(ctx, query, payload.Username).Scan(&user.ID, &user.Username, &user.Role)
+	if err != nil {
+		return nil, fmt.Errorf("could not find user: %v", err)
+	}
+
+	return &user, nil
+}

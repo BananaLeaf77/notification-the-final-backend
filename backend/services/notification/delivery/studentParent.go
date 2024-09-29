@@ -31,9 +31,6 @@ func NewStudentParentHandler(app *fiber.App, useCase domain.StudentParentUseCase
 }
 
 func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
-	wg.Add(1)
-	defer wg.Done()
-
 	var req domain.StudentAndParent
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{

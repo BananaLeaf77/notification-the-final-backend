@@ -9,10 +9,15 @@ type User struct {
 	Role     string `json:"role"`
 }
 
+// GAE CRUD NE NASKLENG!!!
+
+
 type UserRepo interface {
 	FindUserByUsername(ctx context.Context, username string) (*User, error)
+	CreateStaff(ctx context.Context, payload *User) (*User, error)
 }
 
 type UserUseCase interface {
 	FindUserByUsername(ctx context.Context, username string) (*User, error)
+	CreateStaff(ctx context.Context, payload *User) (*User, error)
 }

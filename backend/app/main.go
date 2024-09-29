@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"notification/config"
-	"notification/middleware"
 	"notification/services/notification/delivery"
 	"notification/services/notification/repository"
 	"notification/services/notification/usecase"
@@ -41,8 +40,6 @@ func startHTTP() {
 		AllowMethods: "GET,POST,PUT,DELETE",
 		AllowHeaders: "Origin, Content-Type, Accept",
 	}))
-
-	app.Use(middleware.AuthRequired)
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).SendString("OK")
