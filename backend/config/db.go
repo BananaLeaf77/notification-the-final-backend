@@ -87,10 +87,13 @@ func autoMigrate(pool *pgxpool.Pool) error {
 
 	createUsersTableQuery := `
 	CREATE TABLE IF NOT EXISTS users (
-		id SERIAL PRIMARY KEY,
-		username VARCHAR(255) NOT NULL,
-		password VARCHAR(255) NOT NULL,  -- increased password length to support hashed passwords
-		role VARCHAR(15) NOT NULL
+	id SERIAL PRIMARY KEY,
+	username VARCHAR(255) NOT NULL UNIQUE,
+	password VARCHAR(255) NOT NULL,
+	role VARCHAR(15) NOT NULL,
+	created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+	deleted_at TIMESTAMP WITH TIME ZONE
 	);
 	`
 	_, err = pool.Exec(context.Background(), createUsersTableQuery)

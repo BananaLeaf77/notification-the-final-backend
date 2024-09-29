@@ -19,6 +19,7 @@ func NewUserHandler(app *fiber.App, useCase domain.UserUseCase) {
 	}
 
 	app.Post("/login", handler.Login)
+	app.Post("/create-staff", handler.CreateStaff)
 }
 
 func (uh *UserHandler) Login(c *fiber.Ctx) error {
@@ -29,14 +30,16 @@ func (uh *UserHandler) Login(c *fiber.Ctx) error {
 
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
+			"error":   "Invalid request body",
+			"success": false,
 		})
 	}
 
 	user, err := uh.uc.FindUserByUsername(context.Background(), req.Username)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Invalid username or password",
+			"error":   "Invalid username or password",
+			"success": false,
 		})
 	}
 
@@ -45,7 +48,8 @@ func (uh *UserHandler) Login(c *fiber.Ctx) error {
 		err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Invalid username or password",
+				"error":   "Invalid username or password",
+				"success": false,
 			})
 		}
 	}
@@ -54,7 +58,8 @@ func (uh *UserHandler) Login(c *fiber.Ctx) error {
 	token, err := middleware.GenerateJWT(user.Username, user.Role)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Could not generate token",
+			"success": false,
+			"error":   "Could not generate token",
 		})
 	}
 
@@ -62,3 +67,29 @@ func (uh *UserHandler) Login(c *fiber.Ctx) error {
 		"token": token,
 	})
 }
+
+func (uh *UserHandler) CreateStaff(c *fiber.Ctx) error {
+	var payload domain.User
+	payload.Role = "staff"
+
+	if err := c.BodyParser(&payload); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   err.Error(),
+			"success": false,
+		})
+	}
+
+	_, err := uh.uc.CreateStaff(c.Context(), &payload)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   err.Error(),
+			"success": false,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Account created successfully",
+	})
+}
+
