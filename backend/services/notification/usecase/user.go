@@ -40,7 +40,7 @@ func (u *userUC) CreateStaff(ctx context.Context, payload *domain.User) (*domain
 	return v, nil
 }
 
-func (u *userUC) GetAllStaff(ctx context.Context) (*[]domain.User, error) {
+func (u *userUC) GetAllStaff(ctx context.Context) (*[]domain.SafeStaffData, error) {
 	// ctx, cancel := context.WithTimeout(ctx, mUC.TimeOut)
 	// defer cancel()
 	v, err := u.userRepo.GetAllStaff(ctx)
@@ -50,3 +50,22 @@ func (u *userUC) GetAllStaff(ctx context.Context) (*[]domain.User, error) {
 
 	return v, nil
 }
+
+func (u *userUC) DeleteStaff(ctx context.Context, id int) error {
+	err := u.userRepo.DeleteStaff(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u *userUC) UpdateStaff(ctx context.Context, id int, payload *domain.User) error {
+	err := u.userRepo.UpdateStaff(ctx, id, payload)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+

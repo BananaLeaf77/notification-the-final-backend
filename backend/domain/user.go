@@ -16,15 +16,17 @@ type User struct {
 }
 
 type UserRepo interface {
-	GetAllStaff(ctx context.Context) (*[]User, error)
+	GetAllStaff(ctx context.Context) (*[]SafeStaffData, error)
 	FindUserByUsername(ctx context.Context, username string) (*User, error)
+	UpdateStaff(ctx context.Context, id int, payload *User) error
 	CreateStaff(ctx context.Context, payload *User) (*User, error)
-	// DeleteStaff(ctx context.Context, id int) error
+	DeleteStaff(ctx context.Context, id int) error
 }
 
 type UserUseCase interface {
-	GetAllStaff(ctx context.Context) (*[]User, error)
+	GetAllStaff(ctx context.Context) (*[]SafeStaffData, error)
 	FindUserByUsername(ctx context.Context, username string) (*User, error)
+	UpdateStaff(ctx context.Context, id int, payload *User) error
 	CreateStaff(ctx context.Context, payload *User) (*User, error)
-	// DeleteStaff(ctx context.Context, id int) error
+	DeleteStaff(ctx context.Context, id int) error
 }

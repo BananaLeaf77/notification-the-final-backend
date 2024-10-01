@@ -4,6 +4,7 @@ import (
 	"context"
 	"notification/domain"
 	"notification/middleware"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/bcrypt"
@@ -21,6 +22,7 @@ func NewUserHandler(app *fiber.App, useCase domain.UserUseCase) {
 	app.Post("/login", handler.Login)
 	app.Post("/staff/create-staff", handler.CreateStaff)
 	app.Get("/staff/get-all", handler.GetAllStaff)
+	app.Delete("/staff/rm/:id", handler.DeleteStaff)
 }
 
 func (uh *UserHandler) Login(c *fiber.Ctx) error {
@@ -107,5 +109,59 @@ func (uh *UserHandler) GetAllStaff(c *fiber.Ctx) error {
 		"success": true,
 		"message": "Staff retrieved successfully",
 		"data":    v,
+	})
+}
+
+func (uh *UserHandler) DeleteStaff(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   "converter failure",
+			"success": false,
+		})
+	}
+
+	err = uh.uc.DeleteStaff(c.Context(), id)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   err.Error(),
+			"success": false,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Staff deleted successfully",
+	})
+}
+
+func (uh *UserHandler) UpdateStaff(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   "converter failure",
+			"success": false,
+		})
+	}
+
+	var holdValue domain.User
+	if err := c.BodyParser(&holdValue); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   err.Error(),
+			"success": false,
+		})
+	}
+
+	err = uh.uc.UpdateStaff(c.Context(), id, &holdValue)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   err.Error(),
+			"success": false,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Staff updated successfully",
 	})
 }

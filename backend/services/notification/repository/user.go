@@ -76,7 +76,7 @@ func (ur *userRepository) CreateStaff(ctx context.Context, payload *domain.User)
 	return payload, nil
 }
 
-func (ur *userRepository) GetAllStaff(ctx context.Context) (*[]domain.User, error) {
+func (ur *userRepository) GetAllStaff(ctx context.Context) (*[]domain.SafeStaffData, error) {
 	query := `
 		SELECT id, username, role, created_at, updated_at, deleted_at
 		FROM users
@@ -89,9 +89,9 @@ func (ur *userRepository) GetAllStaff(ctx context.Context) (*[]domain.User, erro
 	}
 	defer rows.Close()
 
-	var users []domain.User
+	var users []domain.SafeStaffData
 	for rows.Next() {
-		var user domain.User
+		var user domain.SafeStaffData
 
 		err := rows.Scan(&user.ID, &user.Username, &user.Role, &user.CreatedAt, &user.UpdatedAt, &user.DeletedAt)
 		if err != nil {
@@ -109,4 +109,38 @@ func (ur *userRepository) GetAllStaff(ctx context.Context) (*[]domain.User, erro
 	}
 
 	return &users, nil
+}
+
+func (ur *userRepository) DeleteStaff(ctx context.Context, id int) error {
+	now := time.Now()
+
+	query := `
+		UPDATE users
+		SET deleted_at = $1
+		WHERE id = $2 AND deleted_at IS NULL;
+	`
+
+	_, err := ur.db.Exec(ctx, query, now, id)
+	if err != nil {
+		return fmt.Errorf("could not delete staff: %v", err)
+	}
+
+	return nil
+}
+
+func (ur *userRepository) UpdateStaff(ctx context.Context, id int, payload *domain.User) error {
+	now := time.Now()
+
+	query := `
+		UPDATE users
+		SET username = $1, password = $2, role = $3, updated_at = $4
+		WHERE id = $5;
+	`
+
+	_, err := ur.db.Exec(ctx, query, payload.Username, payload.Password, payload.Role, now, id)
+	if err != nil {
+		return fmt.Errorf("could not update staff: %v", err)
+	}
+
+	return nil
 }
