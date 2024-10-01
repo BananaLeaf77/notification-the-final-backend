@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -9,7 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-var jwtKey = []byte("your_secret_key")
+var jwtKey = []byte(os.Getenv("BYTE_KEY"))
 
 type Claims struct {
 	Username string `json:"username"`

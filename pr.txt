@@ -1,1 +1,4 @@
 add goroutine di funcs berat ajng lo
+
+steiap stud berelasi ke tiap matapelajaran walaupun beda jurusan, and nil type nilainya ???
+login we kleng
