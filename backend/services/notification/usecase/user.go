@@ -40,3 +40,13 @@ func (u *userUC) CreateStaff(ctx context.Context, payload *domain.User) (*domain
 	return v, nil
 }
 
+func (u *userUC) GetAllStaff(ctx context.Context) (*[]domain.User, error) {
+	// ctx, cancel := context.WithTimeout(ctx, mUC.TimeOut)
+	// defer cancel()
+	v, err := u.userRepo.GetAllStaff(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}

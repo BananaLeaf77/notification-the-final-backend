@@ -51,3 +51,27 @@ func (spu *studentParentUseCase) UpdateStudentAndParent(ctx context.Context, id 
 	}
 	return nil
 }
+
+func (spu *studentParentUseCase) GetStudentDetailByID(ctx context.Context, id int) (*domain.StudentAndParent, error){
+
+	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
+	// defer cancel()
+
+	v, err := spu.repo.GetStudentDetailByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return v, nil
+}
+
+func (spu *studentParentUseCase) DeleteStudentAndParent(ctx context.Context, id int) error{
+
+	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
+	// defer cancel()
+
+	err := spu.repo.DeleteStudentAndParent(ctx, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}

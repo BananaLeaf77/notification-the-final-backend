@@ -19,7 +19,8 @@ func NewUserHandler(app *fiber.App, useCase domain.UserUseCase) {
 	}
 
 	app.Post("/login", handler.Login)
-	app.Post("/create-staff", handler.CreateStaff)
+	app.Post("/staff/create-staff", handler.CreateStaff)
+	app.Get("/staff/get-all", handler.GetAllStaff)
 }
 
 func (uh *UserHandler) Login(c *fiber.Ctx) error {
@@ -93,3 +94,18 @@ func (uh *UserHandler) CreateStaff(c *fiber.Ctx) error {
 	})
 }
 
+func (uh *UserHandler) GetAllStaff(c *fiber.Ctx) error {
+	v, err := uh.uc.GetAllStaff(c.Context())
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   err.Error(),
+			"success": false,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Staff retrieved successfully",
+		"data":    v,
+	})
+}

@@ -24,10 +24,12 @@ func NewStudentParentHandler(app *fiber.App, useCase domain.StudentParentUseCase
 		uc: useCase,
 	}
 
-	route := app.Group("/student_and_parent")
+	route := app.Group("/student-and-parent")
 	route.Post("/insert", handler.CreateStudentAndParent)
 	route.Post("/import", handler.UploadAndImport)
 	route.Put("/modify/:id", handler.UpdateStudentAndParent)
+	route.Delete("/rm/:id", handler.DeleteStudentAndParent)
+	route.Get("/student/:id", handler.GetStudentDetailByID)
 }
 
 func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
@@ -73,9 +75,6 @@ func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
 }
 
 func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
-	wg.Add(1)
-	defer wg.Done()
-	// Handle file upload
 	file, err := c.FormFile("file")
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -299,5 +298,55 @@ func (sph *studentParentHandler) UpdateStudentAndParent(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
 		"message": "Student and Parent updated successfully",
+	})
+}
+
+func (sph *studentParentHandler) DeleteStudentAndParent(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "Invalid student ID",
+			"error":   err.Error(),
+		})
+	}
+
+	if err := sph.uc.DeleteStudentAndParent(c.Context(), id); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Failed to delete student",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Student deleted successfully",
+	})
+}
+
+func (sph *studentParentHandler) GetStudentDetailByID(c *fiber.Ctx) error{
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "Invalid student ID",
+			"error":   err.Error(),
+		})
+	}
+
+	student, err := sph.uc.GetStudentDetailByID(c.Context(), id)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Failed to get student",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Student and Parent retrieved successfully",
+		"data":    student,
 	})
 }

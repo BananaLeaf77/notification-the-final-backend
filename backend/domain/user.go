@@ -15,14 +15,16 @@ type User struct {
 	DeletedAt *time.Time `json:"deleted_at"`
 }
 
-// GAE CRUD NE NASKLENG!!!
-
 type UserRepo interface {
+	GetAllStaff(ctx context.Context) (*[]User, error)
 	FindUserByUsername(ctx context.Context, username string) (*User, error)
 	CreateStaff(ctx context.Context, payload *User) (*User, error)
+	// DeleteStaff(ctx context.Context, id int) error
 }
 
 type UserUseCase interface {
+	GetAllStaff(ctx context.Context) (*[]User, error)
 	FindUserByUsername(ctx context.Context, username string) (*User, error)
 	CreateStaff(ctx context.Context, payload *User) (*User, error)
+	// DeleteStaff(ctx context.Context, id int) error
 }

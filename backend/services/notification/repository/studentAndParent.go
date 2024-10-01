@@ -52,7 +52,7 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 	err = spr.db.QueryRow(ctx, checkParentEmailQuery, req.Parent.Email).Scan(&existingParentID)
 	if err == nil {
 		// Parent with this email already exists
-		return fmt.Errorf("parent with email %s already exists", req.Parent.Email)
+		return fmt.Errorf("parent with email %s already exists", *req.Parent.Email)
 	} else if err != pgx.ErrNoRows {
 		return fmt.Errorf("error checking parent email: %v", err)
 	}
@@ -291,6 +291,112 @@ func (r *studentParentRepository) UpdateStudentAndParent(ctx context.Context, id
 	// Commit the transaction
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("could not commit transaction: %v", err)
+	}
+
+	return nil
+}
+
+func (r *studentParentRepository) GetStudentDetailByID(ctx context.Context, id int) (*domain.StudentAndParent, error) {
+	query := `
+		SELECT s.id, s.name, s.class, s.gender, s.telephone, s.parent_id, s.created_at, s.updated_at, s.deleted_at,
+		p.id, p.name, p.gender, p.telephone, p.email, p.created_at, p.updated_at, p.deleted_at
+		FROM students s
+		JOIN parents p ON s.parent_id = p.id
+		WHERE s.id = $1 AND s.deleted_at IS NULL AND p.deleted_at IS NULL;
+	`
+
+	var result domain.StudentAndParent
+	var pTelephone string
+	var sTelephone string
+
+	err := r.db.QueryRow(ctx, query, id).Scan(
+		&result.Student.ID, &result.Student.Name, &result.Student.Class, &result.Student.Gender, &sTelephone, &result.Student.ParentID, &result.Student.CreatedAt, &result.Student.UpdatedAt, &result.Student.DeletedAt,
+		&result.Parent.ID, &result.Parent.Name, &result.Parent.Gender, &pTelephone, &result.Parent.Email, &result.Parent.CreatedAt, &result.Parent.UpdatedAt, &result.Parent.DeletedAt,
+	)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return nil, fmt.Errorf("student not found")
+		}
+		return nil, fmt.Errorf("could not get student and parent details: %v", err)
+	}
+
+	v, err := strconv.Atoi(pTelephone)
+	if err != nil {
+		return nil, err
+	}
+
+	result.Parent.Telephone = v
+
+	vs, err := strconv.Atoi(sTelephone)
+	if err != nil {
+		return nil, err
+	}
+
+	result.Student.Telephone = vs
+
+	return &result, nil
+}
+
+func (sp *studentParentRepository) DeleteStudentAndParent(ctx context.Context, id int) error {
+
+	var student domain.Student
+
+	query := `
+		UPDATE students
+		SET deleted_at = $1
+		WHERE id = $2 AND deleted_at IS NULL;
+	`
+	query2 := `UPDATE parents
+		SET deleted_at = $1
+		WHERE id = $2 AND deleted_at IS NULL`
+
+	query3 := `
+		SELECT id, name, class, gender, telephone, parent_id, created_at, updated_at, deleted_at
+		FROM students
+		WHERE id = $1 AND deleted_at IS NULL;
+	`
+
+	now := time.Now()
+
+	var telephoneStr string
+
+	// Find student first
+	err := sp.db.QueryRow(ctx, query3, id).Scan(
+		&student.ID,
+		&student.Name,
+		&student.Class,
+		&student.Gender,
+		&telephoneStr,
+		&student.ParentID,
+		&student.CreatedAt,
+		&student.UpdatedAt,
+		&student.DeletedAt,
+	)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return fmt.Errorf("student not found")
+		}
+		return fmt.Errorf("could not get student: %v", err)
+	}
+
+	// Convert telephone to int
+	convertedValue, err := strconv.Atoi(telephoneStr)
+	student.Telephone = convertedValue
+
+	if err != nil {
+		return fmt.Errorf("invalid telephone format: %v", err)
+	}
+
+	// Query delete student
+	_, err = sp.db.Exec(ctx, query, now, id)
+	if err != nil {
+		return fmt.Errorf("could not delete student: %v", err)
+	}
+
+	// Query delete parent
+	_, err = sp.db.Exec(ctx, query2, now, student.ParentID)
+	if err != nil {
+		return fmt.Errorf("could not delete parent: %v", err)
 	}
 
 	return nil

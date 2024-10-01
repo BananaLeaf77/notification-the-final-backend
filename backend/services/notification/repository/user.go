@@ -75,3 +75,38 @@ func (ur *userRepository) CreateStaff(ctx context.Context, payload *domain.User)
 
 	return payload, nil
 }
+
+func (ur *userRepository) GetAllStaff(ctx context.Context) (*[]domain.User, error) {
+	query := `
+		SELECT id, username, role, created_at, updated_at, deleted_at
+		FROM users
+		WHERE deleted_at IS NULL;
+	`
+
+	rows, err := ur.db.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("could not get all staff: %v", err)
+	}
+	defer rows.Close()
+
+	var users []domain.User
+	for rows.Next() {
+		var user domain.User
+
+		err := rows.Scan(&user.ID, &user.Username, &user.Role, &user.CreatedAt, &user.UpdatedAt, &user.DeletedAt)
+		if err != nil {
+			return nil, fmt.Errorf("could not scan user: %v", err)
+		}
+
+		if user.Role != "admin" {
+			users = append(users, user)
+		}
+
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %v", err)
+	}
+
+	return &users, nil
+}
