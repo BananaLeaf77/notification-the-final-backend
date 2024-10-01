@@ -69,3 +69,11 @@ func (u *userUC) UpdateStaff(ctx context.Context, id int, payload *domain.User) 
 	return nil
 }
 
+func (u *userUC) GetStaffDetail(ctx context.Context, id int) (*domain.SafeStaffData, error) {
+	v, err := u.userRepo.GetStaffDetail(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}

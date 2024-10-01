@@ -23,6 +23,7 @@ func NewUserHandler(app *fiber.App, useCase domain.UserUseCase) {
 	app.Post("/staff/create-staff", handler.CreateStaff)
 	app.Get("/staff/get-all", handler.GetAllStaff)
 	app.Delete("/staff/rm/:id", handler.DeleteStaff)
+	app.Get("/staff/details/:id", handler.GetStaffDetail)
 }
 
 func (uh *UserHandler) Login(c *fiber.Ctx) error {
@@ -164,4 +165,29 @@ func (uh *UserHandler) UpdateStaff(c *fiber.Ctx) error {
 		"success": true,
 		"message": "Staff updated successfully",
 	})
+}
+
+func (uh *UserHandler) GetStaffDetail(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   "converter failure",
+			"success": false,
+		})
+	}
+
+	v, err := uh.uc.GetStaffDetail(c.Context(), id)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   err.Error(),
+			"success": false,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Staff retrieved successfully",
+		"data":    v,
+	})
+
 }

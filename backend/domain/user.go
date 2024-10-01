@@ -17,6 +17,7 @@ type User struct {
 
 type UserRepo interface {
 	GetAllStaff(ctx context.Context) (*[]SafeStaffData, error)
+	GetStaffDetail(ctx context.Context, id int) (*SafeStaffData, error)
 	FindUserByUsername(ctx context.Context, username string) (*User, error)
 	UpdateStaff(ctx context.Context, id int, payload *User) error
 	CreateStaff(ctx context.Context, payload *User) (*User, error)
@@ -25,6 +26,7 @@ type UserRepo interface {
 
 type UserUseCase interface {
 	GetAllStaff(ctx context.Context) (*[]SafeStaffData, error)
+	GetStaffDetail(ctx context.Context, id int) (*SafeStaffData, error)
 	FindUserByUsername(ctx context.Context, username string) (*User, error)
 	UpdateStaff(ctx context.Context, id int, payload *User) error
 	CreateStaff(ctx context.Context, payload *User) (*User, error)

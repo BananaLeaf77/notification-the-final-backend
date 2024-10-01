@@ -144,3 +144,27 @@ func (ur *userRepository) UpdateStaff(ctx context.Context, id int, payload *doma
 
 	return nil
 }
+
+func (ur *userRepository) GetStaffDetail(ctx context.Context, id int) (*domain.SafeStaffData, error) {
+	var valueHolder domain.SafeStaffData
+	query := `
+		SELECT id, username, role, created_at, updated_at, deleted_at
+		FROM users
+		WHERE id = $1 AND deleted_at IS NULL;
+	`
+
+	err := ur.db.QueryRow(ctx, query, id).Scan(&valueHolder.ID, &valueHolder.Username, &valueHolder.Role, &valueHolder.CreatedAt, &valueHolder.UpdatedAt, &valueHolder.DeletedAt)
+
+	if valueHolder.Role != "staff" {
+		return nil, fmt.Errorf("staff not found")
+	}
+
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return nil, fmt.Errorf("staff not found")
+		}
+		return nil, fmt.Errorf("could not get staff details: %v", err)
+	}
+
+	return &valueHolder, nil
+}
