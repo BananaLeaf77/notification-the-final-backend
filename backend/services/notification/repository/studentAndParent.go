@@ -22,8 +22,8 @@ func NewStudentParentRepository(database *pgxpool.Pool) domain.StudentParentRepo
 }
 
 func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, req *domain.StudentAndParent) error {
-	studTelephone := strconv.Itoa(req.Student.Telephone)
-	parentTelephone := strconv.Itoa(req.Parent.Telephone)
+	studTelephone := fmt.Sprintf("0" + strconv.Itoa(req.Student.Telephone))
+	parentTelephone := fmt.Sprintf("0" + strconv.Itoa(req.Parent.Telephone))
 
 	// Check if the student telephone already exists
 	checkStudentTelephoneQuery := `SELECT id FROM students WHERE telephone = $1 AND deleted_at IS NULL;`
@@ -215,42 +215,70 @@ func (r *studentParentRepository) UpdateStudentAndParent(ctx context.Context, id
 	}
 	defer tx.Rollback(ctx)
 
-	// Prepare formatted telephone numbers
-	studentTelephone := fmt.Sprintf("0%s", strconv.Itoa(payload.Student.Telephone))
-	parentTelephone := fmt.Sprintf("0%s", strconv.Itoa(payload.Parent.Telephone))
+	// Fetch current data from the database to compare
+	var currentStudent domain.Student
+	var currentParent domain.Parent
 
-	// Check if the student's telephone already exists, excluding the current student
-	checkStudentTelephoneQuery := `
-		SELECT COUNT(1)
-		FROM students
-		WHERE telephone = $1 AND id != $2 AND deleted_at IS NULL;
+	var studTHolder string
+	var parTHolder string
+	
+	// Fetch the current student and parent data (to check for unchanged fields)
+	currentDataQuery := `
+		SELECT s.name, s.class, s.gender, s.telephone, p.name, p.gender, p.telephone, p.email
+		FROM students s
+		JOIN parents p ON s.parent_id = p.id
+		WHERE s.id = $1 AND s.deleted_at IS NULL AND p.deleted_at IS NULL;
 	`
-	var studentCount int
-	err = r.db.QueryRow(ctx, checkStudentTelephoneQuery, studentTelephone, id).Scan(&studentCount)
+	err = r.db.QueryRow(ctx, currentDataQuery, id).Scan(
+		&currentStudent.Name, &currentStudent.Class, &currentStudent.Gender, &studTHolder,
+		&currentParent.Name, &currentParent.Gender, &parTHolder, &currentParent.Email,
+	)
 	if err != nil {
-		return fmt.Errorf("error checking student telephone: %v", err)
-	}
-	if studentCount > 0 {
-		return fmt.Errorf("telephone number %s already exists for another student", studentTelephone)
+		return fmt.Errorf("could not fetch current data: %v", err)
 	}
 
-	// Check if the parent's telephone already exists, excluding the current parent
-	checkParentTelephoneQuery := `
-		SELECT COUNT(1)
-		FROM parents
-		WHERE telephone = $1 AND id != $2 AND deleted_at IS NULL;
-	`
-	var parentCount int
-	err = r.db.QueryRow(ctx, checkParentTelephoneQuery, parentTelephone, payload.Student.ParentID).Scan(&parentCount)
-	if err != nil {
-		return fmt.Errorf("error checking parent telephone: %v", err)
-	}
-	if parentCount > 0 {
-		return fmt.Errorf("telephone number %s already exists for another parent", parentTelephone)
+	// Check if the student's telephone needs to be updated and is unique
+	if studTHolder != "" && studTHolder != strconv.Itoa(currentStudent.Telephone) {
+		checkStudentTelephoneQuery := `
+			SELECT COUNT(1)
+			FROM students
+			WHERE telephone = $1 AND id != $2 AND deleted_at IS NULL;
+		`
+		var studentCount int
+		err = r.db.QueryRow(ctx, checkStudentTelephoneQuery, studTHolder, id).Scan(&studentCount)
+		if err != nil {
+			return fmt.Errorf("error checking student telephone: %v", err)
+		}
+		if studentCount > 0 {
+			return fmt.Errorf("telephone number %s already exists for another student", studTHolder)
+		}
+	} else {
+		// Use existing telephone if not updated
+		studTHolder = strconv.Itoa(currentStudent.Telephone)
 	}
 
-	// Check if the parent's email already exists, excluding the current parent
-	if payload.Parent.Email != nil {
+	// Check if the parent's telephone needs to be updated and is unique
+	if payload.Parent.Telephone != 0 && parentTelephone != strconv.Itoa(currentParent.Telephone) {
+		checkParentTelephoneQuery := `
+			SELECT COUNT(1)
+			FROM parents
+			WHERE telephone = $1 AND id != $2 AND deleted_at IS NULL;
+		`
+		var parentCount int
+		err = r.db.QueryRow(ctx, checkParentTelephoneQuery, parentTelephone, payload.Student.ParentID).Scan(&parentCount)
+		if err != nil {
+			return fmt.Errorf("error checking parent telephone: %v", err)
+		}
+		if parentCount > 0 {
+			return fmt.Errorf("telephone number %s already exists for another parent", parentTelephone)
+		}
+	} else {
+		// Use existing telephone if not updated
+		parentTelephone = strconv.Itoa(currentParent.Telephone)
+	}
+
+	// Check if the parent's email needs to be updated and is unique
+	if payload.Parent.Email != nil && *payload.Parent.Email != *currentParent.Email {
 		checkParentEmailQuery := `
 			SELECT COUNT(1)
 			FROM parents
@@ -264,28 +292,37 @@ func (r *studentParentRepository) UpdateStudentAndParent(ctx context.Context, id
 		if emailCount > 0 {
 			return fmt.Errorf("email %s already exists for another parent", *payload.Parent.Email)
 		}
+	} else {
+		// Use existing email if not updated
+		payload.Parent.Email = currentParent.Email
 	}
 
-	// Update the student
+	// Update the student only if the record is not soft-deleted
 	studentUpdateQuery := `
 		UPDATE students
 		SET name = $1, class = $2, gender = $3, telephone = $4, updated_at = $5
-		WHERE id = $6;
+		WHERE id = $6 AND deleted_at IS NULL;
 	`
-	_, err = tx.Exec(ctx, studentUpdateQuery, payload.Student.Name, payload.Student.Class, payload.Student.Gender, studentTelephone, time.Now(), id)
+	result, err := tx.Exec(ctx, studentUpdateQuery, payload.Student.Name, payload.Student.Class, payload.Student.Gender, studentTelephone, time.Now(), id)
 	if err != nil {
 		return fmt.Errorf("could not update student: %v", err)
 	}
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("student and parent does not exist")
+	}
 
-	// Update the parent
+	// Update the parent only if the record is not soft-deleted
 	parentUpdateQuery := `
 		UPDATE parents
 		SET name = $1, gender = $2, telephone = $3, email = $4, updated_at = $5
-		WHERE id = $6;
+		WHERE id = $6 AND deleted_at IS NULL;
 	`
-	_, err = tx.Exec(ctx, parentUpdateQuery, payload.Parent.Name, payload.Parent.Gender, parentTelephone, payload.Parent.Email, time.Now(), payload.Student.ParentID)
+	result, err = tx.Exec(ctx, parentUpdateQuery, payload.Parent.Name, payload.Parent.Gender, parentTelephone, payload.Parent.Email, time.Now(), payload.Student.ParentID)
 	if err != nil {
 		return fmt.Errorf("could not update parent: %v", err)
+	}
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("parent with id %d is either soft-deleted or does not exist", payload.Student.ParentID)
 	}
 
 	// Commit the transaction
@@ -295,6 +332,8 @@ func (r *studentParentRepository) UpdateStudentAndParent(ctx context.Context, id
 
 	return nil
 }
+
+
 
 func (r *studentParentRepository) GetStudentDetailByID(ctx context.Context, id int) (*domain.StudentAndParent, error) {
 	query := `

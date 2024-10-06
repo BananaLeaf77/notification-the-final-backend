@@ -112,7 +112,14 @@ func (ur *userRepository) GetAllStaff(ctx context.Context) (*[]domain.SafeStaffD
 }
 
 func (ur *userRepository) DeleteStaff(ctx context.Context, id int) error {
+	var userHolder domain.SafeStaffData
 	now := time.Now()
+
+	query2 := `
+		SELECT id, username, role, created_at, updated_at, deleted_at
+		FROM users
+		WHERE id = $1 AND deleted_at IS NULL;
+	`
 
 	query := `
 		UPDATE users
@@ -120,9 +127,28 @@ func (ur *userRepository) DeleteStaff(ctx context.Context, id int) error {
 		WHERE id = $2 AND deleted_at IS NULL;
 	`
 
-	_, err := ur.db.Exec(ctx, query, now, id)
+	err := ur.db.QueryRow(ctx, query2, id).Scan(&userHolder.ID, &userHolder.Username, &userHolder.Role, &userHolder.CreatedAt, &userHolder.UpdatedAt, &userHolder.DeletedAt)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return fmt.Errorf("student not found")
+		}
+		return fmt.Errorf("could not get student and parent details: %v", err)
+	}
+
+	if userHolder.Role == "admin" {
+		return fmt.Errorf("could not delete staff")
+	}
+
+	// Execute the query and check the number of rows affected
+	result, err := ur.db.Exec(ctx, query, now, id)
 	if err != nil {
 		return fmt.Errorf("could not delete staff: %v", err)
+	}
+
+	// Check if any rows were affected
+	rowsAffected := result.RowsAffected()
+	if rowsAffected == 0 {
+		return fmt.Errorf("no staff found with id %d", id)
 	}
 
 	return nil

@@ -3,3 +3,5 @@ add goroutine di funcs berat ajng lo
 steiap stud berelasi ke tiap matapelajaran walaupun beda jurusan, and nil type nilainya ???
 login we kleng
 history
+
+UPDATE student and paren, users data fix lagi tu naskleng!!!
