@@ -85,6 +85,7 @@ func AuthRequired(c *fiber.Ctx) error {
 
 func AdminOnly(c *fiber.Ctx) error {
 	role := c.Locals("role").(string)
+	fmt.Println("User Role:", role)
 	if role != "admin" {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"error": "Access denied",

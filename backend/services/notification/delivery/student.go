@@ -1,14 +1,11 @@
 package delivery
 
 import (
-	"notification/config"
 	"notification/domain"
-	"sync"
+	"notification/middleware"
 
 	"github.com/gofiber/fiber/v2"
 )
-
-var wg *sync.WaitGroup = config.GetWaitGroupInstance()
 
 type studentHandler struct {
 	suc domain.StudentUseCase
@@ -20,7 +17,7 @@ func NewStudentDelivery(app *fiber.App, uc domain.StudentUseCase) {
 	}
 
 	route := app.Group("/student")
-	route.Get("/get-all", handler.deliveryGetAllStudent)
+	route.Get("/get-all", middleware.AuthRequired, middleware.AdminOnly, handler.deliveryGetAllStudent)
 	route.Get("/download_input_template", handler.deliveryDownloadTemplate)
 }
 

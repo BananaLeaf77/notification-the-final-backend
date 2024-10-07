@@ -21,9 +21,6 @@ func NewSenderDelivery(app *fiber.App, uc domain.SenderUseCase) {
 }
 
 func (h *senderHandler) sendMassHandler(c *fiber.Ctx) error {
-	wg.Add(1)
-	defer wg.Done()
-
 	var payload struct {
 		IDs []int `json:"ids"`
 	}

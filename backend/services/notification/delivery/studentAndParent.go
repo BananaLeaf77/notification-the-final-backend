@@ -191,7 +191,7 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 			invalidTelephoneType = append(invalidTelephoneType, txt)
 		}
 
-		if errParentConvert == nil {
+		if row[7] != "" {
 			// Process parent data
 			parentDataHolder = domain.Parent{
 				Name:      row[4],
@@ -204,8 +204,19 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 
 			_, err = govalidator.ValidateStruct(parentDataHolder)
 			if err != nil {
+				fmt.Println("masuk disini dia, emailnya : ", parentDataHolder.Email, parentDataHolder.Name)
+				log.Printf("Parent validation failed on row %d: %v", i+2, err)
 				return nil, nil, fmt.Errorf("row %d: error validating parent: %v", i+2, err)
 			}
+		}
+
+		parentDataHolder = domain.Parent{
+			Name:      row[4],
+			Gender:    row[5],
+			Telephone: convertParentTelephone,
+			Email:     &row[7],
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
 		}
 
 		if errStudentConvert == nil && errParentConvert == nil {

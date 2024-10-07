@@ -50,7 +50,7 @@ func autoMigrate(pool *pgxpool.Pool) error {
 	createParentsTableQuery := `
 	CREATE TABLE IF NOT EXISTS parents (
 		id SERIAL PRIMARY KEY,
-		name VARCHAR(255) NOT NULL,
+		name VARCHAR(150) NOT NULL UNIQUE,
 		gender VARCHAR(15) NOT NULL,
 		telephone VARCHAR(15) NOT NULL,
 		email VARCHAR(255),	
@@ -68,8 +68,8 @@ func autoMigrate(pool *pgxpool.Pool) error {
 	createStudentsTableQuery := `
 	CREATE TABLE IF NOT EXISTS students (
 		id SERIAL PRIMARY KEY,
-		name VARCHAR(255) NOT NULL,
-		class VARCHAR(10) NOT NULL,
+		name VARCHAR(150) NOT NULL UNIQUE,
+		class VARCHAR(3) NOT NULL,
 		gender VARCHAR(15) NOT NULL,
 		telephone VARCHAR(15) NOT NULL,
 		parent_id INTEGER,
