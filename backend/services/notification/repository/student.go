@@ -4,57 +4,25 @@ import (
 	"context"
 	"fmt"
 	"notification/domain"
+	"gorm.io/gorm"
 	"os"
-	"strconv"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type studentRepository struct {
-	db *pgxpool.Pool
+	db *gorm.DB
 }
 
-func NewStudentRepository(database *pgxpool.Pool) domain.StudentRepo {
+func NewStudentRepository(database *gorm.DB) domain.StudentRepo {
 	return &studentRepository{
 		db: database,
 	}
 }
 
 func (sp *studentRepository) GetAllStudent(ctx context.Context) (*[]domain.Student, error) {
-	query := `
-		SELECT id, name, class, gender, telephone, parent_id, created_at, updated_at, deleted_at
-		FROM students
-		WHERE deleted_at IS NULL;
-	`
-
-	rows, err := sp.db.Query(ctx, query)
-	if err != nil {
-		return nil, fmt.Errorf("could not get all students: %v", err)
-	}
-	defer rows.Close()
-
 	var students []domain.Student
-	for rows.Next() {
-		var student domain.Student
-		var studentTelephoneINT string
 
-		err := rows.Scan(&student.ID, &student.Name, &student.Class, &student.Gender, &studentTelephoneINT, &student.ParentID, &student.CreatedAt, &student.UpdatedAt, &student.DeletedAt)
-		if err != nil {
-			return nil, fmt.Errorf("could not scan student: %v", err)
-		}
-
-		v, err := strconv.Atoi(studentTelephoneINT)
-		if err != nil {
-			return nil, err
-		}
-
-		student.Telephone = v
-
-		students = append(students, student)
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows error: %v", err)
+	if err := sp.db.WithContext(ctx).Where("deleted_at IS NULL").Find(&students).Error; err != nil {
+		return nil, fmt.Errorf("could not get all students: %v", err)
 	}
 
 	return &students, nil
@@ -66,8 +34,10 @@ func (sp *studentRepository) DownloadInputDataTemplate(ctx context.Context) (*st
 	// Check if the file exists
 	if _, err := os.Stat(filePath); err != nil {
 		if os.IsNotExist(err) {
-			return nil, err
+			return nil, fmt.Errorf("template file not found: %v", err)
 		}
+		return nil, err
 	}
+
 	return &filePath, nil
 }

@@ -3,16 +3,18 @@ package domain
 import (
 	"context"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type User struct {
-	ID        int        `json:"id"`
-	Username  string     `json:"username"`
-	Password  string     `json:"password"`
-	Role      string     `json:"role"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
-	DeletedAt *time.Time `json:"deleted_at"`
+	ID        uint             `gorm:"primaryKey"`
+	Username  string           `gorm:"unique;not null"`
+	Password  string           `gorm:"not null"`
+	Role      string           `gorm:"not null"`
+	CreatedAt time.Time        `gorm:"autoCreateTime"`
+	UpdatedAt time.Time        `gorm:"autoUpdateTime"`
+	DeletedAt gorm.DeletedAt   `gorm:"index"` // Soft delete field
 }
 
 type UserRepo interface {

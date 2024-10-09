@@ -2,105 +2,95 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"notification/domain"
-	"strconv"
 	"time"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"gorm.io/gorm"
 )
 
 type studentParentRepository struct {
-	db *pgxpool.Pool
+	db *gorm.DB
 }
 
-func NewStudentParentRepository(database *pgxpool.Pool) domain.StudentParentRepo {
+func NewStudentParentRepository(database *gorm.DB) domain.StudentParentRepo {
 	return &studentParentRepository{
 		db: database,
 	}
 }
 
 func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, req *domain.StudentAndParent) error {
-	studTelephone := fmt.Sprintf("0" + strconv.Itoa(req.Student.Telephone))
-	parentTelephone := fmt.Sprintf("0" + strconv.Itoa(req.Parent.Telephone))
-
 	// Check if the student telephone already exists
-	checkStudentTelephoneQuery := `SELECT id FROM students WHERE telephone = $1 AND deleted_at IS NULL;`
-	var existingStudentID int
-	err := spr.db.QueryRow(ctx, checkStudentTelephoneQuery, studTelephone).Scan(&existingStudentID)
+	var existingStudent domain.Student
+	err := spr.db.WithContext(ctx).Where("telephone = ? AND deleted_at IS NULL", req.Student.Telephone).First(&existingStudent).Error
+	// jika query diatas berhasil berarti error nya nil!!
 	if err == nil {
-		// Student with this telephone already exists
-		return fmt.Errorf("student with telephone %s already exists", studTelephone)
-	} else if err != pgx.ErrNoRows {
+		return fmt.Errorf("student with telephone %s already exists", req.Student.Telephone)
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return fmt.Errorf("error checking student telephone: %v", err)
 	}
 
 	// Check if the parent telephone already exists
-	checkParentTelephoneQuery := `SELECT id FROM parents WHERE telephone = $1 AND deleted_at IS NULL;`
-	var existingParentID int
-	err = spr.db.QueryRow(ctx, checkParentTelephoneQuery, parentTelephone).Scan(&existingParentID)
+	var existingParent domain.Parent
+	err = spr.db.WithContext(ctx).Where("telephone = ? AND deleted_at IS NULL", req.Parent.Telephone).First(&existingParent).Error
 	if err == nil {
-		// Parent with this telephone already exists
-		return fmt.Errorf("parent with telephone %s already exists", parentTelephone)
-	} else if err != pgx.ErrNoRows {
+		return fmt.Errorf("parent with telephone %s already exists", req.Parent.Telephone)
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return fmt.Errorf("error checking parent telephone: %v", err)
 	}
 
 	// Check if the parent email already exists
-	checkParentEmailQuery := `SELECT id FROM parents WHERE email = $1 AND deleted_at IS NULL;`
-	err = spr.db.QueryRow(ctx, checkParentEmailQuery, req.Parent.Email).Scan(&existingParentID)
+	err = spr.db.WithContext(ctx).Where("email = ? AND deleted_at IS NULL", req.Parent.Email).First(&existingParent).Error
 	if err == nil {
-		// Parent with this email already exists
 		return fmt.Errorf("parent with email %s already exists", *req.Parent.Email)
-	} else if err != pgx.ErrNoRows {
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return fmt.Errorf("error checking parent email: %v", err)
 	}
 
+	// Check if the student name already exists
+	err = spr.db.WithContext(ctx).Where("name = ? AND deleted_at IS NULL", req.Student.Name).First(&existingStudent).Error
+	if err == nil {
+		return fmt.Errorf("student with name %s already exists", req.Student.Name)
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return fmt.Errorf("error checking student name: %v", err)
+	}
+
+	// Check if the parent name already exists
+	err = spr.db.WithContext(ctx).Where("name = ? AND deleted_at IS NULL", req.Parent.Name).First(&existingParent).Error
+	if err == nil {
+		return fmt.Errorf("parent with name %s already exists", req.Parent.Name)
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return fmt.Errorf("error checking parent name: %v", err)
+	}
+
 	// If all checks pass, proceed with the transaction
-	tx, err := spr.db.Begin(ctx)
-	if err != nil {
+	tx := spr.db.Begin()
+	if err := tx.Error; err != nil {
 		return fmt.Errorf("could not begin transaction: %v", err)
 	}
-	defer tx.Rollback(ctx)
 
 	// Insert parent
-	parentInsertQuery := `
-		INSERT INTO parents (name, gender, telephone, email, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING id;
-	`
-
-	now := time.Now()
-	var parentID int
-	err = tx.QueryRow(ctx, parentInsertQuery, req.Parent.Name, req.Parent.Gender, parentTelephone, req.Parent.Email, now, now).Scan(&parentID)
-	if err != nil {
+	req.Parent.CreatedAt = time.Now()
+	req.Parent.UpdatedAt = req.Parent.CreatedAt
+	if err = tx.WithContext(ctx).Create(&req.Parent).Error; err != nil {
+		tx.Rollback()
 		return fmt.Errorf("could not insert parent: %v", err)
 	}
 
-	req.Parent.ID = parentID
-	req.Parent.CreatedAt = now
-	req.Parent.UpdatedAt = now
+	// Set the ParentID after inserting the parent
+	req.Student.ParentID = req.Parent.ID
 
 	// Insert student
-	studentInsertQuery := `
-		INSERT INTO students (name, class, gender, telephone, parent_id, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
-		RETURNING id;
-	`
-
-	var studentID int
-	err = tx.QueryRow(ctx, studentInsertQuery, req.Student.Name, req.Student.Class, req.Student.Gender, studTelephone, parentID, now, now).Scan(&studentID)
-	if err != nil {
+	req.Student.CreatedAt = time.Now()
+	req.Student.UpdatedAt = req.Student.CreatedAt
+	if err = tx.WithContext(ctx).Create(&req.Student).Error; err != nil {
+		tx.Rollback()
 		return fmt.Errorf("could not insert student: %v", err)
 	}
 
-	req.Student.ID = studentID
-	req.Student.CreatedAt = now
-	req.Student.UpdatedAt = now
-
-	err = tx.Commit(ctx)
-	if err != nil {
+	// Commit the transaction
+	if err = tx.Commit().Error; err != nil {
 		return fmt.Errorf("could not commit transaction: %v", err)
 	}
 
@@ -108,215 +98,208 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 }
 
 func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]domain.StudentAndParent) (*[]string, error) {
-
-	var parentTeleponeSTR string
-	var studentTeleponeSTR string
 	var duplicateMessages []string
 
 	now := time.Now()
 
-	// Prepare statements for inserting parent and student data
-	parentInsertQuery := `
-		INSERT INTO parents (name, gender, telephone, email, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING id;
-	`
-	studentInsertQuery := `
-		INSERT INTO students (name, class, gender, telephone, parent_id, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
-		RETURNING id;
-	`
-
-	// Queries to check if parent or student already exists
-	checkParentExistsByTelephoneQuery := `SELECT id FROM parents WHERE telephone = $1 AND deleted_at IS NULL;`
-	checkParentExistsByEmailQuery := `SELECT id FROM parents WHERE email = $1 AND deleted_at IS NULL;`
-	checkStudentExistsQuery := `SELECT id FROM students WHERE telephone = $1 AND deleted_at IS NULL;`
-
 	for index, record := range *payload {
-		var parentExistsID int
-
-		parentTeleponeSTR = fmt.Sprintf("0%s", strconv.Itoa(record.Parent.Telephone))
-		studentTeleponeSTR = fmt.Sprintf("0%s", strconv.Itoa(record.Student.Telephone))
-
 		// Check if parent already exists by telephone
-		err := spr.db.QueryRow(ctx, checkParentExistsByTelephoneQuery, parentTeleponeSTR).Scan(&parentExistsID)
+		var parentExists domain.Parent
+		err := spr.db.WithContext(ctx).Where("telephone = ? AND deleted_at IS NULL", record.Parent.Telephone).First(&parentExists).Error
 		if err == nil {
-			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with telephone %s already exists", index+1, parentTeleponeSTR))
-		} else if err != pgx.ErrNoRows {
+			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with telephone %s already exists", index+1, record.Parent.Telephone))
+			continue
+		} else if err != gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("row %d: error checking if parent exists by telephone: %v", index+1, err)
 		}
 
 		// Check if parent already exists by email
-		err = spr.db.QueryRow(ctx, checkParentExistsByEmailQuery, record.Parent.Email).Scan(&parentExistsID)
+		err = spr.db.WithContext(ctx).Where("email = ? AND deleted_at IS NULL", record.Parent.Email).First(&parentExists).Error
 		if err == nil {
 			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with email %s already exists", index+1, *record.Parent.Email))
-		} else if err != pgx.ErrNoRows {
+			continue
+		} else if err != gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("row %d: error checking if parent exists by email: %v", index+1, err)
 		}
 
-		// Check if student already exists
-		var studentExistsID int
-		err = spr.db.QueryRow(ctx, checkStudentExistsQuery, studentTeleponeSTR).Scan(&studentExistsID)
+		// Check if parent already exists by name
+		err = spr.db.WithContext(ctx).Where("name = ? AND deleted_at IS NULL", record.Parent.Name).First(&parentExists).Error
 		if err == nil {
-			// Student already exists, add a message to duplicates and continue
-			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student with telephone %s already exists", index+1, studentTeleponeSTR))
+			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with name %s already exists", index+1, record.Parent.Name))
+			continue
+		} else if err != gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("row %d: error checking if parent exists by name: %v", index+1, err)
+		}
 
-		} else if err != pgx.ErrNoRows {
-			// If there's an error other than "no rows", we should handle it
+		// Check if student already exists by telephone
+		var studentExists domain.Student
+		err = spr.db.WithContext(ctx).Where("telephone = ? AND deleted_at IS NULL", record.Student.Telephone).First(&studentExists).Error
+		if err == nil {
+			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student with telephone %s already exists", index+1, record.Student.Telephone))
+			continue
+		} else if err != gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("row %d: error checking if student exists: %v", index+1, err)
 		}
+
+		// Check if student already exists by name
+		err = spr.db.WithContext(ctx).Where("name = ? AND deleted_at IS NULL", record.Student.Name).First(&studentExists).Error
+		if err == nil {
+			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student with name %s already exists", index+1, record.Student.Name))
+			continue
+		} else if err != gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("row %d: error checking if student exists by name: %v", index+1, err)
+		}
+
+		// Insert parent and student
+		tx := spr.db.Begin()
+		if err := tx.Error; err != nil {
+			return nil, fmt.Errorf("could not begin transaction: %v", err)
+		}
+
+		record.Parent.CreatedAt = now
+		record.Parent.UpdatedAt = now
+		err = tx.WithContext(ctx).Create(&record.Parent).Error
+		if err != nil {
+			tx.Rollback()
+			return nil, fmt.Errorf("row %d: could not insert parent: %v", index+1, err)
+		}
+
+		record.Student.ParentID = record.Parent.ID
+		record.Student.CreatedAt = now
+		record.Student.UpdatedAt = now
+		err = tx.WithContext(ctx).Create(&record.Student).Error
+		if err != nil {
+			tx.Rollback()
+			return nil, fmt.Errorf("row %d: could not insert student: %v", index+1, err)
+		}
+
+		tx.Commit()
 	}
 
-	// check jika panjang  var duplikat msg lebih dari 0 (ada)
 	if len(duplicateMessages) > 0 {
 		return &duplicateMessages, nil
 	}
 
-	for index, record := range *payload {
-
-		parentTeleponeSTR = fmt.Sprintf("0%s", strconv.Itoa(record.Parent.Telephone))
-		studentTeleponeSTR = fmt.Sprintf("0%s", strconv.Itoa(record.Student.Telephone))
-
-		// Insert parent
-		var parentID int
-
-		err := spr.db.QueryRow(ctx, parentInsertQuery, record.Parent.Name, record.Parent.Gender, parentTeleponeSTR, record.Parent.Email, now, now).Scan(&parentID)
-		if err != nil {
-			return nil, fmt.Errorf("row %d: could not insert parent: %v", index+1, err)
-		}
-
-		// Update ParentID in record
-		record.Parent.ID = parentID
-		record.Parent.CreatedAt = now
-		record.Parent.UpdatedAt = now
-
-		// Insert student with the retrieved ParentID
-		var studentID int
-
-		err = spr.db.QueryRow(ctx, studentInsertQuery, record.Student.Name, record.Student.Class, record.Student.Gender, studentTeleponeSTR, parentID, now, now).Scan(&studentID)
-		if err != nil {
-			return nil, fmt.Errorf("row %d: could not insert student: %v", index+1, err)
-		}
-
-		// Update StudentID in record
-		record.Student.ID = studentID
-		record.Student.CreatedAt = now
-		record.Student.UpdatedAt = now
-
-	}
-
-	return &duplicateMessages, nil
+	return nil, nil
 }
 
-func (r *studentParentRepository) UpdateStudentAndParent(ctx context.Context, id int, payload *domain.StudentAndParent) error {
+func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, req *domain.StudentAndParent) error {
+	// Start a transaction
+	tx := spr.db.Begin()
+	if err := tx.Error; err != nil {
+		return fmt.Errorf("could not begin transaction: %v", err)
+	}
+
+	// Check if student exists
+	var student domain.Student
+	err := tx.WithContext(ctx).Where("id = ?", req.Student.ID).First(&student).Error
+	if err != nil {
+		tx.Rollback()
+		if err == gorm.ErrRecordNotFound {
+			return fmt.Errorf("student with ID %d not found", req.Student.ID)
+		}
+		return fmt.Errorf("error finding student: %v", err)
+	}
+
+	// Check if parent exists
+	var parent domain.Parent
+	err = tx.WithContext(ctx).Where("id = ?", req.Parent.ID).First(&parent).Error
+	if err != nil {
+		tx.Rollback()
+		if err == gorm.ErrRecordNotFound {
+			return fmt.Errorf("parent with ID %d not found", req.Parent.ID)
+		}
+		return fmt.Errorf("error finding parent: %v", err)
+	}
+
+	// Update parent details
+	req.Parent.UpdatedAt = time.Now()
+	err = tx.WithContext(ctx).Model(&parent).Updates(req.Parent).Error
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("could not update parent: %v", err)
+	}
+
+	// Update student details
+	req.Student.UpdatedAt = time.Now()
+	err = tx.WithContext(ctx).Model(&student).Updates(req.Student).Error
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("could not update student: %v", err)
+	}
+
+	// Commit the transaction
+	err = tx.Commit().Error
+	if err != nil {
+		return fmt.Errorf("could not commit transaction: %v", err)
+	}
 
 	return nil
 }
 
+func (spr *studentParentRepository) DeleteStudentAndParent(ctx context.Context, studentID int) error {
+	// Start a transaction
+	tx := spr.db.Begin()
+	if err := tx.Error; err != nil {
+		return fmt.Errorf("could not begin transaction: %v", err)
+	}
 
+	// Retrieve the parentID from the student record
+	var student domain.Student
+	err := tx.WithContext(ctx).
+		Select("parent_id").
+		Where("id = ? AND deleted_at IS NULL", studentID).
+		First(&student).Error
 
-func (r *studentParentRepository) GetStudentDetailByID(ctx context.Context, id int) (*domain.StudentAndParent, error) {
-	query := `
-		SELECT s.id, s.name, s.class, s.gender, s.telephone, s.parent_id, s.created_at, s.updated_at, s.deleted_at,
-		p.id, p.name, p.gender, p.telephone, p.email, p.created_at, p.updated_at, p.deleted_at
-		FROM students s
-		JOIN parents p ON s.parent_id = p.id
-		WHERE s.id = $1 AND s.deleted_at IS NULL AND p.deleted_at IS NULL;
-	`
-
-	var result domain.StudentAndParent
-	var pTelephone string
-	var sTelephone string
-
-	err := r.db.QueryRow(ctx, query, id).Scan(
-		&result.Student.ID, &result.Student.Name, &result.Student.Class, &result.Student.Gender, &sTelephone, &result.Student.ParentID, &result.Student.CreatedAt, &result.Student.UpdatedAt, &result.Student.DeletedAt,
-		&result.Parent.ID, &result.Parent.Name, &result.Parent.Gender, &pTelephone, &result.Parent.Email, &result.Parent.CreatedAt, &result.Parent.UpdatedAt, &result.Parent.DeletedAt,
-	)
 	if err != nil {
-		if err.Error() == "no rows in result set" {
-			return nil, fmt.Errorf("student not found")
+		tx.Rollback()
+		if err == gorm.ErrRecordNotFound {
+			return fmt.Errorf("student with ID %d not found", studentID)
 		}
-		return nil, fmt.Errorf("could not get student and parent details: %v", err)
+		return fmt.Errorf("error retrieving student: %v", err)
 	}
 
-	v, err := strconv.Atoi(pTelephone)
+	// Soft delete the student
+	err = tx.WithContext(ctx).Where("id = ?", studentID).Delete(&domain.Student{}).Error
 	if err != nil {
-		return nil, err
+		tx.Rollback()
+		return fmt.Errorf("error deleting student: %v", err)
 	}
 
-	result.Parent.Telephone = v
-
-	vs, err := strconv.Atoi(sTelephone)
+	// Soft delete the parent
+	err = tx.WithContext(ctx).Where("id = ?", student.ParentID).Delete(&domain.Parent{}).Error
 	if err != nil {
-		return nil, err
+		tx.Rollback()
+		if err == gorm.ErrRecordNotFound {
+			return fmt.Errorf("parent with ID %d not found", student.ParentID)
+		}
+		return fmt.Errorf("error deleting parent: %v", err)
 	}
 
-	result.Student.Telephone = vs
+	// Commit the transaction
+	err = tx.Commit().Error
+	if err != nil {
+		return fmt.Errorf("could not commit transaction: %v", err)
+	}
+
+	return nil
+}
+
+func (spr *studentParentRepository) GetStudentDetailsByID(ctx context.Context, studentID int) (*domain.StudentAndParent, error) {
+	var result domain.StudentAndParent
+
+	err := spr.db.WithContext(ctx).
+		Select("students.*, parents.*").
+		Joins("JOIN parents ON students.parent_id = parents.id").
+		Where("students.id = ? AND students.deleted_at IS NULL AND parents.deleted_at IS NULL", studentID).
+		First(&result).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("student with ID %d not found", studentID)
+		}
+		return nil, fmt.Errorf("could not fetch student details: %v", err)
+	}
 
 	return &result, nil
-}
-
-func (sp *studentParentRepository) DeleteStudentAndParent(ctx context.Context, id int) error {
-
-	var student domain.Student
-
-	query := `
-		UPDATE students
-		SET deleted_at = $1
-		WHERE id = $2 AND deleted_at IS NULL;
-	`
-	query2 := `UPDATE parents
-		SET deleted_at = $1
-		WHERE id = $2 AND deleted_at IS NULL`
-
-	query3 := `
-		SELECT id, name, class, gender, telephone, parent_id, created_at, updated_at, deleted_at
-		FROM students
-		WHERE id = $1 AND deleted_at IS NULL;
-	`
-
-	now := time.Now()
-
-	var telephoneStr string
-
-	// Find student first
-	err := sp.db.QueryRow(ctx, query3, id).Scan(
-		&student.ID,
-		&student.Name,
-		&student.Class,
-		&student.Gender,
-		&telephoneStr,
-		&student.ParentID,
-		&student.CreatedAt,
-		&student.UpdatedAt,
-		&student.DeletedAt,
-	)
-	if err != nil {
-		if err.Error() == "no rows in result set" {
-			return fmt.Errorf("student not found")
-		}
-		return fmt.Errorf("could not get student: %v", err)
-	}
-
-	// Convert telephone to int
-	convertedValue, err := strconv.Atoi(telephoneStr)
-	student.Telephone = convertedValue
-
-	if err != nil {
-		return fmt.Errorf("invalid telephone format: %v", err)
-	}
-
-	// Query delete student
-	_, err = sp.db.Exec(ctx, query, now, id)
-	if err != nil {
-		return fmt.Errorf("could not delete student: %v", err)
-	}
-
-	// Query delete parent
-	_, err = sp.db.Exec(ctx, query2, now, student.ParentID)
-	if err != nil {
-		return fmt.Errorf("could not delete parent: %v", err)
-	}
-
-	return nil
 }

@@ -1,15 +1,17 @@
 package config
 
 import (
-	"context"
 	"fmt"
+	"notification/domain"
 	"os"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
-var pgxPool *pgxpool.Pool
+var db *gorm.DB
 
+// GetDatabaseURL builds the database connection string.
 func GetDatabaseURL() string {
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_USER"),
@@ -17,88 +19,43 @@ func GetDatabaseURL() string {
 	return dsn
 }
 
-func BootDB() (*pgxpool.Pool, error) {
+// BootDB initializes the database connection and runs migrations.
+func BootDB() (*gorm.DB, error) {
 	url := GetDatabaseURL()
-	config, err := pgxpool.ParseConfig(url)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse database URL: %w", err)
-	}
+	var err error
 
-	dbPool, err := pgxpool.NewWithConfig(context.Background(), config)
+	db, err = gorm.Open(postgres.Open(url), &gorm.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	if pgxPool == nil {
-		pgxPool = dbPool
+	// Auto migrate the models
+	if err := autoMigrate(db); err != nil {
+		return db, err
 	}
 
-	err = pgxPool.Ping(context.Background())
-	if err != nil {
-		return nil, err
-	}
-
-	err = autoMigrate(pgxPool)
-	if err != nil {
-		return pgxPool, err
-	}
 	fmt.Println("DB initialized")
-	return pgxPool, nil
+	return db, nil
 }
 
-func autoMigrate(pool *pgxpool.Pool) error {
-	createParentsTableQuery := `
-	CREATE TABLE IF NOT EXISTS parents (
-		id SERIAL PRIMARY KEY,
-		name VARCHAR(150) NOT NULL UNIQUE,
-		gender VARCHAR(15) NOT NULL,
-		telephone VARCHAR(15) NOT NULL,
-		email VARCHAR(255),	
-		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-		updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-		deleted_at TIMESTAMP WITH TIME ZONE
-	);
-	`
-	_, err := pool.Exec(context.Background(), createParentsTableQuery)
-	if err != nil {
-		fmt.Printf("Error executing parents table migration query: %v\n", err)
-		return fmt.Errorf("failed to run migrations: %w", err)
+func autoMigrate(db *gorm.DB) error {
+	// Create ENUM type for gender if not exists
+	if err := db.Exec(`DO $$ BEGIN
+		IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'gender_enum') THEN
+			CREATE TYPE gender_enum AS ENUM ('male', 'female');
+		END IF;
+	END $$`).Error; err != nil {
+		fmt.Printf("Error creating gender ENUM type: %v\n", err)
+		return fmt.Errorf("failed to create gender ENUM: %w", err)
 	}
 
-	createStudentsTableQuery := `
-	CREATE TABLE IF NOT EXISTS students (
-		id SERIAL PRIMARY KEY,
-		name VARCHAR(150) NOT NULL UNIQUE,
-		class VARCHAR(3) NOT NULL,
-		gender VARCHAR(15) NOT NULL,
-		telephone VARCHAR(15) NOT NULL,
-		parent_id INTEGER,
-		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-		updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-		deleted_at TIMESTAMP WITH TIME ZONE,
-		CONSTRAINT fk_parent FOREIGN KEY (parent_id) REFERENCES parents(id)
-	);
-	`
-	_, err = pool.Exec(context.Background(), createStudentsTableQuery)
-	if err != nil {
-		fmt.Printf("Error executing students table migration query: %v\n", err)
-		return fmt.Errorf("failed to run migrations: %w", err)
-	}
+	// Create new instances of the structs
+	theStudent := domain.Student{}
+	theParent := domain.Parent{}
+	theUser := domain.User{}
 
-	createUsersTableQuery := `
-	CREATE TABLE IF NOT EXISTS users (
-	id SERIAL PRIMARY KEY,
-	username VARCHAR(255) NOT NULL UNIQUE,
-	password TEXT NOT NULL,
-	role VARCHAR(15) NOT NULL,
-	created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-	updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-	deleted_at TIMESTAMP WITH TIME ZONE
-	);
-	`
-	_, err = pool.Exec(context.Background(), createUsersTableQuery)
-	if err != nil {
-		fmt.Printf("Error executing users table migration query: %v\n", err)
+	// Migrate the schema
+	if err := db.AutoMigrate(&theParent, &theStudent, &theUser); err != nil {
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
 

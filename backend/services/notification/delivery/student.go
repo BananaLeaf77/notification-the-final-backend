@@ -2,7 +2,6 @@ package delivery
 
 import (
 	"notification/domain"
-	"notification/middleware"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -17,7 +16,7 @@ func NewStudentDelivery(app *fiber.App, uc domain.StudentUseCase) {
 	}
 
 	route := app.Group("/student")
-	route.Get("/get-all", middleware.AuthRequired, middleware.AdminOnly, handler.deliveryGetAllStudent)
+	route.Get("/get-all", handler.deliveryGetAllStudent)
 	route.Get("/download_input_template", handler.deliveryDownloadTemplate)
 }
 

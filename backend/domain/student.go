@@ -3,18 +3,20 @@ package domain
 import (
 	"context"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type Student struct {
-	ID        int        `json:"id"`
-	Name      string     `json:"name" valid:"required~Name is required"`
-	Class     string     `json:"class" valid:"required~Class is required"`
-	Gender    string     `json:"gender" valid:"required~Gender is required"`
-	Telephone int        `json:"telephone" valid:"required~Telephone is required,numeric~Telephone must be a number"`
-	ParentID  int        `json:"parent_id"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
-	DeletedAt *time.Time `json:"deleted_at"`
+	ID        int            `gorm:"primaryKey;autoIncrement" json:"id"`
+	Name      string         `gorm:"type:varchar(150);not null;unique" json:"name" valid:"required~Name is required"`
+	Class     string         `gorm:"type:varchar(3);not null" json:"class" valid:"required~Class is required"`
+	Gender    string         `gorm:"type:gender_enum;not null" json:"gender" valid:"required~Gender is required"`
+	Telephone string         `gorm:"type:varchar(15);not null" json:"telephone" valid:"required~Telephone is required"`
+	ParentID  int            `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"parent_id"`
+	CreatedAt time.Time      `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"` 
 }
 
 type StudentRepo interface {

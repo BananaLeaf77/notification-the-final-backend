@@ -40,31 +40,31 @@ func (spu *studentParentUseCase) ImportCSV(ctx context.Context, payload *[]domai
 	return data, nil
 }
 
-func (spu *studentParentUseCase) UpdateStudentAndParent(ctx context.Context, id int, payload *domain.StudentAndParent) error {
+func (spu *studentParentUseCase) UpdateStudentAndParent(ctx context.Context, payload *domain.StudentAndParent) error {
 
 	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
 	// defer cancel()
 
-	err := spu.repo.UpdateStudentAndParent(ctx, id, payload)
+	err := spu.repo.UpdateStudentAndParent(ctx, payload)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (spu *studentParentUseCase) GetStudentDetailByID(ctx context.Context, id int) (*domain.StudentAndParent, error){
+func (spu *studentParentUseCase) GetStudentDetailsByID(ctx context.Context, id int) (*domain.StudentAndParent, error) {
 
 	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
 	// defer cancel()
 
-	v, err := spu.repo.GetStudentDetailByID(ctx, id)
+	v, err := spu.repo.GetStudentDetailsByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 	return v, nil
 }
 
-func (spu *studentParentUseCase) DeleteStudentAndParent(ctx context.Context, id int) error{
+func (spu *studentParentUseCase) DeleteStudentAndParent(ctx context.Context, id int) error {
 
 	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
 	// defer cancel()

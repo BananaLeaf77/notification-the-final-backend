@@ -8,10 +8,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
+	"gorm.io/gorm"
 )
 
 // init var
@@ -25,7 +25,7 @@ var (
 )
 
 type senderRepository struct {
-	db          *pgxpool.Pool
+	db          *gorm.DB
 	client      smtp.Auth
 	emailSender string
 	schoolPhone string
@@ -33,7 +33,7 @@ type senderRepository struct {
 	meowClient  *whatsmeow.Client
 }
 
-func NewSenderRepository(db *pgxpool.Pool, client smtp.Auth, smtpAddress, schoolPhone, emailSender string, meow *whatsmeow.Client) domain.SenderRepo {
+func NewSenderRepository(db *gorm.DB, client smtp.Auth, smtpAddress, schoolPhone, emailSender string, meow *whatsmeow.Client) domain.SenderRepo {
 	return &senderRepository{
 		db:          db,
 		client:      client,
@@ -60,60 +60,49 @@ func (m *senderRepository) SendMass(ctx context.Context, idList *[]int) error {
 			return err
 		}
 
-		if *student.Parent.Email != "" {
+		if student.Parent.Email != nil && *student.Parent.Email != "" {
 			if err := m.sendEmail(student); err != nil {
 				finalErr = fmt.Errorf("failed to send email to %s: %w", *student.Parent.Email, err)
 				continue
 			}
 
 			// Add to history table
-
 		}
 
 		err = m.sendWA(ctx, student)
 		if err != nil {
-			finalErr = fmt.Errorf("failed to send Whatsapp text to %s: %w", *&student.Parent.Telephone, err)
+			finalErr = fmt.Errorf("failed to send Whatsapp text to %s: %w", student.Parent.Telephone, err)
 			continue
 		}
-
 	}
 
 	return finalErr
 }
 
-// Fetches student details including parent email from the database.
 func (m *senderRepository) fetchStudentDetails(ctx context.Context, studentID int) (*domain.StudentAndParent, error) {
-	var stuctHolder domain.StudentAndParent
-	var ptHolder string
-	// SQL query to fetch student and parent details.
-	query := `
-		SELECT s.name, p.email, p.name, p.gender, p.telephone
-		FROM students s
-		JOIN parents p ON s.parent_id = p.id 
-		WHERE s.id = $1 AND s.deleted_at IS NULL AND p.deleted_at IS NULL;
-	`
+	var student domain.Student
+	var parent domain.Parent
 
-	// Execute the query and scan the result into the student structure.
-	err := m.db.QueryRow(ctx, query, studentID).Scan(
-		&stuctHolder.Student.Name,
-		&stuctHolder.Parent.Email,
-		&stuctHolder.Parent.Name,
-		&stuctHolder.Parent.Gender,
-		&ptHolder,
-	)
-
+	err := m.db.WithContext(ctx).Where("id = ?", studentID).Preload("Parent").First(&student).Error
 	if err != nil {
-		return &domain.StudentAndParent{}, fmt.Errorf("could not fetch student details: %v", err)
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("student with ID %d not found", studentID)
+		}
+		return nil, fmt.Errorf("could not fetch student details: %v", err)
 	}
 
-	v, err := strconv.Atoi(ptHolder)
+	err = m.db.WithContext(ctx).Where("id = ?", student.ParentID).First(&parent).Error
 	if err != nil {
-		return nil, err
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("parent with ID %d not found", student.ParentID)
+		}
+		return nil, fmt.Errorf("could not fetch parent details: %v", err)
 	}
 
-	stuctHolder.Parent.Telephone = v
-
-	return &stuctHolder, nil
+	return &domain.StudentAndParent{
+		Student: student,
+		Parent:  parent,
+	}, nil
 }
 
 // Sends an email to the provided email address.
@@ -143,8 +132,7 @@ func (m *senderRepository) sendEmail(payload *domain.StudentAndParent) error {
 func (m *senderRepository) sendWA(ctx context.Context, payload *domain.StudentAndParent) error {
 	var msg string
 
-	conStr := strconv.Itoa(payload.Parent.Telephone)
-	completeFormat := fmt.Sprintf("62%s", conStr)
+	completeFormat := fmt.Sprintf("62%s", payload.Parent.Telephone)
 
 	jid := types.NewJID(completeFormat, types.DefaultUserServer)
 
@@ -163,7 +151,6 @@ func (m *senderRepository) sendWA(ctx context.Context, payload *domain.StudentAn
 		return err
 	}
 	return nil
-
 }
 
 func (m *senderRepository) initText(payload *domain.StudentAndParent) error {

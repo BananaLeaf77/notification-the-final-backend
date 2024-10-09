@@ -6,164 +6,115 @@ import (
 	"notification/domain"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 type userRepository struct {
-	db *pgxpool.Pool
+	db *gorm.DB
 }
 
-func NewUserRepository(database *pgxpool.Pool) domain.UserRepo {
+func NewUserRepository(database *gorm.DB) domain.UserRepo {
 	return &userRepository{
 		db: database,
 	}
 }
 
 func (ur *userRepository) FindUserByUsername(ctx context.Context, username string) (*domain.User, error) {
-	query := `
-		SELECT id, username, password, role
-		FROM users
-		WHERE username = $1
-		AND deleted_at IS NULL;
-	`
-
 	var user domain.User
-	err := ur.db.QueryRow(ctx, query, username).Scan(&user.ID, &user.Username, &user.Password, &user.Role)
+	err := ur.db.WithContext(ctx).Where("username = ? AND deleted_at IS NULL", username).First(&user).Error
 	if err != nil {
-		return nil, fmt.Errorf("could not find user: %v", err)
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("could not find user: %v", err)
+		}
+		return nil, err
 	}
-
 	return &user, nil
 }
 
 func (ur *userRepository) CreateStaff(ctx context.Context, payload *domain.User) (*domain.User, error) {
-	checkQuery := `
-		SELECT id 
-		FROM users
-		WHERE username = $1
-		AND deleted_at IS NULL;
-	`
-
-	var existingUserID int
-	err := ur.db.QueryRow(ctx, checkQuery, payload.Username).Scan(&existingUserID)
+	// Check if the user already exists
+	var existingUser domain.User
+	err := ur.db.WithContext(ctx).Where("username = ? AND deleted_at IS NULL", payload.Username).First(&existingUser).Error
 	if err == nil {
 		return nil, fmt.Errorf("username %s already exists", payload.Username)
 	}
 
+	// Hash the password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(payload.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, fmt.Errorf("could not hash password: %v", err)
 	}
+	payload.Password = string(hashedPassword)
 
-	insertQuery := `
-		INSERT INTO users (username, password, role, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id;
-	`
-
-	now := time.Now()
-
-	err = ur.db.QueryRow(ctx, insertQuery, payload.Username, string(hashedPassword), payload.Role, now, now).Scan(&payload.ID)
+	// Save the new user
+	err = ur.db.WithContext(ctx).Create(payload).Error
 	if err != nil {
-		fmt.Printf("Error inserting user: %v\n", err)
 		return nil, fmt.Errorf("could not create user: %v", err)
 	}
-
-	payload.CreatedAt = now
-	payload.UpdatedAt = now
 
 	return payload, nil
 }
 
 func (ur *userRepository) GetAllStaff(ctx context.Context) (*[]domain.SafeStaffData, error) {
-	query := `
-		SELECT id, username, role, created_at, updated_at, deleted_at
-		FROM users
-		WHERE deleted_at IS NULL;
-	`
-
-	rows, err := ur.db.Query(ctx, query)
+	var users []domain.SafeStaffData
+	err := ur.db.WithContext(ctx).Model(&domain.User{}).Where("deleted_at IS NULL").Find(&users).Error
 	if err != nil {
 		return nil, fmt.Errorf("could not get all staff: %v", err)
 	}
-	defer rows.Close()
 
-	var users []domain.SafeStaffData
-	for rows.Next() {
-		var user domain.SafeStaffData
-
-		err := rows.Scan(&user.ID, &user.Username, &user.Role, &user.CreatedAt, &user.UpdatedAt, &user.DeletedAt)
-		if err != nil {
-			return nil, fmt.Errorf("could not scan user: %v", err)
-		}
-
+	// Filter out admin users
+	filteredUsers := []domain.SafeStaffData{}
+	for _, user := range users {
 		if user.Role != "admin" {
-			users = append(users, user)
+			filteredUsers = append(filteredUsers, user)
 		}
-
 	}
 
-	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows error: %v", err)
-	}
-
-	return &users, nil
+	return &filteredUsers, nil
 }
 
 func (ur *userRepository) DeleteStaff(ctx context.Context, id int) error {
-	var userHolder domain.SafeStaffData
-	now := time.Now()
-
-	query2 := `
-		SELECT id, username, role, created_at, updated_at, deleted_at
-		FROM users
-		WHERE id = $1 AND deleted_at IS NULL;
-	`
-
-	query := `
-		UPDATE users
-		SET deleted_at = $1
-		WHERE id = $2 AND deleted_at IS NULL;
-	`
-
-	err := ur.db.QueryRow(ctx, query2, id).Scan(&userHolder.ID, &userHolder.Username, &userHolder.Role, &userHolder.CreatedAt, &userHolder.UpdatedAt, &userHolder.DeletedAt)
+	var user domain.User
+	err := ur.db.WithContext(ctx).Where("id = ? AND deleted_at IS NULL", id).First(&user).Error
 	if err != nil {
-		if err.Error() == "no rows in result set" {
-			return fmt.Errorf("student not found")
+		if err == gorm.ErrRecordNotFound {
+			return fmt.Errorf("staff not found")
 		}
-		return fmt.Errorf("could not get student and parent details: %v", err)
+		return fmt.Errorf("could not get staff details: %v", err)
 	}
 
-	if userHolder.Role == "admin" {
+	// Ensure the user is not an admin
+	if user.Role == "admin" {
 		return fmt.Errorf("could not delete staff")
 	}
 
-	// Execute the query and check the number of rows affected
-	result, err := ur.db.Exec(ctx, query, now, id)
+	// Soft delete the staff
+	now := time.Now()
+	user.DeletedAt = gorm.DeletedAt{Time: now, Valid: true}
+	err = ur.db.WithContext(ctx).Save(&user).Error
 	if err != nil {
 		return fmt.Errorf("could not delete staff: %v", err)
-	}
-
-	// Check if any rows were affected
-	rowsAffected := result.RowsAffected()
-	if rowsAffected == 0 {
-		return fmt.Errorf("no staff found with id %d", id)
 	}
 
 	return nil
 }
 
 func (ur *userRepository) UpdateStaff(ctx context.Context, id int, payload *domain.User) error {
-	now := time.Now()
+	// Hash the password if it has been updated
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(payload.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("could not hash password: %v", err)
+	}
+	payload.Password = string(hashedPassword)
 
-	query := `
-		UPDATE users
-		SET username = $1, password = $2, role = $3, updated_at = $4
-		WHERE id = $5;
-	`
-
-	_, err := ur.db.Exec(ctx, query, payload.Username, payload.Password, payload.Role, now, id)
+	// Update the user details
+	err = ur.db.WithContext(ctx).Model(&domain.User{}).Where("id = ? AND deleted_at IS NULL", id).Updates(domain.User{
+		Username:  payload.Username,
+		Password:  payload.Password,
+		Role:      payload.Role,
+		UpdatedAt: time.Now(),
+	}).Error
 	if err != nil {
 		return fmt.Errorf("could not update staff: %v", err)
 	}
@@ -172,25 +123,18 @@ func (ur *userRepository) UpdateStaff(ctx context.Context, id int, payload *doma
 }
 
 func (ur *userRepository) GetStaffDetail(ctx context.Context, id int) (*domain.SafeStaffData, error) {
-	var valueHolder domain.SafeStaffData
-	query := `
-		SELECT id, username, role, created_at, updated_at, deleted_at
-		FROM users
-		WHERE id = $1 AND deleted_at IS NULL;
-	`
-
-	err := ur.db.QueryRow(ctx, query, id).Scan(&valueHolder.ID, &valueHolder.Username, &valueHolder.Role, &valueHolder.CreatedAt, &valueHolder.UpdatedAt, &valueHolder.DeletedAt)
-
-	if valueHolder.Role != "staff" {
-		return nil, fmt.Errorf("staff not found")
-	}
-
+	var user domain.SafeStaffData
+	err := ur.db.WithContext(ctx).Where("id = ? AND deleted_at IS NULL", id).First(&user).Error
 	if err != nil {
-		if err.Error() == "no rows in result set" {
+		if err == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("staff not found")
 		}
 		return nil, fmt.Errorf("could not get staff details: %v", err)
 	}
 
-	return &valueHolder, nil
+	if user.Role != "staff" {
+		return nil, fmt.Errorf("staff not found")
+	}
+
+	return &user, nil
 }

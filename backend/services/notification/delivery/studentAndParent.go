@@ -29,7 +29,7 @@ func NewStudentParentHandler(app *fiber.App, useCase domain.StudentParentUseCase
 	route.Post("/import", handler.UploadAndImport)
 	route.Put("/modify/:id", handler.UpdateStudentAndParent)
 	route.Delete("/rm/:id", handler.DeleteStudentAndParent)
-	route.Get("/student/:id", handler.GetStudentDetailByID)
+	route.Get("/student/:id", handler.GetStudentDetailsByID)
 }
 
 func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
@@ -132,7 +132,6 @@ func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
 
 func (sph *studentParentHandler) processCSVFile(c context.Context, filePath string) (*[]string, *[]string, error) {
 	var listStudentAndParent []domain.StudentAndParent
-	var invalidTelephoneType []string
 	var parentDataHolder domain.Parent
 	var studentDataHolder domain.Student
 
@@ -153,88 +152,51 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 		return nil, nil, fmt.Errorf("failed to read CSV file: %v", err)
 	}
 
-	// Assume the first row contains headers, so start processing from row 2
+	// Start from row 2 karena row 1 header
 	for i, row := range records[1:] {
-		if len(row) < 8 { // Ensure enough columns
+		if len(row) < 8 {
 			log.Printf("Skipping row %d due to insufficient columns", i+2)
 			continue
 		}
 
-		convertStudTelephone, errStudentConvert := strconv.Atoi(row[3])
-		if errStudentConvert != nil {
-			txt := fmt.Sprintf("Student telephone should be a number, Found : %s", row[3])
-			invalidTelephoneType = append(invalidTelephoneType, txt)
+		studentDataHolder = domain.Student{
+			Name:      row[0],
+			Class:     row[1],
+			Gender:    row[2],
+			Telephone: row[3],
+			ParentID:  0,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
 		}
 
-		if errStudentConvert == nil {
-			// Process student data
-			studentDataHolder = domain.Student{
-				Name:      row[0],
-				Class:     row[1],
-				Gender:    row[2],
-				Telephone: convertStudTelephone,
-				ParentID:  0,
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
-			}
-
-			_, err = govalidator.ValidateStruct(studentDataHolder)
-			if err != nil {
-				return nil, nil, fmt.Errorf("row %d: error validating student: %v", i+2, err)
-			}
-
-		}
-
-		convertParentTelephone, errParentConvert := strconv.Atoi(row[6])
-		if errParentConvert != nil {
-			txt := fmt.Sprintf("Parent telephone should be a number, Found : %s", row[6])
-			invalidTelephoneType = append(invalidTelephoneType, txt)
-		}
-
-		if row[7] != "" {
-			// Process parent data
-			parentDataHolder = domain.Parent{
-				Name:      row[4],
-				Gender:    row[5],
-				Telephone: convertParentTelephone,
-				Email:     &row[7],
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
-			}
-
-			_, err = govalidator.ValidateStruct(parentDataHolder)
-			if err != nil {
-				fmt.Println("masuk disini dia, emailnya : ", parentDataHolder.Email, parentDataHolder.Name)
-				log.Printf("Parent validation failed on row %d: %v", i+2, err)
-				return nil, nil, fmt.Errorf("row %d: error validating parent: %v", i+2, err)
-			}
+		_, err = govalidator.ValidateStruct(studentDataHolder)
+		if err != nil {
+			return nil, nil, fmt.Errorf("row %d: error validating student: %v", i+2, err)
 		}
 
 		parentDataHolder = domain.Parent{
 			Name:      row[4],
 			Gender:    row[5],
-			Telephone: convertParentTelephone,
-			Email:     &row[7],
+			Telephone: row[6],
+			Email:     getStringPointer(row[7]),
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
 
-		if errStudentConvert == nil && errParentConvert == nil {
-			// Combine student and parent into a single struct
-			studNParent := domain.StudentAndParent{
-				Student: studentDataHolder,
-				Parent:  parentDataHolder,
-			}
-			// Append to the list
-			listStudentAndParent = append(listStudentAndParent, studNParent)
+		_, err = govalidator.ValidateStruct(parentDataHolder)
+		if err != nil {
+			log.Printf("Parent validation failed on row %d: %v", i+2, err)
+			return nil, nil, fmt.Errorf("row %d: error validating parent: %v", i+2, err)
 		}
+
+		studNParent := domain.StudentAndParent{
+			Student: studentDataHolder,
+			Parent:  parentDataHolder,
+		}
+		// Append to the list
+		listStudentAndParent = append(listStudentAndParent, studNParent)
 	}
 
-	if len(invalidTelephoneType) > 0 {
-		return nil, &invalidTelephoneType, fmt.Errorf("Invalid type of telephones found")
-	}
-
-	// Use case logic for importing students and parents in bulk
 	duplicates, err := sph.uc.ImportCSV(c, &listStudentAndParent)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error importing CSV data: %v", err)
@@ -245,106 +207,114 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 	}
 
 	return nil, nil, nil
+}
 
+// Helper function to get a pointer to a string
+func getStringPointer(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }
 
 func (sph *studentParentHandler) UpdateStudentAndParent(c *fiber.Ctx) error {
-	// Get the ID from the URL parameters
-	id := c.Params("id")
-	if id == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"success": false,
-			"message": "ID is required",
-		})
-	}
+	// // Get the ID from the URL parameters
+	// id := c.Params("id")
+	// if id == "" {
+	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	// 		"success": false,
+	// 		"message": "ID is required",
+	// 	})
+	// }
 
-	convertetID, err := strconv.Atoi(id)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"success": false,
-			"message": err,
-		})
-	}
+	// convertetID, err := strconv.Atoi(id)
+	// if err != nil {
+	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	// 		"success": false,
+	// 		"message": err,
+	// 	})
+	// }
 
-	// Parse the request body to get the student and parent data
-	var req domain.StudentAndParent
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"success": false,
-			"error":   err.Error(),
-			"message": "Invalid request body",
-		})
-	}
+	// // Parse the request body to get the student and parent data
+	// var req domain.StudentAndParent
+	// if err := c.BodyParser(&req); err != nil {
+	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	// 		"success": false,
+	// 		"error":   err.Error(),
+	// 		"message": "Invalid request body",
+	// 	})
+	// }
 
-	// Fetch the current student and parent details (so we can preserve unchanged fields)
-	currentData, err := sph.uc.GetStudentDetailByID(c.Context(), convertetID)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"success": false,
-			"error":   err.Error(),
-			"message": "Failed to retrieve current student and parent data",
-		})
-	}
+	// // Fetch the current student and parent details (so we can preserve unchanged fields)
+	// currentData, err := sph.uc.GetStudentDetailsByID(c.Context(), convertetID)
+	// if err != nil {
+	// 	return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+	// 		"success": false,
+	// 		"error":   err.Error(),
+	// 		"message": "Failed to retrieve current student and parent data",
+	// 	})
+	// }
 
-	// Merge with existing student data (preserve fields if not provided in request)
-	if req.Student.Name == "" {
-		req.Student.Name = currentData.Student.Name
-	}
-	if req.Student.Telephone == 0 {
-		req.Student.Telephone = currentData.Student.Telephone
-	}
-	if req.Student.Class == "" {
-		req.Student.Class = currentData.Student.Class
-	}
-	if req.Student.Gender == "" {
-		req.Student.Gender = currentData.Student.Gender
-	}
+	// // Merge with existing student data (preserve fields if not provided in request)
+	// if req.Student.Name == "" {
+	// 	req.Student.Name = currentData.Student.Name
+	// }
+	// if req.Student.Telephone == 0 {
+	// 	req.Student.Telephone = currentData.Student.Telephone
+	// }
+	// if req.Student.Class == "" {
+	// 	req.Student.Class = currentData.Student.Class
+	// }
+	// if req.Student.Gender == "" {
+	// 	req.Student.Gender = currentData.Student.Gender
+	// }
 
-	// Merge with existing parent data (preserve fields if not provided in request)
-	if req.Parent.Name == "" {
-		req.Parent.Name = currentData.Parent.Name
-	}
-	if req.Parent.Telephone == 0 {
-		req.Parent.Telephone = currentData.Parent.Telephone
-	}
-	if req.Parent.Gender == "" {
-		req.Parent.Gender = currentData.Parent.Gender
-	}
-	if req.Parent.Email == nil {
-		req.Parent.Email = currentData.Parent.Email
-	}
+	// // Merge with existing parent data (preserve fields if not provided in request)
+	// if req.Parent.Name == "" {
+	// 	req.Parent.Name = currentData.Parent.Name
+	// }
+	// if req.Parent.Telephone == 0 {
+	// 	req.Parent.Telephone = currentData.Parent.Telephone
+	// }
+	// if req.Parent.Gender == "" {
+	// 	req.Parent.Gender = currentData.Parent.Gender
+	// }
+	// if req.Parent.Email == nil {
+	// 	req.Parent.Email = currentData.Parent.Email
+	// }
 
-	// Validate Student
-	if _, err := govalidator.ValidateStruct(req.Student); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"success": false,
-			"error":   err.Error(),
-			"message": "Invalid student data",
-		})
-	}
+	// // Validate Student
+	// if _, err := govalidator.ValidateStruct(req.Student); err != nil {
+	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	// 		"success": false,
+	// 		"error":   err.Error(),
+	// 		"message": "Invalid student data",
+	// 	})
+	// }
 
-	// Validate Parent
-	if _, err := govalidator.ValidateStruct(req.Parent); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"success": false,
-			"error":   err.Error(),
-			"message": "Invalid parent data",
-		})
-	}
+	// // Validate Parent
+	// if _, err := govalidator.ValidateStruct(req.Parent); err != nil {
+	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	// 		"success": false,
+	// 		"error":   err.Error(),
+	// 		"message": "Invalid parent data",
+	// 	})
+	// }
 
-	// Perform the update operation
-	if err := sph.uc.UpdateStudentAndParent(c.Context(), convertetID, &req); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"success": false,
-			"error":   err.Error(),
-			"message": "Failed to update student and parent",
-		})
-	}
+	// // Perform the update operation
+	// if err := sph.uc.UpdateStudentAndParent(c.Context(), convertetID, &req); err != nil {
+	// 	return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+	// 		"success": false,
+	// 		"error":   err.Error(),
+	// 		"message": "Failed to update student and parent",
+	// 	})
+	// }
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"success": true,
-		"message": "Student and Parent updated successfully",
-	})
+	// return c.Status(fiber.StatusOK).JSON(fiber.Map{
+	// 	"success": true,
+	// 	"message": "Student and Parent updated successfully",
+	// })
+	return nil
 }
 
 func (sph *studentParentHandler) DeleteStudentAndParent(c *fiber.Ctx) error {
@@ -371,7 +341,7 @@ func (sph *studentParentHandler) DeleteStudentAndParent(c *fiber.Ctx) error {
 	})
 }
 
-func (sph *studentParentHandler) GetStudentDetailByID(c *fiber.Ctx) error {
+func (sph *studentParentHandler) GetStudentDetailsByID(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -381,7 +351,7 @@ func (sph *studentParentHandler) GetStudentDetailByID(c *fiber.Ctx) error {
 		})
 	}
 
-	student, err := sph.uc.GetStudentDetailByID(c.Context(), id)
+	student, err := sph.uc.GetStudentDetailsByID(c.Context(), id)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
