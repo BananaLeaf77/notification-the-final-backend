@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"notification/domain"
 	"os"
+	"time"
 
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -57,6 +59,36 @@ func autoMigrate(db *gorm.DB) error {
 	// Migrate the schema
 	if err := db.AutoMigrate(&theParent, &theStudent, &theUser); err != nil {
 		return fmt.Errorf("failed to run migrations: %w", err)
+	}
+
+	var existingAdmin domain.User
+	err := db.Where("role = 'admin' AND deleted_at IS NULL").First(&existingAdmin).Error
+	if err != nil {
+		fmt.Println("Creating default admin account....")
+		// init Admin Account
+		adminUsername := os.Getenv("ADMIN_USERNAME")
+		adminPassword := os.Getenv("ADMIN_PASSWORD")
+
+		// Hash the password
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(adminPassword), bcrypt.DefaultCost)
+		if err != nil {
+			return fmt.Errorf("could not hash password: %v", err)
+		}
+
+		now := time.Now()
+		admin := domain.User{
+			Username:  adminUsername,
+			Password:  string(hashedPassword),
+			Role:      "admin",
+			CreatedAt: now,
+			UpdatedAt: now,
+		}
+
+		err = db.Create(&admin).Error
+		if err != nil {
+			return err
+		}
+		fmt.Println("Admin account created")
 	}
 
 	return nil

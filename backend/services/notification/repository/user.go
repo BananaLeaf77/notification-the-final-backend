@@ -123,7 +123,7 @@ func (ur *userRepository) UpdateStaff(ctx context.Context, id int, payload *doma
 }
 
 func (ur *userRepository) GetStaffDetail(ctx context.Context, id int) (*domain.SafeStaffData, error) {
-	var user domain.SafeStaffData
+	var user domain.User
 	err := ur.db.WithContext(ctx).Where("id = ? AND deleted_at IS NULL", id).First(&user).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -136,5 +136,14 @@ func (ur *userRepository) GetStaffDetail(ctx context.Context, id int) (*domain.S
 		return nil, fmt.Errorf("staff not found")
 	}
 
-	return &user, nil
+	safeData := domain.SafeStaffData{
+		ID:        int(user.ID),
+		Username:  user.Username,
+		Role:      user.Role,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+		DeletedAt: &user.DeletedAt.Time,
+	}
+
+	return &safeData, nil
 }

@@ -24,6 +24,7 @@ func NewUserHandler(app *fiber.App, useCase domain.UserUseCase) {
 	app.Get("/staff/get-all", handler.GetAllStaff)
 	app.Delete("/staff/rm/:id", handler.DeleteStaff)
 	app.Get("/staff/details/:id", handler.GetStaffDetail)
+	app.Put("/staff/modify/:id", handler.ModifyStaff)
 }
 
 func (uh *UserHandler) Login(c *fiber.Ctx) error {
@@ -137,37 +138,6 @@ func (uh *UserHandler) DeleteStaff(c *fiber.Ctx) error {
 	})
 }
 
-func (uh *UserHandler) UpdateStaff(c *fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   "converter failure",
-			"success": false,
-		})
-	}
-
-	var holdValue domain.User
-	if err := c.BodyParser(&holdValue); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   err.Error(),
-			"success": false,
-		})
-	}
-
-	err = uh.uc.UpdateStaff(c.Context(), id, &holdValue)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":   err.Error(),
-			"success": false,
-		})
-	}
-
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"success": true,
-		"message": "Staff updated successfully",
-	})
-}
-
 func (uh *UserHandler) GetStaffDetail(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -191,4 +161,37 @@ func (uh *UserHandler) GetStaffDetail(c *fiber.Ctx) error {
 		"data":    v,
 	})
 
+}
+
+func (uh *UserHandler) ModifyStaff(c *fiber.Ctx) error {
+	idParam := c.Params("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "Invalid staff ID",
+		})
+	}
+
+	var payload domain.User
+	if err := c.BodyParser(&payload); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "Invalid input",
+		})
+	}
+
+	err = uh.uc.UpdateStaff(c.Context(), id, &payload)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Failed to modify staff",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Staff modified successfully",
+	})
 }
