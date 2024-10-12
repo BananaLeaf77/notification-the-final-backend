@@ -18,7 +18,7 @@ func NewStudentParentUseCase(repo domain.StudentParentRepo, to time.Duration) do
 	}
 }
 
-func (spu *studentParentUseCase) CreateStudentAndParentUC(ctx context.Context, req *domain.StudentAndParent) error {
+func (spu *studentParentUseCase) CreateStudentAndParentUC(ctx context.Context, req *domain.StudentAndParent) *[]string {
 	ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
 	defer cancel()
 

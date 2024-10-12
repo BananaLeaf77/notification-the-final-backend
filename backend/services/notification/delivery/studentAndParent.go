@@ -34,6 +34,7 @@ func NewStudentParentHandler(app *fiber.App, useCase domain.StudentParentUseCase
 
 func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
 	var req domain.StudentAndParent
+	var toValidate domain.StuAndPar
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
@@ -42,8 +43,17 @@ func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
 		})
 	}
 
+	err := c.BodyParser(&toValidate)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"error":   err.Error(),
+			"message": "Invalid request body",
+		})
+	}
+
 	// Validate Student
-	if _, err := govalidator.ValidateStruct(req.Student); err != nil {
+	if _, err := govalidator.ValidateStruct(toValidate.Student); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"error":   err.Error(),
@@ -52,7 +62,7 @@ func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
 	}
 
 	// Validate Parent
-	if _, err := govalidator.ValidateStruct(req.Parent); err != nil {
+	if _, err := govalidator.ValidateStruct(toValidate.Parent); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"error":   err.Error(),
@@ -63,7 +73,7 @@ func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
 	if err := sph.uc.CreateStudentAndParentUC(c.Context(), &req); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
-			"error":   err.Error(),
+			"error":   err,
 			"message": "Failed to Create Student and Parent",
 		})
 	}
@@ -363,6 +373,6 @@ func (sph *studentParentHandler) GetStudentDetailsByID(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
 		"message": "Student and Parent retrieved successfully",
-		"data":    student,
+		"data":    student.Student,
 	})
 }

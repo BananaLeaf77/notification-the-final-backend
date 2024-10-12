@@ -180,6 +180,8 @@ func (uh *UserHandler) ModifyStaff(c *fiber.Ctx) error {
 			"message": "Invalid input",
 		})
 	}
+	
+	payload.Role = "staff"
 
 	err = uh.uc.UpdateStaff(c.Context(), id, &payload)
 	if err != nil {

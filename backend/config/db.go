@@ -51,21 +51,31 @@ func autoMigrate(db *gorm.DB) error {
 		return fmt.Errorf("failed to create gender ENUM: %w", err)
 	}
 
+	// Create ENUM type for role if not exists
+	if err := db.Exec(`DO $$ BEGIN
+		IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'role_enum') THEN
+			CREATE TYPE role_enum AS ENUM ('admin', 'staff');
+		END IF;
+	END $$`).Error; err != nil {
+		fmt.Printf("Error creating role ENUM type: %v\n", err)
+		return fmt.Errorf("failed to create role ENUM: %w", err)
+	}
+
 	// Create new instances of the structs
 	theStudent := domain.Student{}
 	theParent := domain.Parent{}
 	theUser := domain.User{}
 
-	// Migrate the schema
-	if err := db.AutoMigrate(&theParent, &theStudent, &theUser); err != nil {
+	// Migrate the schema - make sure to create students first
+	if err := db.AutoMigrate(&theStudent, &theParent, &theUser); err != nil {
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
 
+	// Check if admin exists and create if not
 	var existingAdmin domain.User
 	err := db.Where("role = 'admin' AND deleted_at IS NULL").First(&existingAdmin).Error
 	if err != nil {
 		fmt.Println("Creating default admin account....")
-		// init Admin Account
 		adminUsername := os.Getenv("ADMIN_USERNAME")
 		adminPassword := os.Getenv("ADMIN_PASSWORD")
 
