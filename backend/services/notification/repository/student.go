@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 	"notification/domain"
-	"gorm.io/gorm"
 	"os"
+
+	"gorm.io/gorm"
 )
 
 type studentRepository struct {

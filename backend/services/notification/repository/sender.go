@@ -16,12 +16,11 @@ import (
 
 // init var
 var (
-	bodyMale       string
-	bodyFemale     string
-	tNow           time.Time
-	subject        string
-	schoolPhoneINT int
-	JID            types.JID
+	bodyMale   string
+	bodyFemale string
+	tNow       time.Time
+	subject    string
+	JID        types.JID
 )
 
 type senderRepository struct {
@@ -83,7 +82,7 @@ func (m *senderRepository) fetchStudentDetails(ctx context.Context, studentID in
 	var student domain.Student
 	var parent domain.Parent
 
-	err := m.db.WithContext(ctx).Where("id = ?", studentID).Preload("Parent").First(&student).Error
+	err := m.db.WithContext(ctx).Where("student_id = ?", studentID).Preload("Parent").First(&student).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("student with ID %d not found", studentID)
@@ -91,7 +90,7 @@ func (m *senderRepository) fetchStudentDetails(ctx context.Context, studentID in
 		return nil, fmt.Errorf("could not fetch student details: %v", err)
 	}
 
-	err = m.db.WithContext(ctx).Where("id = ?", student.ParentID).First(&parent).Error
+	err = m.db.WithContext(ctx).Where("parent_id = ?", student.ParentID).First(&parent).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("parent with ID %d not found", student.ParentID)
@@ -109,12 +108,12 @@ func (m *senderRepository) fetchStudentDetails(ctx context.Context, studentID in
 func (m *senderRepository) sendEmail(payload *domain.StudentAndParent) error {
 	var msg string
 
-	if payload.Parent.Gender == "Female" {
+	if payload.Parent.Gender == "female" {
 		msg = "From: " + m.emailSender + "\n" +
 			"To: " + *payload.Parent.Email + "\n" +
 			"Subject: " + subject + "\n\n" +
 			bodyFemale
-	} else if payload.Parent.Gender == "Male" {
+	} else if payload.Parent.Gender == "male" {
 		msg = "From: " + m.emailSender + "\n" +
 			"To: " + *payload.Parent.Email + "\n" +
 			"Subject: " + subject + "\n\n" +
@@ -131,14 +130,13 @@ func (m *senderRepository) sendEmail(payload *domain.StudentAndParent) error {
 
 func (m *senderRepository) sendWA(ctx context.Context, payload *domain.StudentAndParent) error {
 	var msg string
-
-	completeFormat := fmt.Sprintf("62%s", payload.Parent.Telephone)
+	completeFormat := fmt.Sprintf("%s%s", "62", payload.Parent.Telephone[1:])
 
 	jid := types.NewJID(completeFormat, types.DefaultUserServer)
 
-	if payload.Parent.Gender == "Female" {
+	if payload.Parent.Gender == "female" {
 		msg = bodyFemale
-	} else if payload.Parent.Gender == "Male" {
+	} else if payload.Parent.Gender == "male" {
 		msg = bodyMale
 	}
 
@@ -148,6 +146,7 @@ func (m *senderRepository) sendWA(ctx context.Context, payload *domain.StudentAn
 
 	_, err := m.meowClient.SendMessage(ctx, jid, conversationMessage)
 	if err != nil {
+		fmt.Println("error cuk")
 		return err
 	}
 	return nil

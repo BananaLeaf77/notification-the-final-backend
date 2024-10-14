@@ -1,6 +1,8 @@
 package domain
 
-import "time"
+import (
+	"time"
+)
 
 type SafeStaffData struct {
 	UserID    int        `json:"user_id"`
@@ -34,9 +36,29 @@ type StudentBase struct {
 }
 
 type ParentBase struct {
-	ParentID  int     `gorm:"primaryKey;autoIncrement" json:"parent_id"`
-	Name      string  `gorm:"type:varchar(150);not null;unique" json:"name" valid:"required~Name is required"`
-	Gender    string  `gorm:"type:gender_enum;not null" json:"gender" valid:"required~Gender is required"`
-	Telephone string  `gorm:"type:varchar(15);not null" json:"telephone" valid:"required~Telephone is required"`
-	Email     *string `gorm:"type:varchar(255)" json:"email" valid:"email~Invalid email format"`
+	ParentID  int        `json:"parent_id" valid:"required~Parent ID is required"`
+	Name      string     `json:"name" valid:"required~Name is required"`
+	Gender    string     `json:"gender" valid:"required~Gender is required,in(male|female)~Invalid gender"`
+	Telephone string     `json:"telephone" valid:"required~Telephone is required"`
+	Email     *string    `json:"email,omitempty" valid:"email~Invalid email format"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
+	DeletedAt *time.Time `json:"deleted_at,omitempty"`
+}
+
+type StudentAndParentBase struct {
+	StudentID int        `json:"student_id" valid:"required~Student ID is required"`
+	Name      string     `json:"name" valid:"required~Name is required"`
+	Class     string     `json:"class" valid:"required~Class is required"`
+	Gender    string     `json:"gender" valid:"required~Gender is required,in(male|female)~Invalid gender"`
+	Telephone string     `json:"telephone" valid:"required~Telephone is required"`
+	ParentID  int        `json:"parent_id"`
+	Parent    ParentBase `json:"parent" valid:"required~Parent details are required"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
+	DeletedAt *time.Time `json:"deleted_at,omitempty"`
+}
+
+type StudentPayload struct {
+	Student Student `json:"student"`
 }

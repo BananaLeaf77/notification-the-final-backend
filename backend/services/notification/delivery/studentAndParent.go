@@ -34,7 +34,6 @@ func NewStudentParentHandler(app *fiber.App, useCase domain.StudentParentUseCase
 
 func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
 	var req domain.StudentAndParent
-	var toValidate domain.StuAndPar
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
@@ -43,30 +42,21 @@ func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
 		})
 	}
 
-	err := c.BodyParser(&toValidate)
+	_, err := govalidator.ValidateStruct(req.Student)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"error":   err.Error(),
-			"message": "Invalid request body",
+			"message": "Invalid Student request body",
 		})
 	}
 
-	// Validate Student
-	if _, err := govalidator.ValidateStruct(toValidate.Student); err != nil {
+	_, err = govalidator.ValidateStruct(req.Parent)
+	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"error":   err.Error(),
-			"message": "Invalid student data",
-		})
-	}
-
-	// Validate Parent
-	if _, err := govalidator.ValidateStruct(toValidate.Parent); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"success": false,
-			"error":   err.Error(),
-			"message": "Invalid parent data",
+			"message": "Invalid Parent request body",
 		})
 	}
 
@@ -228,103 +218,69 @@ func getStringPointer(s string) *string {
 }
 
 func (sph *studentParentHandler) UpdateStudentAndParent(c *fiber.Ctx) error {
-	// // Get the ID from the URL parameters
-	// id := c.Params("id")
-	// if id == "" {
-	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-	// 		"success": false,
-	// 		"message": "ID is required",
-	// 	})
-	// }
+	id := c.Params("id")
+	if id == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "ID Required",
+		})
+	}
 
-	// convertetID, err := strconv.Atoi(id)
-	// if err != nil {
-	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-	// 		"success": false,
-	// 		"message": err,
-	// 	})
-	// }
+	convertetID, err := strconv.Atoi(id)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "Invalid ID",
+			"error":   err.Error(),
+		})
+	}
 
-	// // Parse the request body to get the student and parent data
-	// var req domain.StudentAndParent
-	// if err := c.BodyParser(&req); err != nil {
-	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-	// 		"success": false,
-	// 		"error":   err.Error(),
-	// 		"message": "Invalid request body",
-	// 	})
-	// }
+	// Check if student exists
+	_, err = sph.uc.GetStudentDetailsByID(c.Context(), convertetID)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"error":   err.Error(),
+			"message": "Targeted Student and Parent doesn't exist",
+		})
+	}
 
-	// // Fetch the current student and parent details (so we can preserve unchanged fields)
-	// currentData, err := sph.uc.GetStudentDetailsByID(c.Context(), convertetID)
-	// if err != nil {
-	// 	return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-	// 		"success": false,
-	// 		"error":   err.Error(),
-	// 		"message": "Failed to retrieve current student and parent data",
-	// 	})
-	// }
+	var req domain.StudentPayload
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"error":   err.Error(),
+			"message": "Invalid request body",
+		})
+	}
 
-	// // Merge with existing student data (preserve fields if not provided in request)
-	// if req.Student.Name == "" {
-	// 	req.Student.Name = currentData.Student.Name
-	// }
-	// if req.Student.Telephone == 0 {
-	// 	req.Student.Telephone = currentData.Student.Telephone
-	// }
-	// if req.Student.Class == "" {
-	// 	req.Student.Class = currentData.Student.Class
-	// }
-	// if req.Student.Gender == "" {
-	// 	req.Student.Gender = currentData.Student.Gender
-	// }
+	fmt.Println(req)
 
-	// // Merge with existing parent data (preserve fields if not provided in request)
-	// if req.Parent.Name == "" {
-	// 	req.Parent.Name = currentData.Parent.Name
-	// }
-	// if req.Parent.Telephone == 0 {
-	// 	req.Parent.Telephone = currentData.Parent.Telephone
-	// }
-	// if req.Parent.Gender == "" {
-	// 	req.Parent.Gender = currentData.Parent.Gender
-	// }
-	// if req.Parent.Email == nil {
-	// 	req.Parent.Email = currentData.Parent.Email
-	// }
+	// Validate request body
+	_, err = govalidator.ValidateStruct(&req)
+	if err != nil {
+		// Get validation errors as a map
+		validationErrors := govalidator.ErrorsByField(err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"errors":  validationErrors,
+			"message": "Invalid request body",
+		})
+	}
 
-	// // Validate Student
-	// if _, err := govalidator.ValidateStruct(req.Student); err != nil {
-	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-	// 		"success": false,
-	// 		"error":   err.Error(),
-	// 		"message": "Invalid student data",
-	// 	})
-	// }
+	// Perform the update operation
+	if err := sph.uc.UpdateStudentAndParent(c.Context(), convertetID, &req); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"error":   err.Error(),
+			"message": "Failed to update student and parent",
+		})
+	}
 
-	// // Validate Parent
-	// if _, err := govalidator.ValidateStruct(req.Parent); err != nil {
-	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-	// 		"success": false,
-	// 		"error":   err.Error(),
-	// 		"message": "Invalid parent data",
-	// 	})
-	// }
-
-	// // Perform the update operation
-	// if err := sph.uc.UpdateStudentAndParent(c.Context(), convertetID, &req); err != nil {
-	// 	return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-	// 		"success": false,
-	// 		"error":   err.Error(),
-	// 		"message": "Failed to update student and parent",
-	// 	})
-	// }
-
-	// return c.Status(fiber.StatusOK).JSON(fiber.Map{
-	// 	"success": true,
-	// 	"message": "Student and Parent updated successfully",
-	// })
-	return nil
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Student and Parent updated successfully",
+	})
 }
 
 func (sph *studentParentHandler) DeleteStudentAndParent(c *fiber.Ctx) error {

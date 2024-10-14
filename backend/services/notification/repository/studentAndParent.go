@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"notification/domain"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -204,58 +205,56 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 	return nil, nil
 }
 
-func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, req *domain.StudentAndParent) error {
-	// Start a transaction
+func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, id int, req *domain.StudentPayload) error {
+
+	// Start a new transaction
 	tx := spr.db.Begin()
 	if err := tx.Error; err != nil {
 		return fmt.Errorf("could not begin transaction: %v", err)
 	}
 
-	// Check if student exists
-	var student domain.Student
-	err := tx.WithContext(ctx).Where("id = ?", req.Student.StudentID).First(&student).Error
-	if err != nil {
-		tx.Rollback()
-		if err == gorm.ErrRecordNotFound {
-			return fmt.Errorf("student with ID %d not found", req.Student.StudentID)
-		}
-		return fmt.Errorf("error finding student: %v", err)
-	}
+	now := time.Now()
+	req.Student.UpdatedAt = now
+	req.Student.Parent.UpdatedAt = now
 
-	// Check if parent exists
-	var parent domain.Parent
-	err = tx.WithContext(ctx).Where("id = ?", req.Parent.ParentID).First(&parent).Error
-	if err != nil {
-		tx.Rollback()
-		if err == gorm.ErrRecordNotFound {
-			return fmt.Errorf("parent with ID %d not found", req.Parent.ParentID)
-		}
-		return fmt.Errorf("error finding parent: %v", err)
-	}
-
-	// Update parent details
-	req.Parent.UpdatedAt = time.Now()
-	err = tx.WithContext(ctx).Model(&parent).Updates(req.Parent).Error
-	if err != nil {
+	// Update the parent record, ensure WHERE condition
+	if err := tx.WithContext(ctx).
+		Model(&req.Student.Parent).
+		Where("parent_id = ?", req.Student.ParentID).
+		Updates(req.Student.Parent).
+		Error; err != nil {
 		tx.Rollback()
 		return fmt.Errorf("could not update parent: %v", err)
 	}
 
-	// Update student details
-	req.Student.UpdatedAt = time.Now()
-	err = tx.WithContext(ctx).Model(&student).Updates(req.Student).Error
-	if err != nil {
+	// Update the student record, ensure WHERE condition
+	if err := tx.WithContext(ctx).
+		Model(&req.Student).
+		Where("student_id = ? AND parent_id = ?", id, req.Student.ParentID).
+		Updates(req.Student).
+		Error; err != nil {
 		tx.Rollback()
+
+		// Check for duplicate key error
+		if isDuplicateKeyError(err) {
+			return fmt.Errorf("could not update student: duplicate student name '%s' already exists", req.Student.Name)
+		}
+
 		return fmt.Errorf("could not update student: %v", err)
 	}
 
 	// Commit the transaction
-	err = tx.Commit().Error
-	if err != nil {
+	if err := tx.Commit().Error; err != nil {
 		return fmt.Errorf("could not commit transaction: %v", err)
 	}
 
 	return nil
+}
+
+// Helper function to check if the error is a duplicate key error
+func isDuplicateKeyError(err error) bool {
+	// Check if the error message contains a specific code or text for duplicate key violation (SQLSTATE 23505)
+	return strings.Contains(err.Error(), "SQLSTATE 23505")
 }
 
 func (spr *studentParentRepository) DeleteStudentAndParent(ctx context.Context, studentID int) error {
@@ -288,7 +287,7 @@ func (spr *studentParentRepository) DeleteStudentAndParent(ctx context.Context, 
 	}
 
 	// Soft delete the parent
-	err = tx.WithContext(ctx).Where("id = ?", student.ParentID).Delete(&domain.Parent{}).Error
+	err = tx.WithContext(ctx).Where("parent_id = ?", student.ParentID).Delete(&domain.Parent{}).Error
 	if err != nil {
 		tx.Rollback()
 		if err == gorm.ErrRecordNotFound {
