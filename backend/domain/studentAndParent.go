@@ -15,7 +15,7 @@ type StudentParentRepo interface {
 
 	ImportCSV(ctx context.Context, payload *[]StudentAndParent) (*[]string, error)
 }
-	
+
 type StudentParentUseCase interface {
 	GetStudentDetailsByID(ctx context.Context, id int) (*StudentAndParent, error)
 	CreateStudentAndParentUC(ctx context.Context, req *StudentAndParent) *[]string

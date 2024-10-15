@@ -46,9 +46,12 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 	}
 
 	// Check if the parent email already exists
-	err = spr.db.WithContext(ctx).Where("email = ? AND deleted_at IS NULL", req.Parent.Email).First(&existingParent).Error
+	parentEmailLowered := strings.ToLower(*req.Parent.Email)
+	req.Parent.Email = &parentEmailLowered
+
+	err = spr.db.WithContext(ctx).Where("email = ? AND deleted_at IS NULL", parentEmailLowered).First(&existingParent).Error
 	if err == nil {
-		errList = append(errList, fmt.Sprintf("parent with email %s already exists", *req.Parent.Email))
+		errList = append(errList, fmt.Sprintf("parent with email %s already exists", parentEmailLowered))
 
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		errList = append(errList, fmt.Sprintf("error checking parent email: %v", err))

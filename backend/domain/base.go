@@ -62,3 +62,32 @@ type StudentAndParentBase struct {
 type StudentPayload struct {
 	Student Student `json:"student"`
 }
+
+type StudentAndParent2 struct {
+	Student StudentNoGorm `json:"student"`
+	Parent  ParentNoGorm  `json:"parent"`
+}
+
+type ParentNoGorm struct {
+	ParentID  int        `json:"parent_id"`
+	Name      string     `json:"name" valid:"required~Name is required"`
+	Gender    string     `json:"gender" valid:"required~Gender is required,in(male|female)~Invalid gender"`
+	Telephone string     `json:"telephone" valid:"required~Telephone is required"`
+	Email     *string    `json:"email" valid:"email~Invalid email format,optional~true"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
+	DeletedAt *time.Time `json:"deleted_at"`
+}
+
+	type StudentNoGorm struct {
+		StudentID int        `json:"student_id"`
+		Name      string     `json:"name" valid:"required~Name is required"`
+		Class     string     `json:"class" valid:"required~Class is required"`
+		Gender    string     `json:"gender" valid:"required~Gender is required,in(male|female)~Invalid gender"`
+		Telephone string     `json:"telephone" valid:"required~Telephone is required"`
+		ParentID  int        `json:"parent_id"`
+		Parent    Parent     `json:"parent"`
+		CreatedAt time.Time  `json:"created_at"`
+		UpdatedAt time.Time  `json:"updated_at"`
+		DeletedAt *time.Time `json:"deleted_at"`
+	}

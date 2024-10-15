@@ -9,8 +9,8 @@ import (
 
 type User struct {
 	UserID    int            `gorm:"primaryKey" json:"user_id"`
-	Username  string         `gorm:"unique;not null" json:"username"`
-	Password  string         `gorm:"not null" json:"password"`
+	Username  string         `gorm:"unique;not null" json:"username" valid:"required~Username is required"`
+	Password  string         `gorm:"not null" json:"password" valid:"required~Password is required"`
 	Role      string         `gorm:"not null;type:role_enum" json:"role"`
 	CreatedAt time.Time      `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt time.Time      `gorm:"autoUpdateTime" json:"updated_at"`

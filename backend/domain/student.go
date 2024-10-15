@@ -14,7 +14,7 @@ type Student struct {
 	Gender    string         `gorm:"type:gender_enum;not null" json:"gender" valid:"required~Gender is required,in(male|female)~Invalid gender"`
 	Telephone string         `gorm:"type:varchar(15);not null;unique" json:"telephone" valid:"required~Telephone is required"`
 	ParentID  int            `json:"parent_id"`
-	Parent    Parent         `gorm:"references:ParentID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL" json:"parent"`
+	Parent    Parent         `gorm:"references:ParentID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL" json:"parent" valid:"-"`
 	CreatedAt time.Time      `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
