@@ -138,13 +138,14 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 			return nil, fmt.Errorf("row %d: error checking if parent exists by telephone: %v", index+1, err)
 		}
 
-		// Check if parent already exists by email
-		err = spr.db.WithContext(ctx).Where("email = ? AND deleted_at IS NULL", record.Parent.Email).First(&parentExists).Error
-		if err == nil {
-			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with email %s already exists", index+1, *record.Parent.Email))
-			continue
-		} else if err != gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("row %d: error checking if parent exists by email: %v", index+1, err)
+		if record.Parent.Email != nil {
+			err = spr.db.WithContext(ctx).Where("email = ? AND deleted_at IS NULL", record.Parent.Email).First(&parentExists).Error
+			if err == nil {
+				duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with email %s already exists", index+1, *record.Parent.Email))
+				continue
+			} else if err != gorm.ErrRecordNotFound {
+				return nil, fmt.Errorf("row %d: error checking if parent exists by email: %v", index+1, err)
+			}
 		}
 
 		// Check if parent already exists by name

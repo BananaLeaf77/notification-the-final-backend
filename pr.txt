@@ -6,7 +6,6 @@ history
 
 UPDATE student and paren, users data fix lagi tu naskleng!!!
 
-
 type data tleephone db (varchar 15) stuct validasi 15 digit string 
 
 return import = dupe, invalid telepon, invalid email format (new)

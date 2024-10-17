@@ -22,11 +22,11 @@ var log *logrus.Logger
 var wg sync.WaitGroup
 
 func main() {
-	if err := godotenv.Load(); err != nil {
-		logrus.Fatalf("Error loading .env file")
-	}
-
 	log = config.GetLogrusInstance()
+
+	if err := godotenv.Load(); err != nil {
+		log.Fatalf("Error loading .env file")
+	}
 
 	startHTTP()
 }

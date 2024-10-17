@@ -88,7 +88,13 @@ func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
 	uploadDir := "./uploads"
 	// Ensure upload directory exists
 	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
-		os.MkdirAll(uploadDir, os.ModePerm)
+		if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"success": false,
+				"error":   err.Error(),
+				"message": "Failed to create upload directory",
+			})
+		}
 	}
 
 	// Save the file
@@ -105,7 +111,7 @@ func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
 	// Process the CSV file and get duplicate records
 	resDupe, invalidTelephones, err := sph.processCSVFile(c.Context(), filePath)
 
-	if invalidTelephones != nil && err != nil {
+	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success":            false,
 			"error":              err.Error(),
@@ -114,7 +120,7 @@ func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
 		})
 	}
 
-	if resDupe != nil && err == nil {
+	if resDupe != nil && len(*resDupe) > 0 {
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"success":    false,
 			"message":    "File processed successfully, but some duplicates were found.",
@@ -127,10 +133,13 @@ func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
 		"success": true,
 		"message": "File processed successfully",
 	})
-
 }
 
 func (sph *studentParentHandler) processCSVFile(c context.Context, filePath string) (*[]string, *[]string, error) {
+	if sph.uc == nil {
+		return nil, nil, fmt.Errorf("use case service is not initialized")
+	}
+
 	var listStudentAndParent []domain.StudentAndParent
 	var parentDataHolder domain.Parent
 	var studentDataHolder domain.Student
@@ -152,7 +161,7 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 		return nil, nil, fmt.Errorf("failed to read CSV file: %v", err)
 	}
 
-	// Start from row 2 karena row 1 header
+	// Start from row 2 because row 1 is the header
 	for i, row := range records[1:] {
 		if len(row) < 8 {
 			log.Printf("Skipping row %d due to insufficient columns", i+2)
@@ -202,12 +211,13 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 		return nil, nil, fmt.Errorf("error importing CSV data: %v", err)
 	}
 
-	if len(*duplicates) > 0 {
+	if duplicates != nil && len(*duplicates) > 0 {
 		return duplicates, nil, nil
 	}
 
 	return nil, nil, nil
 }
+
 
 // Helper function to get a pointer to a string
 func getStringPointer(s string) *string {
