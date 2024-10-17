@@ -76,6 +76,7 @@ func startHTTP() {
 	delivery.NewStudentParentHandler(app, studentParentUC)
 	delivery.NewSenderDelivery(app, senderUC)
 	delivery.NewStudentDelivery(app, studentUC)
+	delivery.NewUserAuthHandler(app, db)
 
 	wg.Add(1)
 	go func() {

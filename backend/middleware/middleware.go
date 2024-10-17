@@ -1,96 +1,54 @@
 package middleware
 
 import (
-	"fmt"
+	"notification/domain"
 	"os"
-	"strings"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 var jwtKey = []byte(os.Getenv("BYTE_KEY"))
 
-type Claims struct {
-	Username string `json:"username"`
-	Role     string `json:"role"`
-	jwt.StandardClaims
-}
-
-func GenerateJWT(username, role string) (string, error) {
-	expirationTime := time.Now().Add(24 * time.Hour) // Token valid for 24 hours
-	claims := &Claims{
+func GenerateJWT(userID int, username, role string) (string, error) {
+	expirationTime := time.Now().Add(24 * time.Hour)
+	claims := &domain.Claims{
+		UserID:   userID,
 		Username: username,
 		Role:     role,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: expirationTime.Unix(),
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
 		},
 	}
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtKey)
-}
 
-func VerifyJWT(tokenString string) (*Claims, error) {
-	claims := &Claims{}
-	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-		return jwtKey, nil
-	})
+	tokenString, err := token.SignedString(jwtKey)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	if !token.Valid {
-		return nil, fmt.Errorf("invalid token")
-	}
-	return claims, nil
+
+	return tokenString, nil
 }
 
-func RoleMiddleware(requiredRole string) fiber.Handler {
+func RoleRequired(roles ...string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		user := c.Locals("user").(*jwt.Token)
-		claims := user.Claims.(jwt.MapClaims)
-		role := claims["role"].(string)
-
-		if !strings.EqualFold(role, requiredRole) {
-			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-				"success": false,
-				"message": fmt.Sprintf("Access denied: role '%s' required", requiredRole),
+		userToken := c.Locals("user").(*domain.Claims)
+		if userToken == nil {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "unauthorized: missing token",
 			})
 		}
-		return c.Next()
-	}
-}
 
-func AuthRequired(c *fiber.Ctx) error {
-	token := c.Get("Authorization")
-	if token == "" {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "No token provided",
-		})
-	}
+		for _, role := range roles {
+			if userToken.Role == role {
+				return c.Next()
+			}
+		}
 
-	claims, err := VerifyJWT(token)
-	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Invalid token",
-		})
-	}
-
-	// Add claims to the context for further use
-	c.Locals("username", claims.Username)
-	c.Locals("role", claims.Role)
-
-	return c.Next()
-}
-
-func AdminOnly(c *fiber.Ctx) error {
-	role := c.Locals("role").(string)
-	fmt.Println("User Role:", role)
-	if role != "admin" {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"error": "Access denied",
+			"error": "forbidden: insufficient permissions",
 		})
 	}
-
-	return c.Next()
 }

@@ -44,38 +44,41 @@ func NewSenderRepository(db *gorm.DB, client smtp.Auth, smtpAddress, schoolPhone
 }
 
 func (m *senderRepository) SendMass(ctx context.Context, idList *[]int) error {
-	var finalErr error
-	tNow = time.Now()
+	// tNow = time.Now()
 
-	for _, id := range *idList {
-		student, err := m.fetchStudentDetails(ctx, id)
-		if err != nil {
-			finalErr = fmt.Errorf("failed to fetch student details for ID %d: %w", id, err)
-			continue
-		}
+	// for _, id := range *idList {
+	// 	var waStatus bool
+	// 	var emailStatus bool
 
-		err = m.initText(student)
-		if err != nil {
-			return err
-		}
+	// 	student, err := m.fetchStudentDetails(ctx, id)
+	// 	if err != nil {
+	// 		continue
+	// 	}
 
-		if student.Parent.Email != nil && *student.Parent.Email != "" {
-			if err := m.sendEmail(student); err != nil {
-				finalErr = fmt.Errorf("failed to send email to %s: %w", *student.Parent.Email, err)
-				continue
-			}
+	// 	err = m.initText(student)
+	// 	if err != nil {
+	// 		return err
+	// 	}
 
-			// Add to history table
-		}
+	// 	if student.Parent.Email != nil && *student.Parent.Email != "" {
+	// 		emailStatus = true
 
-		err = m.sendWA(ctx, student)
-		if err != nil {
-			finalErr = fmt.Errorf("failed to send Whatsapp text to %s: %w", student.Parent.Telephone, err)
-			continue
-		}
-	}
+	// 		if err := m.sendEmail(student); err != nil {
+	// 			fmt.Printf("failed email : %s", *student.Parent.Email)
+	// 			continue
+	// 		}
+	// 	}
 
-	return finalErr
+	// 	err = m.sendWA(ctx, student)
+	// 	if err != nil {
+	// 		fmt.Printf("Fail Telephone : %s", student.Parent.Telephone)
+	// 		continue
+	// 	}
+
+	// 	err = m.logNotificationHistory(student.Student.StudentID, student.Student.ParentID, )
+	// }
+
+	return nil
 }
 
 func (m *senderRepository) fetchStudentDetails(ctx context.Context, studentID int) (*domain.StudentAndParent, error) {
@@ -188,6 +191,23 @@ Alasan ketidakhadiran belum kami terima hingga saat ini. Kami berharap Ibu dapat
 Jika terdapat pertanyaan atau memerlukan bantuan lebih lanjut, Ibu dapat menghubungi kami di %s.
 
 Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Student.Name, formattedDate, hourAndMinute, isAM, m.schoolPhone)
+
+	return nil
+}
+
+func (m *senderRepository) logNotificationHistory(studentID, parentID, userID int, whatsappSuccess, emailSuccess bool) error {
+	history := &domain.NotificationHistory{
+		StudentID:      studentID,
+		ParentID:       parentID,
+		UserID:         userID,
+		WhatsappStatus: whatsappSuccess,
+		EmailStatus:    emailSuccess,
+	}
+
+	err := m.db.Create(history).Error
+	if err != nil {
+		return fmt.Errorf("could not log notification history: %v", err)
+	}
 
 	return nil
 }
