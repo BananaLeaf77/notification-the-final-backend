@@ -245,17 +245,7 @@ func (sph *studentParentHandler) UpdateStudentAndParent(c *fiber.Ctx) error {
 		})
 	}
 
-	// Check if student exists
-	_, err = sph.uc.GetStudentDetailsByID(c.Context(), convertetID)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"success": false,
-			"error":   err.Error(),
-			"message": "Targeted Student and Parent doesn't exist",
-		})
-	}
-
-	var req domain.StudentPayload
+	var req domain.StudentAndParent
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
@@ -264,12 +254,8 @@ func (sph *studentParentHandler) UpdateStudentAndParent(c *fiber.Ctx) error {
 		})
 	}
 
-	fmt.Println(req)
-
-	// Validate request body
 	_, err = govalidator.ValidateStruct(&req)
 	if err != nil {
-		// Get validation errors as a map
 		validationErrors := govalidator.ErrorsByField(err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
@@ -278,7 +264,6 @@ func (sph *studentParentHandler) UpdateStudentAndParent(c *fiber.Ctx) error {
 		})
 	}
 
-	// Perform the update operation
 	if err := sph.uc.UpdateStudentAndParent(c.Context(), convertetID, &req); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,

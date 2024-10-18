@@ -209,9 +209,9 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 	return nil, nil
 }
 
-func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, id int, req *domain.StudentPayload) error {
+func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, id int, req *domain.StudentAndParent) error {
+	var student domain.Student
 
-	// Start a new transaction
 	tx := spr.db.Begin()
 	if err := tx.Error; err != nil {
 		return fmt.Errorf("could not begin transaction: %v", err)
@@ -221,20 +221,25 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 	req.Student.UpdatedAt = now
 	req.Student.Parent.UpdatedAt = now
 
-	// Update the parent record, ensure WHERE condition
+	err := spr.db.WithContext(ctx).Where("student_id = ?", id).Find(&student).Error
+	if err != nil {
+		return fmt.Errorf("cant find student with id %d", id)
+	}
+
+	// Update the parent
 	if err := tx.WithContext(ctx).
 		Model(&req.Student.Parent).
-		Where("parent_id = ?", req.Student.ParentID).
-		Updates(req.Student.Parent).
+		Where("parent_id = ?", student.ParentID).
+		Updates(req.Parent).
 		Error; err != nil {
 		tx.Rollback()
 		return fmt.Errorf("could not update parent: %v", err)
 	}
 
-	// Update the student record, ensure WHERE condition
+	// Update the student
 	if err := tx.WithContext(ctx).
 		Model(&req.Student).
-		Where("student_id = ? AND parent_id = ?", id, req.Student.ParentID).
+		Where("student_id = ? AND parent_id = ?", id, student.ParentID).
 		Updates(req.Student).
 		Error; err != nil {
 		tx.Rollback()
@@ -255,9 +260,7 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 	return nil
 }
 
-// Helper function to check if the error is a duplicate key error
 func isDuplicateKeyError(err error) bool {
-	// Check if the error message contains a specific code or text for duplicate key violation (SQLSTATE 23505)
 	return strings.Contains(err.Error(), "SQLSTATE 23505")
 }
 
