@@ -1,26 +1,21 @@
 package delivery
 
 import (
-	"fmt"
 	"notification/domain"
-	"notification/middleware"
 
 	"github.com/gofiber/fiber/v2"
-	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 )
 
 type userHandler struct {
-	db *gorm.DB
+	uc domain.AuthUseCase
 }
 
-func NewUserAuthHandler(app *fiber.App, db *gorm.DB) {
+func NewUserAuthHandler(app *fiber.App, uc domain.AuthUseCase) {
 	handler := &userHandler{
-		db: db,
+		uc: uc,
 	}
 
-	route := app.Group("/login")
-	route.Post("/user", handler.Login)
+	app.Post("/login", handler.Login)
 }
 
 func (h *userHandler) Login(c *fiber.Ctx) error {
@@ -31,31 +26,19 @@ func (h *userHandler) Login(c *fiber.Ctx) error {
 		})
 	}
 
-	var user domain.User
-	err := h.db.Where("username = ?", req.Username).First(&user).Error
-	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "invalid username or password",
-		})
-	}
-
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
-	if err != nil {
-		fmt.Println("Password comparison failed")
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "invalid username or password",
-		})
-	}
-
-	token, err := middleware.GenerateJWT(user.UserID, user.Username, user.Role)
+	dataList, err := h.uc.Login(c.Context(), &req)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "failed to generate token",
+			"error":   err.Error(),
+			"message": "Failed to login",
 		})
 	}
 
+	theRole := (*dataList)[0]
+	theToken := (*dataList)[1]
+
 	return c.Status(fiber.StatusOK).JSON(domain.LoginResponse{
-		Token: token,
-		Role:  user.Role,
+		Token: theToken,
+		Role:  theRole,
 	})
 }

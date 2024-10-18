@@ -58,7 +58,10 @@ func startHTTP() {
 		return
 	}
 
-	// Register repository and Usecase here
+	// Repo And Usecase Declare mafaka
+	// Auth
+	authRepo := repository.NewAuthRepository(db)
+	authUC := usecase.NewAuthUseCase(authRepo)
 	// User
 	userRepo := repository.NewUserRepository(db)
 	userUC := usecase.NewUserUseCase(userRepo, 100*time.Second)
@@ -72,11 +75,11 @@ func startHTTP() {
 	senderRepo := repository.NewSenderRepository(db, eAuth, *eAdress, *schoolPhone, *emailSender, meow)
 	senderUC := usecase.NewSenderUseCase(senderRepo, 30*time.Second)
 	// Register delivery here
+	delivery.NewUserAuthHandler(app, authUC)
 	delivery.NewUserHandler(app, userUC)
 	delivery.NewStudentParentHandler(app, studentParentUC)
 	delivery.NewSenderDelivery(app, senderUC)
 	delivery.NewStudentDelivery(app, studentUC)
-	delivery.NewUserAuthHandler(app, db)
 
 	wg.Add(1)
 	go func() {

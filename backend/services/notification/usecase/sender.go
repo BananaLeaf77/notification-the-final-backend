@@ -18,11 +18,11 @@ func NewSenderUseCase(repo domain.SenderRepo, timeOut time.Duration) domain.Send
 	}
 }
 
-func (mUC *senderUC) SendMass(ctx context.Context, idList *[]int) error {
+func (mUC *senderUC) SendMass(ctx context.Context, idList *[]int, userID *int) error {
 	// ctx, cancel := context.WithTimeout(ctx, mUC.TimeOut)
 	// defer cancel()
 
-	err := mUC.emailSMTPRepo.SendMass(ctx, idList)
+	err := mUC.emailSMTPRepo.SendMass(ctx, idList, userID)
 	if err != nil {
 		return err
 	}

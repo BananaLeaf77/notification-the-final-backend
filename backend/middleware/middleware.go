@@ -52,3 +52,29 @@ func RoleRequired(roles ...string) fiber.Handler {
 		})
 	}
 }
+
+func AuthRequired() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		tokenStr := c.Get("Authorization")
+		if tokenStr == "" {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "missing token",
+			})
+		}
+
+		claims := new(domain.Claims)
+		token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
+			return jwtKey, nil
+		})
+
+		if err != nil || !token.Valid {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "invalid or expired token",
+			})
+		}
+
+		c.Locals("user", claims)
+
+		return c.Next()
+	}
+}

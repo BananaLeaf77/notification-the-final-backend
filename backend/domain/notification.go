@@ -1,8 +1,11 @@
 package domain
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
-type NotificationHistory struct {
+type AttendanceNotificationHistory struct {
 	NotificationHistoryID int       `gorm:"primaryKey;autoIncrement" json:"notification_history_id"`
 	StudentID             int       `gorm:"not null" json:"student_id"`
 	ParentID              int       `gorm:"not null" json:"parent_id"`
@@ -10,4 +13,8 @@ type NotificationHistory struct {
 	WhatsappStatus        bool      `gorm:"not null" json:"whatsapp"`
 	EmailStatus           bool      `gorm:"not null" json:"email"`
 	CreatedAt             time.Time `gorm:"autoCreateTime" json:"created_at"`
+}
+
+type NotificationHistoryRepo interface {
+	GetAllAttendanceNotificationHistory(ctx context.Context)
 }

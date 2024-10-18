@@ -24,9 +24,9 @@ type Claims struct {
 }
 
 type AuthRepo interface{
-	Login(ctx context.Context, )
+	Login(ctx context.Context, data *LoginRequest) (*[]string, error)
 }
 
 type AuthUseCase interface{
-	Login(ctx context.Context, )
+	Login(ctx context.Context, data *LoginRequest) (*[]string, error)
 }

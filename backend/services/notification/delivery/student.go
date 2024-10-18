@@ -2,6 +2,7 @@ package delivery
 
 import (
 	"notification/domain"
+	"notification/middleware"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -16,8 +17,8 @@ func NewStudentDelivery(app *fiber.App, uc domain.StudentUseCase) {
 	}
 
 	route := app.Group("/student")
-	route.Get("/get-all", handler.deliveryGetAllStudent)
-	route.Get("/download_input_template", handler.deliveryDownloadTemplate)
+	route.Get("/get-all", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.deliveryGetAllStudent)
+	route.Get("/download_input_template", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.deliveryDownloadTemplate)
 }
 
 func (sh *studentHandler) deliveryGetAllStudent(c *fiber.Ctx) error {

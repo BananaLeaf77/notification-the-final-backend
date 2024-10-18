@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"notification/domain"
+	"notification/middleware"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -25,11 +26,11 @@ func NewStudentParentHandler(app *fiber.App, useCase domain.StudentParentUseCase
 	}
 
 	route := app.Group("/student-and-parent")
-	route.Post("/insert", handler.CreateStudentAndParent)
-	route.Post("/import", handler.UploadAndImport)
-	route.Put("/modify/:id", handler.UpdateStudentAndParent)
-	route.Delete("/rm/:id", handler.DeleteStudentAndParent)
-	route.Get("/student/:id", handler.GetStudentDetailsByID)
+	route.Post("/insert", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.CreateStudentAndParent)
+	route.Post("/import", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.UploadAndImport)
+	route.Put("/modify/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.UpdateStudentAndParent)
+	route.Delete("/rm/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteStudentAndParent)
+	route.Get("/student/:id", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetStudentDetailsByID)
 }
 
 func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
@@ -217,7 +218,6 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 
 	return nil, nil, nil
 }
-
 
 // Helper function to get a pointer to a string
 func getStringPointer(s string) *string {

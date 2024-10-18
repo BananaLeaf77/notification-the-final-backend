@@ -63,7 +63,7 @@ func autoMigrate(db *gorm.DB) error {
 	theStudent := domain.Student{}
 	theParent := domain.Parent{}
 	theUser := domain.User{}
-	theNotificationHistory := domain.NotificationHistory{}
+	theNotificationHistory := domain.AttendanceNotificationHistory{}
 
 
 	if err := db.AutoMigrate(&theStudent, &theParent, &theUser, &theNotificationHistory); err != nil {

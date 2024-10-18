@@ -2,6 +2,7 @@ package delivery
 
 import (
 	"notification/domain"
+	"notification/middleware"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -16,11 +17,11 @@ func NewUserHandler(app *fiber.App, useCase domain.UserUseCase) {
 		uc: useCase,
 	}
 
-	app.Post("/staff/create-staff", handler.CreateStaff)
-	app.Get("/staff/get-all", handler.GetAllStaff)
-	app.Delete("/staff/rm/:id", handler.DeleteStaff)
-	app.Get("/staff/details/:id", handler.GetStaffDetail)
-	app.Put("/staff/modify/:id", handler.ModifyStaff)
+	app.Post("/staff/create-staff", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.CreateStaff)
+	app.Get("/staff/get-all", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.GetAllStaff)
+	app.Delete("/staff/rm/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteStaff)
+	app.Get("/staff/details/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.GetStaffDetail)
+	app.Put("/staff/modify/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.ModifyStaff)
 }
 
 func (uh *UserHandler) CreateStaff(c *fiber.Ctx) error {

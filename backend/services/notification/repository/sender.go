@@ -43,40 +43,46 @@ func NewSenderRepository(db *gorm.DB, client smtp.Auth, smtpAddress, schoolPhone
 	}
 }
 
-func (m *senderRepository) SendMass(ctx context.Context, idList *[]int) error {
-	// tNow = time.Now()
+func (m *senderRepository) SendMass(ctx context.Context, idList *[]int, userID *int) error {
+	tNow = time.Now()
 
-	// for _, id := range *idList {
-	// 	var waStatus bool
-	// 	var emailStatus bool
+	for _, id := range *idList {
+		var waStatus bool
+		var emailStatus bool
 
-	// 	student, err := m.fetchStudentDetails(ctx, id)
-	// 	if err != nil {
-	// 		continue
-	// 	}
+		student, err := m.fetchStudentDetails(ctx, id)
+		if err != nil {
+			continue
+		}
 
-	// 	err = m.initText(student)
-	// 	if err != nil {
-	// 		return err
-	// 	}
+		err = m.initText(student)
+		if err != nil {
+			return err
+		}
 
-	// 	if student.Parent.Email != nil && *student.Parent.Email != "" {
-	// 		emailStatus = true
+		if student.Parent.Email != nil && *student.Parent.Email != "" {
+			emailStatus = true
 
-	// 		if err := m.sendEmail(student); err != nil {
-	// 			fmt.Printf("failed email : %s", *student.Parent.Email)
-	// 			continue
-	// 		}
-	// 	}
+			if err := m.sendEmail(student); err != nil {
+				fmt.Printf("failed email : %s", *student.Parent.Email)
+				continue
+			}
+		}
 
-	// 	err = m.sendWA(ctx, student)
-	// 	if err != nil {
-	// 		fmt.Printf("Fail Telephone : %s", student.Parent.Telephone)
-	// 		continue
-	// 	}
+		err = m.sendWA(ctx, student)
+		if err != nil {
+			fmt.Printf("Fail Telephone : %s", student.Parent.Telephone)
+			continue
+		}
 
-	// 	err = m.logNotificationHistory(student.Student.StudentID, student.Student.ParentID, )
-	// }
+		err = m.logNotificationHistory(student.Student.StudentID, student.Student.ParentID, *userID, waStatus, emailStatus)
+		if err != nil {
+			return fmt.Errorf("failed saving the data to notification history, error : %v", err)
+		}
+
+		waStatus = false
+		emailStatus = false
+	}
 
 	return nil
 }
@@ -196,7 +202,7 @@ Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Stu
 }
 
 func (m *senderRepository) logNotificationHistory(studentID, parentID, userID int, whatsappSuccess, emailSuccess bool) error {
-	history := &domain.NotificationHistory{
+	history := &domain.AttendanceNotificationHistory{
 		StudentID:      studentID,
 		ParentID:       parentID,
 		UserID:         userID,
