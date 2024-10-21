@@ -75,3 +75,15 @@ func (spu *studentParentUseCase) DeleteStudentAndParent(ctx context.Context, id 
 	}
 	return nil
 }
+
+func (spu *studentParentUseCase) DataChangeRequest(ctx context.Context, datas domain.DataChangeRequest) error {
+
+	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
+	// defer cancel()
+
+	err := spu.repo.DataChangeRequest(ctx, datas)
+	if err != nil {
+		return err
+	}
+	return nil
+}

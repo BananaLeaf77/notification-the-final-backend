@@ -64,9 +64,9 @@ func autoMigrate(db *gorm.DB) error {
 	theParent := domain.Parent{}
 	theUser := domain.User{}
 	theNotificationHistory := domain.AttendanceNotificationHistory{}
+	theDataChangeRequest := domain.DataChangeRequest{}
 
-
-	if err := db.AutoMigrate(&theStudent, &theParent, &theUser, &theNotificationHistory); err != nil {
+	if err := db.AutoMigrate(&theStudent, &theParent, &theUser, &theNotificationHistory, &theDataChangeRequest); err != nil {
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
 

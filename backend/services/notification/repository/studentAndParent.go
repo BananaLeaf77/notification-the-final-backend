@@ -330,3 +330,12 @@ func (spr *studentParentRepository) GetStudentDetailsByID(ctx context.Context, s
 
 	return &result, nil
 }
+
+func (spr *studentParentRepository) DataChangeRequest(ctx context.Context, datas domain.DataChangeRequest) error {
+	err := spr.db.WithContext(ctx).Create(&datas).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

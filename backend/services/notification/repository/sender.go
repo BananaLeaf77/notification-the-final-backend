@@ -113,7 +113,6 @@ func (m *senderRepository) fetchStudentDetails(ctx context.Context, studentID in
 	}, nil
 }
 
-// Sends an email to the provided email address.
 func (m *senderRepository) sendEmail(payload *domain.StudentAndParent) error {
 	var msg string
 
@@ -129,7 +128,6 @@ func (m *senderRepository) sendEmail(payload *domain.StudentAndParent) error {
 			bodyMale
 	}
 
-	// Send the email.
 	err := smtp.SendMail(m.smtpAdress, m.client, m.emailSender, []string{*payload.Parent.Email}, []byte(msg))
 	if err != nil {
 		return fmt.Errorf("failed to send email: %w", err)

@@ -327,3 +327,30 @@ func (sph *studentParentHandler) GetStudentDetailsByID(c *fiber.Ctx) error {
 		"data":    student.Student,
 	})
 }
+
+func (sph *studentParentHandler) DataChangeRequest(c *fiber.Ctx) error {
+	var datas domain.DataChangeRequest
+
+	err := c.BodyParser(&datas)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "Invalid Request",
+			"error":   err,
+		})
+	}
+
+	err = sph.uc.DataChangeRequest(c.Context(), datas)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Failed to send data change request",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Successfully sent data changes",
+	})
+}

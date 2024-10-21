@@ -1,15 +1,10 @@
 add goroutine di funcs berat ajng lo
 
 steiap stud berelasi ke tiap matapelajaran walaupun beda jurusan, and nil type nilainya ???
-login we kleng
-history
 
-UPDATE student and paren, users data fix lagi tu naskleng!!!
+(di importcsv check length no telphone)
 
-type data tleephone db (varchar 15) stuct validasi 15 digit string 
+(fitur find by no telphone / email)
 
-return import = dupe, invalid telepon, invalid email format (new)
-
-di importcsv check length no telphone
-
-govalidator sing nyak ye!!!!
+Anaisis Kebutuhan
+S
