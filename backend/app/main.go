@@ -59,6 +59,9 @@ func startHTTP() {
 	}
 
 	// Repo And Usecase Declare mafaka
+	// Notification
+	notifRepo := repository.NewNotificationRepository(db)
+	notifUC := usecase.NewNotificationUseCase(notifRepo)
 	// Auth
 	authRepo := repository.NewAuthRepository(db)
 	authUC := usecase.NewAuthUseCase(authRepo)
@@ -75,6 +78,7 @@ func startHTTP() {
 	senderRepo := repository.NewSenderRepository(db, eAuth, *eAdress, *schoolPhone, *emailSender, meow)
 	senderUC := usecase.NewSenderUseCase(senderRepo, 30*time.Second)
 	// Register delivery here
+	delivery.NewNotificationHandler(app, notifUC)
 	delivery.NewUserAuthHandler(app, authUC)
 	delivery.NewUserHandler(app, userUC)
 	delivery.NewStudentParentHandler(app, studentParentUC)

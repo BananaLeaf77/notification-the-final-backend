@@ -130,6 +130,15 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 	for index, record := range *payload {
 		// Check if parent already exists by telephone
 		var parentExists domain.Parent
+
+		if len(record.Student.Telephone) > 15 {
+			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student with telephone %s is too long", index+1, record.Parent.Telephone))
+		}
+
+		if len(record.Parent.Telephone) > 15 {
+			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with telephone %s is too long", index+1, record.Parent.Telephone))
+		}
+
 		err := spr.db.WithContext(ctx).Where("telephone = ? AND deleted_at IS NULL", record.Parent.Telephone).First(&parentExists).Error
 		if err == nil {
 			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with telephone %s already exists", index+1, record.Parent.Telephone))

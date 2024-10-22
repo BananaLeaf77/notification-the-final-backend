@@ -50,6 +50,9 @@ func (m *senderRepository) SendMass(ctx context.Context, idList *[]int, userID *
 		var waStatus bool
 		var emailStatus bool
 
+		waStatus = false
+		emailStatus = false
+
 		student, err := m.fetchStudentDetails(ctx, id)
 		if err != nil {
 			continue
@@ -61,12 +64,11 @@ func (m *senderRepository) SendMass(ctx context.Context, idList *[]int, userID *
 		}
 
 		if student.Parent.Email != nil && *student.Parent.Email != "" {
-			emailStatus = true
-
 			if err := m.sendEmail(student); err != nil {
 				fmt.Printf("failed email : %s", *student.Parent.Email)
 				continue
 			}
+			emailStatus = true
 		}
 
 		err = m.sendWA(ctx, student)
@@ -75,13 +77,12 @@ func (m *senderRepository) SendMass(ctx context.Context, idList *[]int, userID *
 			continue
 		}
 
+		waStatus = true
+
 		err = m.logNotificationHistory(student.Student.StudentID, student.Student.ParentID, *userID, waStatus, emailStatus)
 		if err != nil {
 			return fmt.Errorf("failed saving the data to notification history, error : %v", err)
 		}
-
-		waStatus = false
-		emailStatus = false
 	}
 
 	return nil

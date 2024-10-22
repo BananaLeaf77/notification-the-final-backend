@@ -60,14 +60,18 @@ func autoMigrate(db *gorm.DB) error {
 		return fmt.Errorf("failed to create role ENUM: %w", err)
 	}
 
-	theStudent := domain.Student{}
 	theParent := domain.Parent{}
+	theStudent := domain.Student{}
 	theUser := domain.User{}
 	theNotificationHistory := domain.AttendanceNotificationHistory{}
 	theDataChangeRequest := domain.DataChangeRequest{}
 
-	if err := db.AutoMigrate(&theStudent, &theParent, &theUser, &theNotificationHistory, &theDataChangeRequest); err != nil {
-		return fmt.Errorf("failed to run migrations: %w", err)
+	if err := db.AutoMigrate(&theParent, &theStudent, &theUser, &theDataChangeRequest); err != nil {
+		return fmt.Errorf("failed to run initial migrations: %w", err)
+	}
+
+	if err := db.AutoMigrate(&theNotificationHistory); err != nil {
+		return fmt.Errorf("failed to run notification history migration: %w", err)
 	}
 
 	var existingAdmin domain.User

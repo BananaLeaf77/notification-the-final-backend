@@ -19,7 +19,7 @@ func NewUserAuthHandler(app *fiber.App, uc domain.AuthUseCase) {
 }
 
 func (h *userHandler) Login(c *fiber.Ctx) error {
-	var req domain.LoginRequest
+	var req domain.LoginRequest	
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "invalid request body",

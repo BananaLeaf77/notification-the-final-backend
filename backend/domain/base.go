@@ -2,6 +2,8 @@ package domain
 
 import (
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type SafeStaffData struct {
@@ -79,15 +81,32 @@ type ParentNoGorm struct {
 	DeletedAt *time.Time `json:"deleted_at"`
 }
 
-	type StudentNoGorm struct {
-		StudentID int        `json:"student_id"`
-		Name      string     `json:"name" valid:"required~Name is required"`
-		Class     string     `json:"class" valid:"required~Class is required"`
-		Gender    string     `json:"gender" valid:"required~Gender is required,in(male|female)~Invalid gender"`
-		Telephone string     `json:"telephone" valid:"required~Telephone is required"`
-		ParentID  int        `json:"parent_id"`
-		Parent    Parent     `json:"parent"`
-		CreatedAt time.Time  `json:"created_at"`
-		UpdatedAt time.Time  `json:"updated_at"`
-		DeletedAt *time.Time `json:"deleted_at"`
-	}
+type StudentNoGorm struct {
+	StudentID int        `json:"student_id"`
+	Name      string     `json:"name" valid:"required~Name is required"`
+	Class     string     `json:"class" valid:"required~Class is required"`
+	Gender    string     `json:"gender" valid:"required~Gender is required,in(male|female)~Invalid gender"`
+	Telephone string     `json:"telephone" valid:"required~Telephone is required"`
+	ParentID  int        `json:"parent_id"`
+	Parent    Parent     `json:"parent"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
+	DeletedAt *time.Time `json:"deleted_at"`
+}
+
+type UserResponse struct {
+	UserID    int            `json:"user_id"`
+	Username  string         `json:"username"`
+	Role      string         `json:"role"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"deleted_at,omitempty"`
+}
+
+type AttendanceNotificationHistoryResponse struct {
+	Student        Student      `json:"student"`
+	Parent         Parent       `json:"parent"`
+	User           UserResponse `json:"user"`
+	WhatsappStatus bool         `json:"whatsapp_status"`
+	EmailStatus    bool         `json:"email_status"`
+}
