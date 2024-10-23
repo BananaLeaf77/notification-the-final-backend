@@ -26,6 +26,19 @@ func NewStudentParentHandler(app *fiber.App, useCase domain.StudentParentUseCase
 	}
 
 	route := app.Group("/student-and-parent")
+	route.Post("/insert", handler.CreateStudentAndParent)
+	route.Post("/import", handler.UploadAndImport)
+	route.Put("/modify/:id", handler.UpdateStudentAndParent)
+	route.Delete("/rm/:id", handler.DeleteStudentAndParent)
+	route.Get("/student/:id", handler.GetStudentDetailsByID)
+}
+
+func NewStudentParentHandlerDeploy(app *fiber.App, useCase domain.StudentParentUseCase) {
+	handler := &studentParentHandler{
+		uc: useCase,
+	}
+
+	route := app.Group("/student-and-parent")
 	route.Post("/insert", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.CreateStudentAndParent)
 	route.Post("/import", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.UploadAndImport)
 	route.Put("/modify/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.UpdateStudentAndParent)
@@ -60,6 +73,17 @@ func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
 			"message": "Invalid Parent request body",
 		})
 	}
+
+	classID, err := sph.uc.GetClassIDByName(req.Student.ClassName)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"error":   err.Error(),
+			"message": "Invalid Class Value",
+		})
+	}
+
+	req.Student.ClassID = *classID
 
 	if err := sph.uc.CreateStudentAndParentUC(c.Context(), &req); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -169,9 +193,15 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 			continue
 		}
 
+		classID, err := sph.uc.GetClassIDByName(row[1])
+		if err != nil {
+			log.Printf("Error finding class %s: %v", row[1], err)
+			return nil, nil, fmt.Errorf("row %d: %v", i+2, err)
+		}
+
 		studentDataHolder = domain.Student{
 			Name:      row[0],
-			Class:     row[1],
+			ClassID:   *classID,
 			Gender:    row[2],
 			Telephone: row[3],
 			ParentID:  0,

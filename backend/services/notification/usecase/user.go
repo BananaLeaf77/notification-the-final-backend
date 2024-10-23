@@ -77,3 +77,30 @@ func (u *userUC) GetStaffDetail(ctx context.Context, id int) (*domain.SafeStaffD
 
 	return v, nil
 }
+
+func (u *userUC) CreateClass(ctx context.Context, data *domain.Class) error {
+	err := u.userRepo.CreateClass(ctx, data)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u *userUC) DeleteClass(ctx context.Context, id int) error {
+	err := u.userRepo.DeleteClass(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u *userUC) GetlAllClass(ctx context.Context) (*[]domain.Class, error) {
+	v, err := u.userRepo.GetlAllClass(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}

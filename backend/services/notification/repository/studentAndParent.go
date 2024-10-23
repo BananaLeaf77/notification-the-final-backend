@@ -22,57 +22,48 @@ func NewStudentParentRepository(database *gorm.DB) domain.StudentParentRepo {
 }
 
 func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, req *domain.StudentAndParent) *[]string {
-	// Check if the student telephone already exists
 	var errList []string
 	var existingStudent domain.Student
+	var existingParent domain.Parent
+
+	// Check if the student telephone already exists
 	err := spr.db.WithContext(ctx).Where("telephone = ? AND deleted_at IS NULL", req.Student.Telephone).First(&existingStudent).Error
-	// jika query diatas berhasil berarti error nya nil!!
 	if err == nil {
 		errList = append(errList, fmt.Sprintf("student with telephone %s already exists", req.Student.Telephone))
-
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		errList = append(errList, fmt.Sprintf("error checking student telephone: %v", err))
 	}
 
 	// Check if the parent telephone already exists
-	var existingParent domain.Parent
 	err = spr.db.WithContext(ctx).Where("telephone = ? AND deleted_at IS NULL", req.Parent.Telephone).First(&existingParent).Error
 	if err == nil {
 		errList = append(errList, fmt.Sprintf("parent with telephone %s already exists", req.Parent.Telephone))
-
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		errList = append(errList, fmt.Sprintf("error checking parent telephone: %v", err))
-
 	}
 
 	// Check if the parent email already exists
 	parentEmailLowered := strings.ToLower(*req.Parent.Email)
 	req.Parent.Email = &parentEmailLowered
-
 	err = spr.db.WithContext(ctx).Where("email = ? AND deleted_at IS NULL", parentEmailLowered).First(&existingParent).Error
 	if err == nil {
 		errList = append(errList, fmt.Sprintf("parent with email %s already exists", parentEmailLowered))
-
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		errList = append(errList, fmt.Sprintf("error checking parent email: %v", err))
-
 	}
 
 	// Check if the student name already exists
 	err = spr.db.WithContext(ctx).Where("name = ? AND deleted_at IS NULL", req.Student.Name).First(&existingStudent).Error
 	if err == nil {
 		errList = append(errList, fmt.Sprintf("student with name %s already exists", req.Student.Name))
-
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		errList = append(errList, fmt.Sprintf("error checking student name: %v", err))
-
 	}
 
 	// Check if the parent name already exists
 	err = spr.db.WithContext(ctx).Where("name = ? AND deleted_at IS NULL", req.Parent.Name).First(&existingParent).Error
 	if err == nil {
 		errList = append(errList, fmt.Sprintf("parent with name %s already exists", req.Parent.Name))
-
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		errList = append(errList, fmt.Sprintf("error checking parent name: %v", err))
 	}
@@ -81,12 +72,9 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 		return &errList
 	}
 
-	// If all checks pass, proceed with the transaction
 	tx := spr.db.Begin()
 	if err := tx.Error; err != nil {
-		var singleArr []string
-		singleArr = append(singleArr, fmt.Sprintf("could not begin transaction: %v", err))
-		return &singleArr
+		return &[]string{fmt.Sprintf("could not begin transaction: %v", err)}
 	}
 
 	// Insert parent
@@ -94,9 +82,7 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 	req.Parent.UpdatedAt = req.Parent.CreatedAt
 	if err = tx.WithContext(ctx).Create(&req.Parent).Error; err != nil {
 		tx.Rollback()
-		var singleArr []string
-		singleArr = append(singleArr, fmt.Sprintf("could not insert parent: %v", err))
-		return &singleArr
+		return &[]string{fmt.Sprintf("could not insert parent: %v", err)}
 	}
 
 	// Set the ParentID after inserting the parent
@@ -107,16 +93,11 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 	req.Student.UpdatedAt = req.Student.CreatedAt
 	if err = tx.WithContext(ctx).Create(&req.Student).Error; err != nil {
 		tx.Rollback()
-		var singleArr []string
-		singleArr = append(singleArr, fmt.Sprintf("could not insert student: %v", err))
-		return &singleArr
+		return &[]string{fmt.Sprintf("could not insert student: %v", err)}
 	}
 
-	// Commit the transaction
 	if err = tx.Commit().Error; err != nil {
-		var singleArr []string
-		singleArr = append(singleArr, fmt.Sprintf("could not commit transaction: %v", err))
-		return &singleArr
+		return &[]string{fmt.Sprintf("could not commit transaction: %v", err)}
 	}
 
 	return nil
@@ -324,7 +305,6 @@ func (spr *studentParentRepository) DeleteStudentAndParent(ctx context.Context, 
 func (spr *studentParentRepository) GetStudentDetailsByID(ctx context.Context, studentID int) (*domain.StudentAndParent, error) {
 	var result domain.StudentAndParent
 
-	// Use Preload to load the Parent data automatically and use the correct column student_id
 	err := spr.db.WithContext(ctx).
 		Preload("Parent").
 		Where("students.student_id = ? AND students.deleted_at IS NULL", studentID).
@@ -347,4 +327,18 @@ func (spr *studentParentRepository) DataChangeRequest(ctx context.Context, datas
 	}
 
 	return nil
+}
+
+func (spr *studentParentRepository) GetClassIDByName(className string) (*int, error) {
+	var class domain.Class
+
+	err := spr.db.Where("name = ?", className).First(&class).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("class not found: %s", className)
+		}
+		return nil, fmt.Errorf("error retrieving class: %v", err)
+	}
+
+	return &class.ClassID, nil
 }

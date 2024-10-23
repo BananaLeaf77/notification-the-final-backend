@@ -32,6 +32,7 @@ type StudentParentRepo interface {
 	CreateStudentAndParent(ctx context.Context, req *StudentAndParent) *[]string
 	DeleteStudentAndParent(ctx context.Context, id int) error
 	UpdateStudentAndParent(ctx context.Context, id int, payload *StudentAndParent) error
+	GetClassIDByName(className string) (*int, error)
 
 	ImportCSV(ctx context.Context, payload *[]StudentAndParent) (*[]string, error)
 	DataChangeRequest(ctx context.Context, datas DataChangeRequest) error
@@ -42,6 +43,7 @@ type StudentParentUseCase interface {
 	CreateStudentAndParentUC(ctx context.Context, req *StudentAndParent) *[]string
 	DeleteStudentAndParent(ctx context.Context, id int) error
 	UpdateStudentAndParent(ctx context.Context, id int, payload *StudentAndParent) error
+	GetClassIDByName(className string) (*int, error)
 
 	ImportCSV(ctx context.Context, payload *[]StudentAndParent) (*[]string, error)
 	DataChangeRequest(ctx context.Context, datas DataChangeRequest) error

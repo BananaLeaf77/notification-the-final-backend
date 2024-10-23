@@ -171,3 +171,32 @@ func (ur *userRepository) GetStaffDetail(ctx context.Context, id int) (*domain.S
 
 	return &safeData, nil
 }
+
+func (ur *userRepository) GetlAllClass(ctx context.Context) (*[]domain.Class, error) {
+	var classess []domain.Class
+	err := ur.db.WithContext(ctx).Model(&domain.Class{}).Where("deleted_at IS NULL").Find(&classess).Error
+	if err != nil {
+		return nil, fmt.Errorf("could not get all class: %v", err)
+	}
+
+	return &classess, nil
+}
+
+func (ur *userRepository) CreateClass(ctx context.Context, data *domain.Class) error {
+	err := ur.db.WithContext(ctx).Create(&data).Error
+	if err != nil {
+		return fmt.Errorf("could not create class : %v", err)
+	}
+
+	return nil
+}
+
+func (ur *userRepository) DeleteClass(ctx context.Context, id int) error {
+	db := ur.db.WithContext(ctx)
+
+	if err := db.Model(&domain.Class{}).Where("class_id = ?", id).Update("deleted_at", time.Now()).Error; err != nil {
+		return fmt.Errorf("failed to soft delete class with ID %d: %w", id, err)
+	}
+
+	return nil
+}

@@ -2,6 +2,7 @@ package delivery
 
 import (
 	"notification/domain"
+	"notification/middleware"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -17,6 +18,15 @@ func NewNotificationHandler(app *fiber.App, uc domain.NotificationUseCase) {
 
 	group := app.Group("/notification")
 	group.Get("/truancy-history", handler.GetAllAttendanceNotificationHistory)
+}
+
+func NewNotificationHandlerDeploy(app *fiber.App, uc domain.NotificationUseCase) {
+	handler := &notifHandler{
+		uc: uc,
+	}
+
+	group := app.Group("/notification")
+	group.Get("/truancy-history", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.GetAllAttendanceNotificationHistory)
 }
 
 func (nh *notifHandler) GetAllAttendanceNotificationHistory(c *fiber.Ctx) error {

@@ -65,8 +65,11 @@ func autoMigrate(db *gorm.DB) error {
 	theUser := domain.User{}
 	theNotificationHistory := domain.AttendanceNotificationHistory{}
 	theDataChangeRequest := domain.DataChangeRequest{}
+	theClass := domain.Class{}
+	theSubject := domain.Subject{}
+	theTestScore := domain.TestScore{}
 
-	if err := db.AutoMigrate(&theParent, &theStudent, &theUser, &theDataChangeRequest); err != nil {
+	if err := db.AutoMigrate(&theParent, &theStudent, &theClass, &theSubject, &theTestScore, &theUser, &theDataChangeRequest); err != nil {
 		return fmt.Errorf("failed to run initial migrations: %w", err)
 	}
 

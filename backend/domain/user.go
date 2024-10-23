@@ -24,6 +24,10 @@ type UserRepo interface {
 	UpdateStaff(ctx context.Context, id int, payload *User) error
 	CreateStaff(ctx context.Context, payload *User) (*User, error)
 	DeleteStaff(ctx context.Context, id int) error
+
+	GetlAllClass(ctx context.Context) (*[]Class, error)
+	CreateClass(ctx context.Context, classData *Class) error
+	DeleteClass(ctx context.Context, id int) error
 }
 
 type UserUseCase interface {
@@ -33,4 +37,8 @@ type UserUseCase interface {
 	UpdateStaff(ctx context.Context, id int, payload *User) error
 	CreateStaff(ctx context.Context, payload *User) (*User, error)
 	DeleteStaff(ctx context.Context, id int) error
+
+	GetlAllClass(ctx context.Context) (*[]Class, error)
+	CreateClass(ctx context.Context, classData *Class) error
+	DeleteClass(ctx context.Context, id int) error
 }

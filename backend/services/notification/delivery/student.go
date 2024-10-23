@@ -17,6 +17,16 @@ func NewStudentDelivery(app *fiber.App, uc domain.StudentUseCase) {
 	}
 
 	route := app.Group("/student")
+	route.Get("/get-all", handler.deliveryGetAllStudent)
+	route.Get("/download_input_template", handler.deliveryDownloadTemplate)
+}
+
+func NewStudentDeliveryDeploy(app *fiber.App, uc domain.StudentUseCase) {
+	handler := &studentHandler{
+		suc: uc,
+	}
+
+	route := app.Group("/student")
 	route.Get("/get-all", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.deliveryGetAllStudent)
 	route.Get("/download_input_template", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.deliveryDownloadTemplate)
 }
