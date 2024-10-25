@@ -172,31 +172,130 @@ func (ur *userRepository) GetStaffDetail(ctx context.Context, id int) (*domain.S
 	return &safeData, nil
 }
 
-func (ur *userRepository) GetlAllClass(ctx context.Context) (*[]domain.Class, error) {
-	var classess []domain.Class
-	err := ur.db.WithContext(ctx).Model(&domain.Class{}).Where("deleted_at IS NULL").Find(&classess).Error
-	if err != nil {
-		return nil, fmt.Errorf("could not get all class: %v", err)
+func (ur *userRepository) CreateSubject(ctx context.Context, subject *domain.Subject) error {
+	nameLowered := strings.ToLower(subject.Name)
+
+	var existingUser domain.Subject
+	err := ur.db.WithContext(ctx).Where("name = ? AND deleted_at IS NULL", nameLowered).First(&existingUser).Error
+	if err == nil {
+		return fmt.Errorf("subject with %s name already exists", nameLowered)
 	}
 
-	return &classess, nil
-}
-
-func (ur *userRepository) CreateClass(ctx context.Context, data *domain.Class) error {
-	err := ur.db.WithContext(ctx).Create(&data).Error
+	subject.Name = nameLowered
+	err = ur.db.WithContext(ctx).Create(subject).Error
 	if err != nil {
-		return fmt.Errorf("could not create class : %v", err)
+		return fmt.Errorf("could not create subject: %v", err)
 	}
 
 	return nil
 }
 
-func (ur *userRepository) DeleteClass(ctx context.Context, id int) error {
-	db := ur.db.WithContext(ctx)
+func (ur *userRepository) CreateSubjectBulk(ctx context.Context, subjects *[]domain.Subject) (*[]string, error) {
+	var errList []string
 
-	if err := db.Model(&domain.Class{}).Where("class_id = ?", id).Update("deleted_at", time.Now()).Error; err != nil {
-		return fmt.Errorf("failed to soft delete class with ID %d: %w", id, err)
+	for _, subject := range *subjects {
+		loweredName := strings.ToLower(subject.Name)
+
+		var existingSubject domain.Subject
+		err := ur.db.WithContext(ctx).Where("LOWER(name) = ?", loweredName).First(&existingSubject).Error
+
+		if err == nil {
+			errList = append(errList, fmt.Sprintf("Subject with name %s already exist", subject.Name))
+		} else if err != gorm.ErrRecordNotFound {
+			return nil, err
+		}
+	}
+
+	if len(errList) > 0 {
+		return &errList, nil
+	}
+
+	if err := ur.db.WithContext(ctx).Create(subjects).Error; err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+func (ur *userRepository) GetAllSubject(ctx context.Context) (*[]domain.Subject, error) {
+	var subjects []domain.Subject
+	err := ur.db.WithContext(ctx).Where("deleted_at IS NULL").Find(&subjects).Error
+	if err != nil {
+		return nil, err
+	}
+	return &subjects, nil
+}
+
+func (ur *userRepository) UpdateSubject(ctx context.Context, id int, newSubjectData *domain.Subject) error {
+	nameLowered := strings.ToLower(newSubjectData.Name)
+
+	var existingSubject domain.Subject
+	err := ur.db.WithContext(ctx).Where("name = ? AND subject_id != ? AND deleted_at IS NULL", nameLowered, id).First(&existingSubject).Error
+	if err == nil {
+		return fmt.Errorf("subject with name %s already exists", nameLowered)
+	}
+
+	newSubjectData.Name = nameLowered
+
+	err = ur.db.WithContext(ctx).Model(&domain.Subject{}).
+		Where("subject_id = ? AND deleted_at IS NULL", id).
+		Updates(&newSubjectData).Error
+	if err != nil {
+		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
+			return fmt.Errorf("subject with name %s already exists", nameLowered)
+		}
+		return fmt.Errorf("could not update staff: %v", err)
+	}
+
+	return nil
+
+}
+
+func (ur *userRepository) DeleteSubject(ctx context.Context, id int) error {
+	var subject domain.Subject
+	err := ur.db.WithContext(ctx).Where("subject_id = ? AND deleted_at IS NULL", id).First(&subject).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return fmt.Errorf("subject not found")
+		}
+		return fmt.Errorf("could not get subject details: %v", err)
+	}
+
+	now := time.Now()
+	subject.DeletedAt = gorm.DeletedAt{Time: now, Valid: true}
+	err = ur.db.WithContext(ctx).Save(&subject).Error
+	if err != nil {
+		return fmt.Errorf("could not delete subject: %v", err)
 	}
 
 	return nil
 }
+
+// func (ur *userRepository) GetlAllClass(ctx context.Context) (*[]domain.Class, error) {
+// 	var classess []domain.Class
+// 	err := ur.db.WithContext(ctx).Model(&domain.Class{}).Where("deleted_at IS NULL").Find(&classess).Error
+// 	if err != nil {
+// 		return nil, fmt.Errorf("could not get all class: %v", err)
+// 	}
+
+// 	return &classess, nil
+// }
+
+// func (ur *userRepository) CreateClass(ctx context.Context, data *domain.Class) error {
+// 	err := ur.db.WithContext(ctx).Create(&data).Error
+// 	if err != nil {
+// 		return fmt.Errorf("could not create class : %v", err)
+// 	}
+
+// 	return nil
+// }
+
+// func (ur *userRepository) DeleteClass(ctx context.Context, id int) error {
+// 	db := ur.db.WithContext(ctx)
+
+// 	if err := db.Model(&domain.Class{}).Where("class_id = ?", id).Update("deleted_at", time.Now()).Error; err != nil {
+// 		return fmt.Errorf("failed to soft delete class with ID %d: %w", id, err)
+// 	}
+
+// 	return nil
+// }

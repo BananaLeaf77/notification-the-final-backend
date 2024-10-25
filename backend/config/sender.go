@@ -222,7 +222,7 @@ func generateQRCode(data, filePath string) error {
 
 func SendQRtoEmail(smtpAddr string, smtpAuth *smtp.Auth, emailSender string, qrFilePath string) error {
 	// Subject and body of the email
-	subject := "Subject: QR Code Login\n"
+	subject := "Subject: SINOAN QR Code Login\n"
 	body := "Please find the attached QR code for login.\n\n"
 
 	// Open the QR code file

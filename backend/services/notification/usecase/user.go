@@ -78,8 +78,8 @@ func (u *userUC) GetStaffDetail(ctx context.Context, id int) (*domain.SafeStaffD
 	return v, nil
 }
 
-func (u *userUC) CreateClass(ctx context.Context, data *domain.Class) error {
-	err := u.userRepo.CreateClass(ctx, data)
+func (u *userUC) CreateSubject(ctx context.Context, subject *domain.Subject) error {
+	err := u.userRepo.CreateSubject(ctx, subject)
 	if err != nil {
 		return err
 	}
@@ -87,20 +87,65 @@ func (u *userUC) CreateClass(ctx context.Context, data *domain.Class) error {
 	return nil
 }
 
-func (u *userUC) DeleteClass(ctx context.Context, id int) error {
-	err := u.userRepo.DeleteClass(ctx, id)
-	if err != nil {
-		return err
+func (u *userUC) CreateSubjectBulk(ctx context.Context, subjects *[]domain.Subject) (*[]string, error) {
+	errList, _ := u.userRepo.CreateSubjectBulk(ctx, subjects)
+	if errList != nil {
+		return errList, nil
 	}
 
-	return nil
+	return nil, nil
 }
 
-func (u *userUC) GetlAllClass(ctx context.Context) (*[]domain.Class, error) {
-	v, err := u.userRepo.GetlAllClass(ctx)
+func (u *userUC) GetAllSubject(ctx context.Context) (*[]domain.Subject, error) {
+	v, err := u.userRepo.GetAllSubject(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	return v, nil
 }
+
+func (u *userUC) UpdateSubject(ctx context.Context, id int, newSubjectData *domain.Subject) error {
+	err := u.userRepo.UpdateSubject(ctx, id, newSubjectData)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u *userUC) DeleteSubject(ctx context.Context, id int) error {
+	err := u.userRepo.DeleteSubject(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// func (u *userUC) CreateClass(ctx context.Context, data *domain.Class) error {
+// 	err := u.userRepo.CreateClass(ctx, data)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	return nil
+// }
+
+// func (u *userUC) DeleteClass(ctx context.Context, id int) error {
+// 	err := u.userRepo.DeleteClass(ctx, id)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	return nil
+// }
+
+// func (u *userUC) GetlAllClass(ctx context.Context) (*[]domain.Class, error) {
+// 	v, err := u.userRepo.GetlAllClass(ctx)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	return v, nil
+// }

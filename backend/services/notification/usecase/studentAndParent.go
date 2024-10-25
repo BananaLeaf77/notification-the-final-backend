@@ -88,14 +88,14 @@ func (spu *studentParentUseCase) DataChangeRequest(ctx context.Context, datas do
 	return nil
 }
 
-func (spu *studentParentUseCase) GetClassIDByName(className string) (*int, error) {
+// func (spu *studentParentUseCase) GetClassIDByName(className string) (*int, error) {
 
-	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
-	// defer cancel()
+// 	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
+// 	// defer cancel()
 
-	v, err := spu.repo.GetClassIDByName(className)
-	if err != nil {
-		return nil, err
-	}
-	return v, nil
-}
+// 	v, err := spu.repo.GetClassIDByName(className)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return v, nil
+// }

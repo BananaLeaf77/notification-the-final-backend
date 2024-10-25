@@ -43,13 +43,16 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 	}
 
 	// Check if the parent email already exists
-	parentEmailLowered := strings.ToLower(*req.Parent.Email)
-	req.Parent.Email = &parentEmailLowered
-	err = spr.db.WithContext(ctx).Where("email = ? AND deleted_at IS NULL", parentEmailLowered).First(&existingParent).Error
-	if err == nil {
-		errList = append(errList, fmt.Sprintf("parent with email %s already exists", parentEmailLowered))
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		errList = append(errList, fmt.Sprintf("error checking parent email: %v", err))
+	if req.Parent.Email != nil {
+		parentEmailLowered := strings.ToLower(*req.Parent.Email)
+		req.Parent.Email = &parentEmailLowered
+
+		err = spr.db.WithContext(ctx).Where("email = ? AND deleted_at IS NULL", parentEmailLowered).First(&existingParent).Error
+		if err == nil {
+			errList = append(errList, fmt.Sprintf("parent with email %s already exists", parentEmailLowered))
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+			errList = append(errList, fmt.Sprintf("error checking parent email: %v", err))
+		}
 	}
 
 	// Check if the student name already exists
@@ -329,16 +332,16 @@ func (spr *studentParentRepository) DataChangeRequest(ctx context.Context, datas
 	return nil
 }
 
-func (spr *studentParentRepository) GetClassIDByName(className string) (*int, error) {
-	var class domain.Class
+// func (spr *studentParentRepository) GetClassIDByName(className string) (*int, error) {
+// 	var class domain.Class
 
-	err := spr.db.Where("name = ?", className).First(&class).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, fmt.Errorf("class not found: %s", className)
-		}
-		return nil, fmt.Errorf("error retrieving class: %v", err)
-	}
+// 	err := spr.db.Where("name = ?", className).First(&class).Error
+// 	if err != nil {
+// 		if errors.Is(err, gorm.ErrRecordNotFound) {
+// 			return nil, fmt.Errorf("class not found: %s", className)
+// 		}
+// 		return nil, fmt.Errorf("error retrieving class: %v", err)
+// 	}
 
-	return &class.ClassID, nil
-}
+// 	return &class.ClassID, nil
+// }

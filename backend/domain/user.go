@@ -25,9 +25,15 @@ type UserRepo interface {
 	CreateStaff(ctx context.Context, payload *User) (*User, error)
 	DeleteStaff(ctx context.Context, id int) error
 
-	GetlAllClass(ctx context.Context) (*[]Class, error)
-	CreateClass(ctx context.Context, classData *Class) error
-	DeleteClass(ctx context.Context, id int) error
+	CreateSubject(ctx context.Context, subject *Subject) error
+	CreateSubjectBulk(ctx context.Context, subjects *[]Subject) (*[]string, error)
+	GetAllSubject(ctx context.Context) (*[]Subject, error)
+	UpdateSubject(ctx context.Context, id int, newSubjectData *Subject) error
+	DeleteSubject(ctx context.Context, id int) error
+
+	// GetlAllClass(ctx context.Context) (*[]Class, error)
+	// CreateClass(ctx context.Context, classData *Class) error
+	// DeleteClass(ctx context.Context, id int) error
 }
 
 type UserUseCase interface {
@@ -38,7 +44,13 @@ type UserUseCase interface {
 	CreateStaff(ctx context.Context, payload *User) (*User, error)
 	DeleteStaff(ctx context.Context, id int) error
 
-	GetlAllClass(ctx context.Context) (*[]Class, error)
-	CreateClass(ctx context.Context, classData *Class) error
-	DeleteClass(ctx context.Context, id int) error
+	CreateSubject(ctx context.Context, subject *Subject) error
+	CreateSubjectBulk(ctx context.Context, subjects *[]Subject) (*[]string, error)
+	GetAllSubject(ctx context.Context) (*[]Subject, error)
+	UpdateSubject(ctx context.Context, id int, newSubjectData *Subject) error
+	DeleteSubject(ctx context.Context, id int) error
+
+	// GetlAllClass(ctx context.Context) (*[]Class, error)
+	// CreateClass(ctx context.Context, classData *Class) error
+	// DeleteClass(ctx context.Context, id int) error
 }

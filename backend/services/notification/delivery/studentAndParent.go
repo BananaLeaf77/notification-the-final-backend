@@ -74,16 +74,9 @@ func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
 		})
 	}
 
-	classID, err := sph.uc.GetClassIDByName(req.Student.ClassName)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"success": false,
-			"error":   err.Error(),
-			"message": "Invalid Class Value",
-		})
+	if req.Parent.Email != nil && *req.Parent.Email == "" {
+		req.Parent.Email = nil
 	}
-
-	req.Student.ClassID = *classID
 
 	if err := sph.uc.CreateStudentAndParentUC(c.Context(), &req); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -193,15 +186,9 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 			continue
 		}
 
-		classID, err := sph.uc.GetClassIDByName(row[1])
-		if err != nil {
-			log.Printf("Error finding class %s: %v", row[1], err)
-			return nil, nil, fmt.Errorf("row %d: %v", i+2, err)
-		}
-
 		studentDataHolder = domain.Student{
 			Name:      row[0],
-			ClassID:   *classID,
+			Class:     row[1],
 			Gender:    row[2],
 			Telephone: row[3],
 			ParentID:  0,

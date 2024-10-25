@@ -85,6 +85,14 @@ func startHTTP() {
 	delivery.NewSenderDelivery(app, senderUC)
 	delivery.NewStudentDelivery(app, studentUC)
 
+	// Auth Needed
+	// delivery.NewNotificationHandlerDeploy(app, notifUC)
+	// delivery.NewUserAuthHandlerDeploy(app, authUC)
+	// delivery.NewUserHandlerDeploy(app, userUC)
+	// delivery.NewStudentParentHandlerDeploy(app, studentParentUC)
+	// delivery.NewSenderDeliveryDeploy(app, senderUC)
+	// delivery.NewStudentDeliveryDeploy(app, studentUC)
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
