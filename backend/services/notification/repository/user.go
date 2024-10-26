@@ -35,21 +35,33 @@ func (ur *userRepository) FindUserByUsername(ctx context.Context, username strin
 	return &user, nil
 }
 
-func (ur *userRepository) CreateStaff(ctx context.Context, payload *domain.User) (*domain.User, error) {
+func (ur *userRepository) CreateStaff(ctx context.Context, payload *domain.User, subjectIDs []int) (*domain.User, error) {
 	payloadUsernameLowered := strings.ToLower(payload.Username)
-	// Check if the user already exists
+
 	var existingUser domain.User
 	err := ur.db.WithContext(ctx).Where("username = ? AND deleted_at IS NULL", payloadUsernameLowered).First(&existingUser).Error
 	if err == nil {
 		return nil, fmt.Errorf("username %s already exists", payloadUsernameLowered)
 	}
 
-	// Hash the password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(payload.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, fmt.Errorf("could not hash password: %v", err)
 	}
 	payload.Password = string(hashedPassword)
+
+	var subjects []domain.Subject
+	err = ur.db.WithContext(ctx).Where("subject_id IN ?", subjectIDs).Find(&subjects).Error
+	if err != nil {
+		return nil, fmt.Errorf("could not assign subjects: %v", err)
+	}
+
+	subjectPointers := make([]*domain.Subject, len(subjects))
+	for i := range subjects {
+		subjectPointers[i] = &subjects[i]
+	}
+
+	payload.Teaching = subjectPointers
 
 	// Save the new user
 	payload.Username = payloadUsernameLowered
@@ -62,21 +74,47 @@ func (ur *userRepository) CreateStaff(ctx context.Context, payload *domain.User)
 }
 
 func (ur *userRepository) GetAllStaff(ctx context.Context) (*[]domain.SafeStaffData, error) {
-	var users []domain.SafeStaffData
-	err := ur.db.WithContext(ctx).Model(&domain.User{}).Where("deleted_at IS NULL").Find(&users).Error
+	var users []domain.User
+	err := ur.db.WithContext(ctx).Where("deleted_at IS NULL").Find(&users).Error
 	if err != nil {
 		return nil, fmt.Errorf("could not get all staff: %v", err)
 	}
 
-	// Filter out admin users
-	filteredUsers := []domain.SafeStaffData{}
+	// Prepare to hold safe staff data
+	var safeStaffData []domain.SafeStaffData
+
 	for _, user := range users {
-		if user.Role != "admin" {
-			filteredUsers = append(filteredUsers, user)
+		// Skip admin users
+		if user.Role == "admin" {
+			continue
 		}
+
+		// Fetch subjects associated with the user
+		var subjects []domain.Subject
+		if err := ur.db.WithContext(ctx).Model(&user).
+			Association("Teaching").Find(&subjects); err != nil {
+			return nil, fmt.Errorf("could not get subjects for user %d: %v", user.UserID, err)
+		}
+
+		// Convert gorm.DeletedAt to *time.Time
+		var deletedAt *time.Time
+		if user.DeletedAt.Valid {
+			deletedAt = &user.DeletedAt.Time
+		}
+
+		// Create SafeStaffData instance
+		safeStaffData = append(safeStaffData, domain.SafeStaffData{
+			UserID:    user.UserID,
+			Username:  user.Username,
+			Role:      user.Role,
+			CreatedAt: user.CreatedAt,
+			UpdatedAt: user.UpdatedAt,
+			DeletedAt: deletedAt,
+			Teaching:  subjects,
+		})
 	}
 
-	return &filteredUsers, nil
+	return &safeStaffData, nil
 }
 
 func (ur *userRepository) DeleteStaff(ctx context.Context, id int) error {
@@ -105,10 +143,9 @@ func (ur *userRepository) DeleteStaff(ctx context.Context, id int) error {
 	return nil
 }
 
-func (ur *userRepository) UpdateStaff(ctx context.Context, id int, payload *domain.User) error {
+func (ur *userRepository) UpdateStaff(ctx context.Context, id int, payload *domain.User, subjectIDs []int) error {
 	usernameLowered := strings.ToLower(payload.Username)
 
-	// Check if the username already exists for another user
 	var existingUser domain.User
 	err := ur.db.WithContext(ctx).Where("username = ? AND user_id != ? AND deleted_at IS NULL", usernameLowered, id).First(&existingUser).Error
 	if err == nil {
@@ -130,17 +167,40 @@ func (ur *userRepository) UpdateStaff(ctx context.Context, id int, payload *doma
 		updateUser.Password = string(hashedPassword)
 	}
 
-	// Update the user details
 	err = ur.db.WithContext(ctx).Model(&domain.User{}).
 		Where("user_id = ? AND deleted_at IS NULL", id).
 		Updates(&updateUser).Error
 
 	if err != nil {
-		// Check for unique constraint violation
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
 			return fmt.Errorf("username %s already exists", usernameLowered)
 		}
 		return fmt.Errorf("could not update staff: %v", err)
+	}
+
+	if len(subjectIDs) > 0 {
+		var user domain.User
+		if err := ur.db.WithContext(ctx).First(&user, id).Error; err != nil {
+			return fmt.Errorf("could not find user: %v", err)
+		}
+
+		if err := ur.db.WithContext(ctx).Model(&user).Association("Teaching").Clear(); err != nil {
+			return fmt.Errorf("could not clear existing subjects: %v", err)
+		}
+
+		var subjects []domain.Subject
+		if err := ur.db.WithContext(ctx).Where("subject_id IN ?", subjectIDs).Find(&subjects).Error; err != nil {
+			return fmt.Errorf("could not find new subjects: %v", err)
+		}
+
+		subjectPointers := make([]*domain.Subject, len(subjects))
+		for i := range subjects {
+			subjectPointers[i] = &subjects[i]
+		}
+
+		if err := ur.db.WithContext(ctx).Model(&user).Association("Teaching").Replace(subjectPointers); err != nil {
+			return fmt.Errorf("could not update subjects: %v", err)
+		}
 	}
 
 	return nil

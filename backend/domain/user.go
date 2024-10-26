@@ -8,10 +8,11 @@ import (
 )
 
 type User struct {
-	UserID    int            `gorm:"primaryKey" json:"user_id"`
-	Username  string         `gorm:"unique;not null" json:"username" valid:"required~Username is required"`
-	Password  string         `gorm:"not null" json:"password" valid:"required~Password is required"`
-	Role      string         `gorm:"not null;type:role_enum" json:"role"`
+	UserID    int            `gorm:"primaryKey;autoIncrement" json:"user_id"`
+	Username  string         `gorm:"type:varchar(100);not null;unique" json:"username"`
+	Password  string         `gorm:"type:varchar(100);not null" json:"password"`
+	Role      string         `gorm:"type:varchar(10);not null" json:"role"`
+	Teaching  []*Subject     `gorm:"many2many:user_subjects" json:"teaching"`
 	CreatedAt time.Time      `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
@@ -21,8 +22,8 @@ type UserRepo interface {
 	GetAllStaff(ctx context.Context) (*[]SafeStaffData, error)
 	GetStaffDetail(ctx context.Context, id int) (*SafeStaffData, error)
 	FindUserByUsername(ctx context.Context, username string) (*User, error)
-	UpdateStaff(ctx context.Context, id int, payload *User) error
-	CreateStaff(ctx context.Context, payload *User) (*User, error)
+	UpdateStaff(ctx context.Context, id int, payload *User, subjectIDs []int) error
+	CreateStaff(ctx context.Context, payload *User, subjectIDs []int) (*User, error)
 	DeleteStaff(ctx context.Context, id int) error
 
 	CreateSubject(ctx context.Context, subject *Subject) error
@@ -40,8 +41,8 @@ type UserUseCase interface {
 	GetAllStaff(ctx context.Context) (*[]SafeStaffData, error)
 	GetStaffDetail(ctx context.Context, id int) (*SafeStaffData, error)
 	FindUserByUsername(ctx context.Context, username string) (*User, error)
-	UpdateStaff(ctx context.Context, id int, payload *User) error
-	CreateStaff(ctx context.Context, payload *User) (*User, error)
+	UpdateStaff(ctx context.Context, id int, payload *User, subjectIDs []int) error
+	CreateStaff(ctx context.Context, payload *User, subjectIDs []int) (*User, error)
 	DeleteStaff(ctx context.Context, id int) error
 
 	CreateSubject(ctx context.Context, subject *Subject) error

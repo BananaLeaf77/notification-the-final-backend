@@ -183,18 +183,24 @@ func (uh *uHandler) DeleteSubject(c *fiber.Ctx) error {
 	})
 }
 
-func (uh *uHandler) CreateStaff(c *fiber.Ctx) error {
-	var payload domain.User
-	payload.Role = "staff"
+type CreateStaffRequest struct {
+	User       domain.User `json:"user"`
+	SubjectIDs []int       `json:"subject_ids"`
+}
 
-	if err := c.BodyParser(&payload); err != nil {
+func (uh *uHandler) CreateStaff(c *fiber.Ctx) error {
+	var req CreateStaffRequest
+
+	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   err.Error(),
 			"success": false,
 		})
 	}
 
-	_, err := uh.uc.CreateStaff(c.Context(), &payload)
+	req.User.Role = "staff"
+
+	_, err := uh.uc.CreateStaff(c.Context(), &req.User, req.SubjectIDs)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":   err.Error(),
@@ -282,7 +288,11 @@ func (uh *uHandler) ModifyStaff(c *fiber.Ctx) error {
 		})
 	}
 
-	var payload domain.User
+	var payload struct {
+		User       domain.User `json:"user"`
+		SubjectIDs []int       `json:"subject_ids"` 
+	}
+
 	if err := c.BodyParser(&payload); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
@@ -290,9 +300,9 @@ func (uh *uHandler) ModifyStaff(c *fiber.Ctx) error {
 		})
 	}
 
-	payload.Role = "staff"
+	payload.User.Role = "staff"
 
-	err = uh.uc.UpdateStaff(c.Context(), id, &payload)
+	err = uh.uc.UpdateStaff(c.Context(), id, &payload.User, payload.SubjectIDs) 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,

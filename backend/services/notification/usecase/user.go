@@ -29,10 +29,10 @@ func (u *userUC) FindUserByUsername(ctx context.Context, username string) (*doma
 	return v, nil
 }
 
-func (u *userUC) CreateStaff(ctx context.Context, payload *domain.User) (*domain.User, error) {
+func (u *userUC) CreateStaff(ctx context.Context, payload *domain.User, subjectIDs []int) (*domain.User, error) {
 	// ctx, cancel := context.WithTimeout(ctx, mUC.TimeOut)
 	// defer cancel()
-	v, err := u.userRepo.CreateStaff(ctx, payload)
+	v, err := u.userRepo.CreateStaff(ctx, payload, subjectIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -60,8 +60,8 @@ func (u *userUC) DeleteStaff(ctx context.Context, id int) error {
 	return nil
 }
 
-func (u *userUC) UpdateStaff(ctx context.Context, id int, payload *domain.User) error {
-	err := u.userRepo.UpdateStaff(ctx, id, payload)
+func (u *userUC) UpdateStaff(ctx context.Context, id int, payload *domain.User, subjectIDs []int) error {
+	err := u.userRepo.UpdateStaff(ctx, id, payload, subjectIDs)
 	if err != nil {
 		return err
 	}

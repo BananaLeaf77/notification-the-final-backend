@@ -77,21 +77,21 @@ func startHTTP() {
 	// Sender
 	senderRepo := repository.NewSenderRepository(db, eAuth, *eAdress, *schoolPhone, *emailSender, meow)
 	senderUC := usecase.NewSenderUseCase(senderRepo, 30*time.Second)
-	// Register delivery here
-	delivery.NewNotificationHandler(app, notifUC)
-	delivery.NewUserAuthHandler(app, authUC)
-	delivery.NewUserHandler(app, userUC)
-	delivery.NewStudentParentHandler(app, studentParentUC)
-	delivery.NewSenderDelivery(app, senderUC)
-	delivery.NewStudentDelivery(app, studentUC)
+	// // Register delivery here
+	// delivery.NewNotificationHandler(app, notifUC)
+	// delivery.NewUserAuthHandler(app, authUC)
+	// delivery.NewUserHandler(app, userUC)
+	// delivery.NewStudentParentHandler(app, studentParentUC)
+	// delivery.NewSenderDelivery(app, senderUC)
+	// delivery.NewStudentDelivery(app, studentUC)
 
 	// Auth Needed
-	// delivery.NewNotificationHandlerDeploy(app, notifUC)
-	// delivery.NewUserAuthHandlerDeploy(app, authUC)
-	// delivery.NewUserHandlerDeploy(app, userUC)
-	// delivery.NewStudentParentHandlerDeploy(app, studentParentUC)
-	// delivery.NewSenderDeliveryDeploy(app, senderUC)
-	// delivery.NewStudentDeliveryDeploy(app, studentUC)
+	delivery.NewUserAuthHandler(app, authUC)
+	delivery.NewNotificationHandlerDeploy(app, notifUC)
+	delivery.NewUserHandlerDeploy(app, userUC)
+	delivery.NewStudentParentHandlerDeploy(app, studentParentUC)
+	delivery.NewSenderDeliveryDeploy(app, senderUC)
+	delivery.NewStudentDeliveryDeploy(app, studentUC)
 
 	wg.Add(1)
 	go func() {
