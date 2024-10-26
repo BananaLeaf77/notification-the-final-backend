@@ -20,13 +20,14 @@ type Claims struct {
 	UserID   int    `json:"user_id"`
 	Username string `json:"username"`
 	Role     string `json:"role"`
+	// Teaching []int  `json:"teaching"`
 	jwt.RegisteredClaims
 }
 
-type AuthRepo interface{
+type AuthRepo interface {
 	Login(ctx context.Context, data *LoginRequest) (*[]string, error)
 }
 
-type AuthUseCase interface{
+type AuthUseCase interface {
 	Login(ctx context.Context, data *LoginRequest) (*[]string, error)
 }

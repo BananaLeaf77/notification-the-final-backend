@@ -35,6 +35,22 @@ func (ur *userRepository) FindUserByUsername(ctx context.Context, username strin
 	return &user, nil
 }
 
+func (r *userRepository) GetSubjectsForTeacher(ctx context.Context, userID int) (*[]domain.Subject, error) {
+	var subjects []domain.Subject
+
+	err := r.db.WithContext(ctx).
+		Table("subjects").
+		Joins("JOIN user_subjects ON user_subjects.subject_subject_id = subjects.subject_id").
+		Where("user_subjects.user_user_id = ?", userID).
+		Find(&subjects).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &subjects, nil
+}
+
 func (ur *userRepository) CreateStaff(ctx context.Context, payload *domain.User, subjectIDs []int) (*domain.User, error) {
 	payloadUsernameLowered := strings.ToLower(payload.Username)
 

@@ -123,6 +123,15 @@ func (u *userUC) DeleteSubject(ctx context.Context, id int) error {
 	return nil
 }
 
+func (u *userUC) GetSubjectsForTeacher(ctx context.Context, userID int) (*[]domain.Subject, error)  {
+	v, err := u.userRepo.GetSubjectsForTeacher(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
 // func (u *userUC) CreateClass(ctx context.Context, data *domain.Class) error {
 // 	err := u.userRepo.CreateClass(ctx, data)
 // 	if err != nil {

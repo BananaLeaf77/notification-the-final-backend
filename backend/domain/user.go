@@ -32,6 +32,9 @@ type UserRepo interface {
 	UpdateSubject(ctx context.Context, id int, newSubjectData *Subject) error
 	DeleteSubject(ctx context.Context, id int) error
 
+	GetSubjectsForTeacher(ctx context.Context, userID int) (*[]Subject, error)
+	// InputTestScores(ctx context.Context)
+
 	// GetlAllClass(ctx context.Context) (*[]Class, error)
 	// CreateClass(ctx context.Context, classData *Class) error
 	// DeleteClass(ctx context.Context, id int) error
@@ -50,6 +53,8 @@ type UserUseCase interface {
 	GetAllSubject(ctx context.Context) (*[]Subject, error)
 	UpdateSubject(ctx context.Context, id int, newSubjectData *Subject) error
 	DeleteSubject(ctx context.Context, id int) error
+
+	GetSubjectsForTeacher(ctx context.Context, userID int) (*[]Subject, error)
 
 	// GetlAllClass(ctx context.Context) (*[]Class, error)
 	// CreateClass(ctx context.Context, classData *Class) error

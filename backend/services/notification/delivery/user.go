@@ -28,6 +28,8 @@ func NewUserHandler(app *fiber.App, useCase domain.UserUseCase) {
 	group.Get("/subject/all", handler.GetAllSubject)
 	group.Put("/subject/modify/:id", handler.UpdateSubject)
 	group.Delete("/subject/rm/:id", handler.DeleteSubject)
+
+	group.Get("/show-student-testscores", handler.GetSubjectsForTeacher)
 }
 
 func NewUserHandlerDeploy(app *fiber.App, useCase domain.UserUseCase) {
@@ -46,6 +48,31 @@ func NewUserHandlerDeploy(app *fiber.App, useCase domain.UserUseCase) {
 	group.Get("/subject/all", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.GetAllSubject)
 	group.Put("/subject/modify/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.UpdateSubject)
 	group.Delete("/subject/rm/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteSubject)
+	group.Get("/show-students-subjects", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetSubjectsForTeacher)
+}
+
+func (h *uHandler) GetSubjectsForTeacher(c *fiber.Ctx) error {
+	userClaims := c.Locals("user").(*domain.Claims)
+	if userClaims == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "unauthorized: missing token"})
+	}
+
+	userID := userClaims.UserID
+
+	subjects, err := h.uc.GetSubjectsForTeacher(c.Context(), userID)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   err.Error(),
+			"success": false,
+			"message": "Failed to get subjects for the teacher",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"success": true,
+		"message": "Subjects fetched successfully",
+		"data":    subjects,
+	})
 }
 
 func (uh *uHandler) CreateSubject(c *fiber.Ctx) error {
@@ -290,7 +317,7 @@ func (uh *uHandler) ModifyStaff(c *fiber.Ctx) error {
 
 	var payload struct {
 		User       domain.User `json:"user"`
-		SubjectIDs []int       `json:"subject_ids"` 
+		SubjectIDs []int       `json:"subject_ids"`
 	}
 
 	if err := c.BodyParser(&payload); err != nil {
@@ -302,7 +329,7 @@ func (uh *uHandler) ModifyStaff(c *fiber.Ctx) error {
 
 	payload.User.Role = "staff"
 
-	err = uh.uc.UpdateStaff(c.Context(), id, &payload.User, payload.SubjectIDs) 
+	err = uh.uc.UpdateStaff(c.Context(), id, &payload.User, payload.SubjectIDs)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
