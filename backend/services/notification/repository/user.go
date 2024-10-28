@@ -40,16 +40,24 @@ func (r *userRepository) InputTestScores(ctx context.Context, teacherID int, tes
 	tx := r.db.WithContext(ctx).Begin()
 
 	for _, score := range *testScores {
+		var student domain.Student
+		if err := tx.Where("student_id = ?", score.StudentID).First(&student).Error; err != nil {
+			tx.Rollback()
+			return fmt.Errorf("student ID %d does not exist", score.StudentID)
+		}
+
 		var subject domain.Subject
+		if err := tx.Where("subject_id = ?", score.SubjectID).First(&subject).Error; err != nil {
+			tx.Rollback()
+			return fmt.Errorf("subject ID %d does not exist", score.SubjectID)
+		}
 
-		fmt.Println(teacherID)
-		fmt.Println(testScores)
-
+		var count int64
 		err := tx.Table("user_subjects").
 			Where("user_user_id = ? AND subject_subject_id = ?", teacherID, score.SubjectID).
-			First(&subject).Error
+			Count(&count).Error
 
-		if err != nil {
+		if err != nil || count == 0 {
 			tx.Rollback()
 			return fmt.Errorf("teacher is not authorized to input scores for subject ID %d", score.SubjectID)
 		}
@@ -64,14 +72,12 @@ func (r *userRepository) InputTestScores(ctx context.Context, teacherID int, tes
 		}
 
 		if existingScore.TestScoreID > 0 {
-			// Update the existing score
 			existingScore.Score = score.Score
 			if err := tx.Save(&existingScore).Error; err != nil {
 				tx.Rollback()
 				return err
 			}
 		} else {
-			// Create a new test score record
 			newScore := domain.TestScore{
 				StudentID: score.StudentID,
 				SubjectID: score.SubjectID,

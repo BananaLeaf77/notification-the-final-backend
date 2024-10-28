@@ -77,6 +77,7 @@ func startHTTP() {
 	// Sender
 	senderRepo := repository.NewSenderRepository(db, eAuth, *eAdress, *schoolPhone, *emailSender, meow)
 	senderUC := usecase.NewSenderUseCase(senderRepo, 30*time.Second)
+	
 	// // Register delivery here
 	// delivery.NewNotificationHandler(app, notifUC)
 	// delivery.NewUserAuthHandler(app, authUC)
