@@ -49,6 +49,35 @@ func NewUserHandlerDeploy(app *fiber.App, useCase domain.UserUseCase) {
 	group.Put("/subject/modify/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.UpdateSubject)
 	group.Delete("/subject/rm/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteSubject)
 	group.Get("/show-students-subjects", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetSubjectsForTeacher)
+	group.Post("/input-test-scores", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.InputTestScores)
+}
+
+func (h *uHandler) InputTestScores(c *fiber.Ctx) error {
+	userClaims := c.Locals("user").(*domain.Claims)
+	if userClaims == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "unauthorized: missing token"})
+	}
+
+	teacherID := userClaims.UserID
+
+	var testScores []domain.TestScore
+	if err := c.BodyParser(&testScores); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request payload"})
+	}
+
+	err := h.uc.InputTestScores(c.Context(), teacherID, &testScores)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   err.Error(),
+			"success": false,
+			"message": "Failed to input test scores",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Test scores successfully inputted",
+	})
 }
 
 func (h *uHandler) GetSubjectsForTeacher(c *fiber.Ctx) error {

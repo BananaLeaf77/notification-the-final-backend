@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"notification/domain"
 	"strings"
@@ -33,6 +34,58 @@ func (ur *userRepository) FindUserByUsername(ctx context.Context, username strin
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (r *userRepository) InputTestScores(ctx context.Context, teacherID int, testScores *[]domain.TestScore) error {
+	tx := r.db.WithContext(ctx).Begin()
+
+	for _, score := range *testScores {
+		var subject domain.Subject
+
+		fmt.Println(teacherID)
+		fmt.Println(testScores)
+
+		err := tx.Table("user_subjects").
+			Where("user_user_id = ? AND subject_subject_id = ?", teacherID, score.SubjectID).
+			First(&subject).Error
+
+		if err != nil {
+			tx.Rollback()
+			return fmt.Errorf("teacher is not authorized to input scores for subject ID %d", score.SubjectID)
+		}
+
+		var existingScore domain.TestScore
+		err = tx.Where("student_id = ? AND subject_id = ? AND teacher_id = ?", score.StudentID, score.SubjectID, teacherID).
+			First(&existingScore).Error
+
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			tx.Rollback()
+			return err
+		}
+
+		if existingScore.TestScoreID > 0 {
+			// Update the existing score
+			existingScore.Score = score.Score
+			if err := tx.Save(&existingScore).Error; err != nil {
+				tx.Rollback()
+				return err
+			}
+		} else {
+			// Create a new test score record
+			newScore := domain.TestScore{
+				StudentID: score.StudentID,
+				SubjectID: score.SubjectID,
+				TeacherID: teacherID,
+				Score:     score.Score,
+			}
+			if err := tx.Create(&newScore).Error; err != nil {
+				tx.Rollback()
+				return err
+			}
+		}
+	}
+
+	return tx.Commit().Error
 }
 
 func (r *userRepository) GetSubjectsForTeacher(ctx context.Context, userID int) (*[]domain.Subject, error) {
