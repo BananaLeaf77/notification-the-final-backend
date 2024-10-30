@@ -2,6 +2,7 @@ package delivery
 
 import (
 	"fmt"
+	"notification/config"
 	"notification/domain"
 	"notification/middleware"
 
@@ -36,17 +37,16 @@ func NewStudentDeliveryDeploy(app *fiber.App, uc domain.StudentUseCase) {
 func (sh *studentHandler) deliveryGetAllStudent(c *fiber.Ctx) error {
 	userToken, ok := c.Locals("user").(*domain.Claims)
 	if !ok {
-		log.Error("[Error] Failed to extract user token from context")
+		config.PrintLogInfo(&userToken.Username, fiber.StatusUnauthorized, "deliveryGetAllStudent")
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"success": false,
 			"message": "Unauthorized",
 		})
 	}
 
-	log.Info(fmt.Sprintf("User: %s => Request to get all students", userToken.Username))
-
 	students, err := sh.suc.GetAllStudentUC(c.Context())
 	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "deliveryGetAllStudent")
 		log.Error(fmt.Sprintf("User: %s => Failed to get all students: %v", userToken.Username, err))
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
@@ -55,8 +55,7 @@ func (sh *studentHandler) deliveryGetAllStudent(c *fiber.Ctx) error {
 		})
 	}
 
-	log.Info(fmt.Sprintf("User: %s => Successfully retrieved all students", userToken.Username))
-
+	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "deliveryGetAllStudent")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
 		"message": "Students retrieved successfully",

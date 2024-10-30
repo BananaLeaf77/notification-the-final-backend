@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"log"
+	"notification/config"
 	"notification/domain"
 	"notification/middleware"
 	"os"
@@ -47,8 +48,11 @@ func NewStudentParentHandlerDeploy(app *fiber.App, useCase domain.StudentParentU
 }
 
 func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
+	userToken := c.Locals("user").(*domain.Claims)
+
 	var req domain.StudentAndParent
 	if err := c.BodyParser(&req); err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "CreateStudentAndParent")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"error":   err.Error(),
@@ -58,6 +62,7 @@ func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
 
 	_, err := govalidator.ValidateStruct(req.Student)
 	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "CreateStudentAndParent")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"error":   err.Error(),
@@ -67,6 +72,7 @@ func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
 
 	_, err = govalidator.ValidateStruct(req.Parent)
 	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "CreateStudentAndParent")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"error":   err.Error(),
@@ -79,12 +85,15 @@ func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
 	}
 
 	if err := sph.uc.CreateStudentAndParentUC(c.Context(), &req); err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "CreateStudentAndParent")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"error":   err,
 			"message": "Failed to Create Student and Parent",
 		})
 	}
+
+	config.PrintLogInfo(&userToken.Username, fiber.StatusCreated, "CreateStudentAndParent")
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"success": true,
