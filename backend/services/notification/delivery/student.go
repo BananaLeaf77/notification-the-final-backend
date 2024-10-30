@@ -1,10 +1,12 @@
 package delivery
 
 import (
+	"fmt"
 	"notification/domain"
 	"notification/middleware"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/log"
 )
 
 type studentHandler struct {
@@ -32,14 +34,28 @@ func NewStudentDeliveryDeploy(app *fiber.App, uc domain.StudentUseCase) {
 }
 
 func (sh *studentHandler) deliveryGetAllStudent(c *fiber.Ctx) error {
+	userToken, ok := c.Locals("user").(*domain.Claims)
+	if !ok {
+		log.Error("[Error] Failed to extract user token from context")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"success": false,
+			"message": "Unauthorized",
+		})
+	}
+
+	log.Info(fmt.Sprintf("User: %s => Request to get all students", userToken.Username))
+
 	students, err := sh.suc.GetAllStudentUC(c.Context())
 	if err != nil {
+		log.Error(fmt.Sprintf("User: %s => Failed to get all students: %v", userToken.Username, err))
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
-			"message": "Failed to get all students",
+			"message": "Failed to retrieve students",
 			"error":   err.Error(),
 		})
 	}
+
+	log.Info(fmt.Sprintf("User: %s => Successfully retrieved all students", userToken.Username))
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,

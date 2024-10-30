@@ -39,6 +39,12 @@ func (ur *userRepository) FindUserByUsername(ctx context.Context, username strin
 func (r *userRepository) InputTestScores(ctx context.Context, teacherID int, testScores *[]domain.TestScore) error {
 	tx := r.db.WithContext(ctx).Begin()
 
+	var userDetail domain.User
+	err := r.db.WithContext(ctx).Where("user_id = ? AND deleted_at is NULL", teacherID).First(&userDetail).Error
+	if err != nil {
+		return fmt.Errorf("teacher with id %d not found", teacherID)
+	}
+
 	for _, score := range *testScores {
 		var student domain.Student
 		if err := tx.Where("student_id = ?", score.StudentID).First(&student).Error; err != nil {
@@ -52,18 +58,22 @@ func (r *userRepository) InputTestScores(ctx context.Context, teacherID int, tes
 			return fmt.Errorf("subject ID %d does not exist", score.SubjectID)
 		}
 
-		var count int64
-		err := tx.Table("user_subjects").
-			Where("user_user_id = ? AND subject_subject_id = ?", teacherID, score.SubjectID).
-			Count(&count).Error
+		// Authorization check for non-admin users
+		if userDetail.Role != "admin" {
+			var count int64
+			err := tx.Table("user_subjects").
+				Where("user_user_id = ? AND subject_subject_id = ?", teacherID, score.SubjectID).
+				Count(&count).Error
 
-		if err != nil || count == 0 {
-			tx.Rollback()
-			return fmt.Errorf("teacher is not authorized to input scores for subject ID %d", score.SubjectID)
+			if err != nil || count == 0 {
+				tx.Rollback()
+				return fmt.Errorf("teacher is not authorized to input scores for subject ID %d", score.SubjectID)
+			}
 		}
 
+		// Check if a test score already exists for this student and subject (ignore teacher)
 		var existingScore domain.TestScore
-		err = tx.Where("student_id = ? AND subject_id = ? AND teacher_id = ?", score.StudentID, score.SubjectID, teacherID).
+		err := tx.Where("student_id = ? AND subject_id = ?", score.StudentID, score.SubjectID).
 			First(&existingScore).Error
 
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -72,12 +82,15 @@ func (r *userRepository) InputTestScores(ctx context.Context, teacherID int, tes
 		}
 
 		if existingScore.TestScoreID > 0 {
+			// Update the existing score
 			existingScore.Score = score.Score
+			existingScore.TeacherID = teacherID // Optionally update the teacher ID to the new one
 			if err := tx.Save(&existingScore).Error; err != nil {
 				tx.Rollback()
 				return err
 			}
 		} else {
+			// Create a new test score record
 			newScore := domain.TestScore{
 				StudentID: score.StudentID,
 				SubjectID: score.SubjectID,
@@ -96,15 +109,30 @@ func (r *userRepository) InputTestScores(ctx context.Context, teacherID int, tes
 
 func (r *userRepository) GetSubjectsForTeacher(ctx context.Context, userID int) (*[]domain.Subject, error) {
 	var subjects []domain.Subject
+	var user domain.User
 
-	err := r.db.WithContext(ctx).
-		Table("subjects").
-		Joins("JOIN user_subjects ON user_subjects.subject_subject_id = subjects.subject_id").
-		Where("user_subjects.user_user_id = ?", userID).
-		Find(&subjects).Error
-
+	err := r.db.WithContext(ctx).Where("user_id = ?", userID).First(&user).Error
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("user with id %d not found", userID)
+	}
+
+	if user.Role != "admin" {
+		err = r.db.WithContext(ctx).
+			Table("subjects").
+			Joins("JOIN user_subjects ON user_subjects.subject_subject_id = subjects.subject_id").
+			Where("user_subjects.user_user_id = ?", userID).
+			Find(&subjects).Error
+
+		if err != nil {
+			return nil, err
+		}
+		return &subjects, nil
+
+	}
+
+	err = r.db.WithContext(ctx).Where("deleted_at IS NULL").Find(&subjects).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to get all subject %v", err)
 	}
 
 	return &subjects, nil

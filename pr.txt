@@ -4,7 +4,7 @@ steiap stud berelasi ke tiap matapelajaran walaupun beda jurusan, and nil type n
 
 (di importcsv check length no telphone)
 
-(fitur find by no telphone / email)
+(fitur find by no telphone / email) untuk 
 
 Anaisis Kebutuhan
-S
+

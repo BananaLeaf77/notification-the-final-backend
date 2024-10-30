@@ -35,6 +35,8 @@ type UserRepo interface {
 	GetSubjectsForTeacher(ctx context.Context, userID int) (*[]Subject, error)
 	InputTestScores(ctx context.Context, teacherID int, testScores *[]TestScore) error
 
+	// GetAllAssignedSubject(ctx context.Context, userID int) (*[]Subject, error)
+
 	// GetlAllClass(ctx context.Context) (*[]Class, error)
 	// CreateClass(ctx context.Context, classData *Class) error
 	// DeleteClass(ctx context.Context, id int) error
@@ -57,6 +59,8 @@ type UserUseCase interface {
 	GetSubjectsForTeacher(ctx context.Context, userID int) (*[]Subject, error)
 	InputTestScores(ctx context.Context, teacherID int, testScores *[]TestScore) error
 
+	// GetAllAssignedSubject(ctx context.Context, userID int) (*[]Subject, error)
+	
 	// GetlAllClass(ctx context.Context) (*[]Class, error)
 	// CreateClass(ctx context.Context, classData *Class) error
 	// DeleteClass(ctx context.Context, id int) error

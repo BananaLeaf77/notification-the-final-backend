@@ -19,7 +19,7 @@ type Subject struct {
 type Student struct {
 	StudentID int            `gorm:"primaryKey;autoIncrement" json:"student_id"`
 	Name      string         `gorm:"type:varchar(150);not null;unique" json:"name" valid:"required~Name is required"`
-	Class     string         `gorm:"type:varchar(3);not null" json:"class"`
+	Class     string         `gorm:"type:varchar(5);not null" json:"class"`
 	Gender    string         `gorm:"type:gender_enum;not null" json:"gender" valid:"required~Gender is required,in(male|female)~Invalid gender"`
 	Telephone string         `gorm:"type:varchar(15);not null;unique" json:"telephone" valid:"required~Telephone is required"`
 	ParentID  int            `json:"parent_id"`

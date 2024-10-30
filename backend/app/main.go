@@ -38,7 +38,7 @@ func startHTTP() {
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
 		AllowMethods: "GET,POST,PUT,DELETE",
-		AllowHeaders: "Origin, Content-Type, Accept",
+		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
 	}))
 
 	app.Get("/", func(c *fiber.Ctx) error {
@@ -77,7 +77,7 @@ func startHTTP() {
 	// Sender
 	senderRepo := repository.NewSenderRepository(db, eAuth, *eAdress, *schoolPhone, *emailSender, meow)
 	senderUC := usecase.NewSenderUseCase(senderRepo, 30*time.Second)
-	
+
 	// // Register delivery here
 	// delivery.NewNotificationHandler(app, notifUC)
 	// delivery.NewUserAuthHandler(app, authUC)
