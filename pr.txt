@@ -6,5 +6,6 @@ steiap stud berelasi ke tiap matapelajaran walaupun beda jurusan, and nil type n
 
 (fitur find by no telphone / email) untuk 
 
-Anaisis Kebutuhan
+if one to many parent dengan siswa bagaimana pengecekan nama yang sama nomer yang sama email yang sama solusi saya pakai wali
+
 

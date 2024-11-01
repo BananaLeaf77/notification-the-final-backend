@@ -47,6 +47,6 @@ func PrintLogInfo(username *string, statusCode int, functionName string) {
 	}
 
 	// Log the message with the appropriate color
-	logMsg := fmt.Sprintf("\n\n\nUser: %s, (%s) => Status: %s[%d] - %s%s\n\n\n", *username, functionName, logColor, statusCode, http.StatusText(statusCode), reset)
+	logMsg := fmt.Sprintf("\nUser: %s, (%s) => Status: %s[%d] - %s%s\n\n\n", *username, functionName, logColor, statusCode, http.StatusText(statusCode), reset)
 	log.Info(logMsg)
 }
