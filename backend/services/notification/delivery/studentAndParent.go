@@ -290,10 +290,11 @@ func (sph *studentParentHandler) UpdateStudentAndParent(c *fiber.Ctx) error {
 		})
 	}
 
-	if err := sph.uc.UpdateStudentAndParent(c.Context(), convertetID, &req); err != nil {
+	errList := sph.uc.UpdateStudentAndParent(c.Context(), convertetID, &req)
+	if errList != nil && len(*errList) > 0 {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
-			"error":   err.Error(),
+			"error":   *errList,
 			"message": "Failed to update student and parent",
 		})
 	}

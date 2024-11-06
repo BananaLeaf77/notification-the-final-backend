@@ -12,8 +12,9 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	Token string `json:"token"`
-	Role  string `json:"role"`
+	Token    string `json:"token"`
+	Role     string `json:"role"`
+	Username string `json:"username"`
 }
 
 type Claims struct {

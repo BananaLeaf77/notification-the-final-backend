@@ -9,13 +9,20 @@ import (
 
 type User struct {
 	UserID    int            `gorm:"primaryKey;autoIncrement" json:"user_id"`
-	Username  string         `gorm:"type:varchar(100);not null;unique" json:"username"`
+	Username  string         `gorm:"type:varchar(100);not null;" json:"username"`
 	Password  string         `gorm:"type:varchar(100);not null" json:"password"`
 	Role      string         `gorm:"type:varchar(10);not null" json:"role"`
 	Teaching  []*Subject     `gorm:"many2many:user_subjects" json:"teaching"`
 	CreatedAt time.Time      `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+}
+
+type Profile struct {
+	UserID   int    `gorm:"primaryKey;autoIncrement" json:"user_id"`
+	Username string `gorm:"type:varchar(100);not null;" json:"username"`
+	Password string `gorm:"type:varchar(100);not null" json:"password"`
+	Role     string `gorm:"type:varchar(10);not null" json:"role"`
 }
 
 type UserRepo interface {
@@ -60,7 +67,7 @@ type UserUseCase interface {
 	InputTestScores(ctx context.Context, teacherID int, testScores *[]TestScore) error
 
 	// GetAllAssignedSubject(ctx context.Context, userID int) (*[]Subject, error)
-	
+
 	// GetlAllClass(ctx context.Context) (*[]Class, error)
 	// CreateClass(ctx context.Context, classData *Class) error
 	// DeleteClass(ctx context.Context, id int) error

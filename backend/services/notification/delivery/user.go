@@ -50,6 +50,16 @@ func NewUserHandlerDeploy(app *fiber.App, useCase domain.UserUseCase) {
 	group.Delete("/subject/rm/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteSubject)
 	group.Get("/show-students-subjects", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetSubjectsForTeacher)
 	group.Post("/input-test-scores", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.InputTestScores)
+	group.Get("/profile-dashboard", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.ShowProfile)
+}
+
+func (h *uHandler) ShowProfile(c *fiber.Ctx) error {
+	userToken := c.Locals("user").(*domain.Claims)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Profile data loaded",
+		"data":    userToken,
+	})
 }
 
 func (h *uHandler) InputTestScores(c *fiber.Ctx) error {

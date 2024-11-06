@@ -8,4 +8,3 @@ steiap stud berelasi ke tiap matapelajaran walaupun beda jurusan, and nil type n
 
 if one to many parent dengan siswa bagaimana pengecekan nama yang sama nomer yang sama email yang sama solusi saya pakai wali
 
-

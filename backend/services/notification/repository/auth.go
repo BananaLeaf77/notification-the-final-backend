@@ -34,7 +34,7 @@ func (ar *authRepository) Login(ctx context.Context, data *domain.LoginRequest) 
 		return nil, fmt.Errorf("invalid username or password")
 	}
 
-	dataList = append(dataList, user.Role)
+	dataList = append(dataList, user.Role, user.Username)
 
 	token, err := middleware.GenerateJWT(user.UserID, user.Username, user.Role)
 	if err != nil {

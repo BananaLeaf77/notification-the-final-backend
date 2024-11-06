@@ -75,6 +75,8 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 		return &errList
 	}
 
+	req.Student.Class = strings.ToUpper(req.Student.Class)
+	fmt.Println(req.Student.Class)
 	tx := spr.db.Begin()
 	if err := tx.Error; err != nil {
 		return &[]string{fmt.Sprintf("could not begin transaction: %v", err)}
@@ -202,31 +204,77 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 	return nil, nil
 }
 
-func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, id int, req *domain.StudentAndParent) error {
+func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, id int, req *domain.StudentAndParent) *[]string {
 	var student domain.Student
+	var duplicatedDataStudent domain.Student
+	var duplicatedDataParent domain.Parent
+
+	var errList []string
 
 	tx := spr.db.Begin()
 	if err := tx.Error; err != nil {
-		return fmt.Errorf("could not begin transaction: %v", err)
+		errList = append(errList, fmt.Sprintf("could not begin transaction: %v", err))
+		return &errList
 	}
 
 	now := time.Now()
 	req.Student.UpdatedAt = now
 	req.Student.Parent.UpdatedAt = now
 
-	err := spr.db.WithContext(ctx).Where("student_id = ?", id).Find(&student).Error
+	// Check if the student exists
+	err := spr.db.WithContext(ctx).Where("student_id = ? AND deleted_at IS NULL", id).First(&student).Error
 	if err != nil {
-		return fmt.Errorf("cant find student with id %d", id)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			errList = append(errList, fmt.Sprintf("can't find student with id %d", id))
+			return &errList
+		} else {
+			errList = append(errList, fmt.Sprintf("database error: %v", err))
+			return &errList
+		}
 	}
 
-	// Update the parent
+	// Ensure no duplicate student fields
+	checkUniqueStudentField := func(field, value string) {
+		err := spr.db.WithContext(ctx).Where(fmt.Sprintf("%s = ? AND student_id != ? AND deleted_at IS NULL", field), value, id).First(&duplicatedDataStudent).Error
+		if err == nil {
+			errList = append(errList, fmt.Sprintf("Student with %s %s already exists", field, value))
+		}
+	}
+
+	checkUniqueStudentField("name", req.Student.Name)
+	checkUniqueStudentField("telephone", req.Student.Telephone)
+
+	// Ensure no duplicate parent fields
+	checkUniqueParentField := func(field, value string) {
+		err := spr.db.WithContext(ctx).Where(fmt.Sprintf("%s = ? AND parent_id != ? AND deleted_at IS NULL", field), value, student.ParentID).First(&duplicatedDataParent).Error
+		if err == nil {
+			errList = append(errList, fmt.Sprintf("Parent with %s %s already exists", field, value))
+		}
+	}
+
+	checkUniqueParentField("name", req.Parent.Name)
+
+	if req.Parent.Email != nil && *req.Parent.Email != "" {
+		loweredEmail := strings.ToLower(*req.Parent.Email)
+		req.Parent.Email = &loweredEmail
+		checkUniqueParentField("email", loweredEmail)
+	}
+
+	checkUniqueParentField("telephone", req.Parent.Telephone)
+
+	if len(errList) > 0 {
+		return &errList
+	}
+
+	// Update only if parent exists, or create otherwise
 	if err := tx.WithContext(ctx).
-		Model(&req.Student.Parent).
 		Where("parent_id = ?", student.ParentID).
-		Updates(req.Parent).
+		Assign(req.Parent).
+		FirstOrCreate(&req.Student.Parent).
 		Error; err != nil {
 		tx.Rollback()
-		return fmt.Errorf("could not update parent: %v", err)
+		errList = append(errList, fmt.Sprintf("could not update parent: %v", err))
+		return &errList
 	}
 
 	// Update the student
@@ -236,25 +284,17 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 		Updates(req.Student).
 		Error; err != nil {
 		tx.Rollback()
-
-		// Check for duplicate key error
-		if isDuplicateKeyError(err) {
-			return fmt.Errorf("could not update student: duplicate student name '%s' already exists", req.Student.Name)
-		}
-
-		return fmt.Errorf("could not update student: %v", err)
+		errList = append(errList, fmt.Sprintf("could not update student: %v", err))
+		return &errList
 	}
 
 	// Commit the transaction
 	if err := tx.Commit().Error; err != nil {
-		return fmt.Errorf("could not commit transaction: %v", err)
+		errList = append(errList, fmt.Sprintf("could not commit transaction: %v", err))
+		return &errList
 	}
 
 	return nil
-}
-
-func isDuplicateKeyError(err error) bool {
-	return strings.Contains(err.Error(), "SQLSTATE 23505")
 }
 
 func (spr *studentParentRepository) DeleteStudentAndParent(ctx context.Context, studentID int) error {

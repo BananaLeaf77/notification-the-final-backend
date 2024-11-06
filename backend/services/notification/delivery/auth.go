@@ -35,11 +35,13 @@ func (h *userHandler) Login(c *fiber.Ctx) error {
 	}
 
 	theRole := (*dataList)[0]
-	theToken := (*dataList)[1]
+	theUsername := (*dataList)[1]
+	theToken := (*dataList)[2]
 
 	return c.Status(fiber.StatusOK).JSON(domain.LoginResponse{
-		Token: theToken,
-		Role:  theRole,
+		Token:    theToken,
+		Role:     theRole,
+		Username: theUsername,
 	})
 
 }

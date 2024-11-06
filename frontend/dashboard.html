@@ -7,6 +7,29 @@
     <style>
         body {
             background-color: #f7f7f7;
+            font-family: 'Arial', sans-serif;
+        }
+        .sidebar {
+            height: 100vh;
+            background-color: #343a40;
+            color: white;
+            position: fixed;
+            width: 220px;
+            padding-top: 20px;
+        }
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            padding: 10px 20px;
+            transition: background-color 0.3s;
+        }
+        .sidebar a:hover {
+            background-color: #495057;
+        }
+        .content {
+            margin-left: 220px;
+            padding: 20px;
         }
         .card-header {
             background-color: #007bff;
@@ -19,159 +42,225 @@
             background-color: #007bff;
             color: white;
         }
+        .form-label {
+            font-size: 0.9em;
+        }
+        .profile-icon {
+            display: flex;
+            align-items: center;
+            color: white;
+            cursor: pointer;
+        }
+        .profile-icon img {
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            margin-right: 8px;
+        }
     </style>
 </head>
 <body>
-<div class="container mt-5">
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h3>Student Dashboard</h3>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStudentModal">Add Student</button>
-        </div>
-        <div class="card-body">
-            <table class="table table-hover">
-                <thead class="thead-dark">
-                <tr>
-                    <th>Class</th>
-                    <th>Name</th>
-                    <th>Actions</th>
-                </tr>
-                </thead>
-                <tbody id="studentTable">
-                    <!-- Dynamically load students here -->
-                </tbody>
-            </table>
+    <div class="sidebar">
+        <h4 class="text-center">SINOAN</h4>
+        <a href="#dashboard">Dashboard</a>
+        <a href="#students">Students</a>
+        <a href="#parents">Parents</a>
+        <a href="#settings">Settings</a>
+    </div>
+    <div class="content">
+        <div class="container mt-5">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3>Student Dashboard</h3>
+                <div id="profileInfo" class="profile-icon">
+                    <img src="/frontend/imgs/profile-img.jpg" alt="Profile">
+                    <span id="profileName">Loading...</span>
+                </div>
+            </div>
+            <div class="card mt-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3>Student Dashboard</h3>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStudentModal">Add Student</button>
+                </div>
+                <div class="card-body">
+                    <table class="table table-hover">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th>Class</th>
+                                <th>Name</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentTable">
+                            <!-- Dynamically load students here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
-</div>
+    <div class="modal fade" id="addStudentModal" tabindex="-1" aria-labelledby="addStudentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addStudentModalLabel">Add Student</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addStudentForm">
+                        <h6>Student Information</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="studentName" class="form-label">Student Name</label>
+                                <input type="text" class="form-control" id="studentName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="studentClass" class="form-label">Class</label>
+                                <input type="text" class="form-control" id="studentClass" maxlength="5" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="studentGender" class="form-label">Gender</label>
+                                <select class="form-select" id="studentGender" required>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="studentTelephone" class="form-label">Telephone</label>
+                                <input type="tel" class="form-control" id="studentTelephone" maxlength="15" pattern="[0-9]+" required>
+                            </div>
+                        </div>
+                        <hr>
+                        <h6>Parent Information</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="parentName" class="form-label">Parent Name</label>
+                                <input type="text" class="form-control" id="parentName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="parentTelephone" class="form-label">Parent Telephone</label>
+                                <input type="tel" class="form-control" id="parentTelephone" maxlength="15" pattern="[0-9]+" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="parentEmail" class="form-label">Parent Email</label>
+                                <input type="email" class="form-control" id="parentEmail">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="parentGender" class="form-label">Parent Gender</label>
+                                <select class="form-select" id="parentGender" required>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-3 d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<!-- Add Student Modal -->
-<div class="modal fade" id="addStudentModal" tabindex="-1" aria-labelledby="addStudentModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addStudentModalLabel">Add Student</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="addStudentForm">
-                    <div class="mb-3">
-                        <label for="studentName" class="form-label">Student Name</label>
-                        <input type="text" class="form-control" id="studentName" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="studentClass" class="form-label">Class</label>
-                        <input type="text" class="form-control" id="studentClass" maxlength="3" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="studentGender" class="form-label">Gender</label>
-                        <select class="form-select" id="studentGender" required>
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="studentTelephone" class="form-label">Telephone</label>
-                        <input type="tel" class="form-control" id="studentTelephone" maxlength="15" pattern="[0-9]+" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="parentName" class="form-label">Parent Name</label>
-                        <input type="text" class="form-control" id="parentName" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="parentTelephone" class="form-label">Parent Telephone</label>
-                        <input type="tel" class="form-control" id="parentTelephone" maxlength="15" pattern="[0-9]+" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="parentEmail" class="form-label">Parent Email</label>
-                        <input type="email" class="form-control" id="parentEmail">
-                    </div>
-                    <div class="mb-3">
-                        <label for="parentGender" class="form-label">Parent Gender</label>
-                        <select class="form-select" id="parentGender" required>
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Save</button>
-                </form>
+    <!-- Update Student Modal -->
+    <div class="modal fade" id="updateStudentModal" tabindex="-1" aria-labelledby="updateStudentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="updateStudentModalLabel">Update Student</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="updateStudentForm">
+                        <input type="hidden" id="updateStudentId">
+                        <h6>Student Information</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="updateStudentName" class="form-label">Student Name</label>
+                                <input type="text" class="form-control" id="updateStudentName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="updateStudentClass" class="form-label">Class</label>
+                                <input type="text" class="form-control" id="updateStudentClass" maxlength="5" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="updateStudentGender" class="form-label">Gender</label>
+                                <select class="form-select" id="updateStudentGender" required>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="updateStudentTelephone" class="form-label">Telephone</label>
+                                <input type="tel" class="form-control" id="updateStudentTelephone" maxlength="15" pattern="[0-9]+" required>
+                            </div>
+                        </div>
+                        <hr>
+                        <h6>Parent Information</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="updateParentName" class="form-label">Parent Name</label>
+                                <input type="text" class="form-control" id="updateParentName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="updateParentTelephone" class="form-label">Parent Telephone</label>
+                                <input type="tel" class="form-control" id="updateParentTelephone" maxlength="15" pattern="[0-9]+" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="updateParentEmail" class="form-label">Parent Email</label>
+                                <input type="email" class="form-control" id="updateParentEmail">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="updateParentGender" class="form-label">Parent Gender</label>
+                                <select class="form-select" id="updateParentGender" required>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-3 d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary">Update</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // Fetch students and populate the table after the DOM is fully loaded
+    // Fetch profile data on page load
     document.addEventListener("DOMContentLoaded", function () {
         const token = localStorage.getItem("authToken");
-
         if (!token) {
             alert("You are not authorized. Please log in first.");
             window.location.href = "login.html";
             return;
         }
-
+        fetchProfileData(token);
         fetchStudents(token);
     });
 
-    function fetchStudents(token) {
-        fetch("http://127.0.0.1:8000/student/get-all", {
+    function fetchProfileData(token) {
+        fetch("http://127.0.0.1:8000/user/profile-dashboard", {
             method: "GET",
             headers: {
-                "Authorization": `${token}`, // Added " to the Authorization header
+                "Authorization": `${token}`,
                 "Content-Type": "application/json"
             }
         })
         .then(response => response.json())
         .then(data => {
-            const studentTable = document.getElementById('studentTable');
-            studentTable.innerHTML = '';
-            data.data.forEach(student => {
-                const row = document.createElement('tr');
-                row.classList.add('student-row');
-                row.innerHTML = `
-                    <td>${student.class}</td>
-                    <td>${student.name}</td>
-                    <td>
-                        <button class="btn btn-warning btn-sm update-btn" data-id="${student.student_id}">Update</button>
-                        <button class="btn btn-danger btn-sm delete-btn" data-id="${student.student_id}">Delete</button>
-                    </td>
-                `;
-                studentTable.appendChild(row);
-            });
-
-            // Attach event listeners to the buttons
-            document.querySelectorAll('.update-btn').forEach(button => {
-                button.addEventListener('click', function (e) {
-                    e.stopPropagation(); // Prevent row click event
-                    updateStudent(this.getAttribute('data-id'));
-                });
-            });
-
-            document.querySelectorAll('.delete-btn').forEach(button => {
-                button.addEventListener('click', function (e) {
-                    e.stopPropagation(); // Prevent row click event
-                    deleteStudent(this.getAttribute('data-id'));
-                });
-            });
-
-            // Attach row click event for viewing details
-            document.querySelectorAll('.student-row').forEach(row => {
-                row.addEventListener('click', function () {
-                    const studentId = this.querySelector('.update-btn').getAttribute('data-id');
-                    viewDetails(studentId);
-                });
-            });
+            if (data.success) {
+                const profileName = document.getElementById("profileName");
+                profileName.textContent = `${data.data.username} (${data.data.role})`;
+            } else {
+                alert("Failed to load profile information.");
+            }
         })
         .catch(error => {
-            console.error("Error fetching students:", error);
-            alert("Failed to load student data.");
+            console.error("Error fetching profile data:", error);
+            alert("An error occurred while fetching profile information.");
         });
-    }
-
-    function viewDetails(studentId) {
-        window.location.href = `student-details.html?id=${studentId}`;
     }
 
     document.getElementById('addStudentForm').addEventListener('submit', function (e) {
@@ -209,8 +298,10 @@
                 fetchStudents(token); 
                 document.getElementById('addStudentForm').reset(); 
     
-                const addStudentModal = new bootstrap.Modal(document.getElementById('addStudentModal'));
+                const addStudentModalElement = document.getElementById('addStudentModal');
+                const addStudentModal = bootstrap.Modal.getInstance(addStudentModalElement);
                 addStudentModal.hide();
+
             } else {
                 alert(data.error || "Failed to add student.");
             }
@@ -219,33 +310,148 @@
             alert("An error occurred while adding the student.");
         });
     });
-    
 
-    function updateStudent(studentId) {
-        // Fetch and update logic (you can add modal logic for editing a student)
-        alert(`Update student with ID: ${studentId}`);
-    }
-
-    function deleteStudent(studentId) {
+    document.addEventListener("DOMContentLoaded", function () {
         const token = localStorage.getItem("authToken");
+        if (!token) {
+            alert("You are not authorized. Please log in first.");
+            window.location.href = "login.html";
+            return;
+        }
+        fetchStudents(token);
+    });
 
-        fetch(`http://127.0.0.1:8000/student-and-parent/rm/${studentId}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `${token}` // Ensure token is included here
-            }
-        }).then(response => {
-            if (response.ok) {
-                fetchStudents(token); // Refresh student list
-            } else {
-                alert("Failed to delete student.");
-            }
-        }).catch(error => {
-            console.error("Error deleting student:", error);
-            alert("An error occurred while deleting the student.");
+    function fetchStudents(token) {
+        fetch("http://127.0.0.1:8000/student/get-all", {
+            method: "GET",
+            headers: { "Authorization": `${token}`, "Content-Type": "application/json" }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const studentTable = document.getElementById('studentTable');
+            studentTable.innerHTML = '';
+    
+            // Sort students based on class in ascending order
+            data.data.sort((a, b) => {
+                const [aClassNum, aClassLetter] = parseClass(a.class);
+                const [bClassNum, bClassLetter] = parseClass(b.class);
+    
+                // First compare by class number
+                if (aClassNum !== bClassNum) {
+                    return aClassNum - bClassNum;
+                }
+                // If class numbers are the same, compare by class letter
+                return aClassLetter.localeCompare(bClassLetter);
+            });
+    
+            data.data.forEach(student => {
+                const row = document.createElement('tr');
+                row.classList.add('student-row');
+                row.innerHTML = `
+                    <td>${student.class}</td>
+                    <td>${student.name}</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm update-btn" data-id="${student.student_id}" onclick="fetchStudentDetails(${student.student_id})">Update</button>
+                        <button class="btn btn-danger btn-sm delete-btn" data-id="${student.student_id}">Delete</button>
+                    </td>
+                `;
+                studentTable.appendChild(row);
+            });
+        })
+        .catch(error => {
+            console.error("Error fetching students:", error);
+            alert("Failed to load student data.");
         });
     }
-</script>
+    
+    // Helper function to parse the class string
+    function parseClass(classStr) {
+        const match = classStr.match(/^(\d+)([A-Z])$/);
+        if (match) {
+            return [parseInt(match[1]), match[2]]; // Extract and return class number and letter
+        }
+        return [Infinity, ""]; // Default for any malformed data
+    }
+    
 
+    function fetchStudentDetails(studentId) {
+        const token = localStorage.getItem("authToken");
+        fetch(`http://127.0.0.1:8000/student-and-parent/student/${studentId}`, {
+            method: "GET",
+            headers: { "Authorization": `${token}`, "Content-Type": "application/json" }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const student = data.data;
+                document.getElementById('updateStudentId').value = student.student_id;
+                document.getElementById('updateStudentName').value = student.name;
+                document.getElementById('updateStudentClass').value = student.class;
+                document.getElementById('updateStudentGender').value = student.gender;
+                document.getElementById('updateStudentTelephone').value = student.telephone;
+                document.getElementById('updateParentName').value = student.parent.name;
+                document.getElementById('updateParentTelephone').value = student.parent.telephone;
+                document.getElementById('updateParentEmail').value = student.parent.email;
+                document.getElementById('updateParentGender').value = student.parent.gender;
+
+                // Show the update modal
+                const updateModal = new bootstrap.Modal(document.getElementById('updateStudentModal'));
+                updateModal.show();
+            } else {
+                alert(data.message || "Failed to load student details.");
+            }
+        })
+        .catch(error => {
+            console.error("Error fetching student details:", error);
+            alert("An error occurred while loading student details.");
+        });
+    }
+
+    document.getElementById('updateStudentForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const token = localStorage.getItem("authToken");
+
+    const studentId = document.getElementById('updateStudentId').value; // Get student ID
+
+    const updatedStudent = {
+        student: {
+            name: document.getElementById('updateStudentName').value,
+            class: document.getElementById('updateStudentClass').value,
+            gender: document.getElementById('updateStudentGender').value,
+            telephone: document.getElementById('updateStudentTelephone').value
+        },
+        parent: {
+            name: document.getElementById('updateParentName').value,
+            telephone: document.getElementById('updateParentTelephone').value,
+            email: document.getElementById('updateParentEmail').value,
+            gender: document.getElementById('updateParentGender').value
+        }
+    };
+
+    fetch(`http://127.0.0.1:8000/student-and-parent/modify/${studentId}`, {
+        method: "PUT",
+        headers: {
+            "Authorization": `${token}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(updatedStudent)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            fetchStudents(token); // Refresh the student list
+            bootstrap.Modal.getInstance(document.getElementById('updateStudentModal')).hide();
+        } else {
+            alert(data.error); // Display error message if update fails
+        }
+    })
+    .catch(error => {
+        console.error("Error updating student:", error);
+        alert("An error occurred while updating the student.");
+    });
+});
+
+</script>
 </body>
 </html>

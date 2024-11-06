@@ -434,6 +434,8 @@ func (ur *userRepository) DeleteSubject(ctx context.Context, id int) error {
 	return nil
 }
 
+
+
 // func (ur *userRepository) GetlAllClass(ctx context.Context) (*[]domain.Class, error) {
 // 	var classess []domain.Class
 // 	err := ur.db.WithContext(ctx).Model(&domain.Class{}).Where("deleted_at IS NULL").Find(&classess).Error

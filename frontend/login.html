@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>SINOAN Login</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
@@ -12,17 +12,22 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            font-family: 'Arial', sans-serif;
+            color: #333;
         }
 
         .card {
             border: none;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
             border-radius: 12px;
+            padding: 2rem;
+            background: #fff;
         }
 
         .card h2 {
             color: #007bff;
             font-weight: 700;
+            margin-bottom: 1.5rem;
         }
 
         .form-control:focus {
@@ -41,14 +46,19 @@
         .btn-primary:hover {
             background: #0056b3;
         }
+
+        #errorMessage {
+            margin-top: 1rem;
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-6">
-                <div class="card p-4">
-                    <h2 class="text-center mb-4">Login</h2>
+                <div class="card">
+                    <h2 class="text-center">SINOAN Login</h2>
                     <form id="loginForm">
                         <div class="mb-3">
                             <label for="username" class="form-label">Username</label>
@@ -62,7 +72,7 @@
                             <button type="submit" class="btn btn-primary">Login</button>
                         </div>
                     </form>
-                    <div id="errorMessage" class="alert alert-danger mt-3 d-none" role="alert"></div>
+                    <div id="errorMessage" class="alert alert-danger" role="alert"></div>
                 </div>
             </div>
         </div>
@@ -92,13 +102,13 @@
                     window.location.href = "dashboard.html";
                 } else {
                     errorMessage.textContent = data.error;
-                    errorMessage.classList.remove("d-none");
+                    errorMessage.style.display = "block";
                 }
             })
             .catch(error => {
                 console.error("Error:", error);
                 errorMessage.textContent = "An error occurred while logging in.";
-                errorMessage.classList.remove("d-none");
+                errorMessage.style.display = "block";
             });
         });
     </script>
