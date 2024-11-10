@@ -35,14 +35,7 @@ func NewStudentDeliveryDeploy(app *fiber.App, uc domain.StudentUseCase) {
 }
 
 func (sh *studentHandler) deliveryGetAllStudent(c *fiber.Ctx) error {
-	userToken, ok := c.Locals("user").(*domain.Claims)
-	if !ok {
-		config.PrintLogInfo(&userToken.Username, fiber.StatusUnauthorized, "deliveryGetAllStudent")
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"success": false,
-			"message": "Unauthorized",
-		})
-	}
+	userToken, _ := c.Locals("user").(*domain.Claims)
 
 	students, err := sh.suc.GetAllStudentUC(c.Context())
 	if err != nil {
@@ -64,9 +57,11 @@ func (sh *studentHandler) deliveryGetAllStudent(c *fiber.Ctx) error {
 }
 
 func (sh *studentHandler) deliveryDownloadTemplate(c *fiber.Ctx) error {
+	userToken, _ := c.Locals("user").(*domain.Claims)
 
 	filePath, err := sh.suc.DownloadInputDataTemplate(c.Context())
 	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "deliveryDownloadTemplate")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"message": "Failed to get the input data template",
@@ -77,5 +72,6 @@ func (sh *studentHandler) deliveryDownloadTemplate(c *fiber.Ctx) error {
 	c.Set("Content-Disposition", "attachment; filename=input_data_template.csv")
 	c.Set("Content-Type", "text/csv")
 
+	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "deliveryDownloadTemplate")
 	return c.SendFile(*filePath)
 }

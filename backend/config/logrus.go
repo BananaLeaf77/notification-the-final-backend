@@ -30,23 +30,22 @@ func PrintLogInfo(username *string, statusCode int, functionName string) {
 	var logColor string
 
 	switch statusCode {
-	case fiber.StatusOK:
-		logColor = green
-	case fiber.StatusCreated:
+	case fiber.StatusOK, fiber.StatusCreated:
 		logColor = green
 	case fiber.StatusAccepted:
 		logColor = yellow
-	case fiber.StatusBadRequest:
-		logColor = red
-	case fiber.StatusUnauthorized:
-		logColor = red
-	case fiber.StatusInternalServerError:
+	case fiber.StatusBadRequest, fiber.StatusUnauthorized, fiber.StatusInternalServerError:
 		logColor = red
 	default:
-		logColor = reset // Default color for any unhandled status codes
+		logColor = reset
 	}
 
-	// Log the message with the appropriate color
-	logMsg := fmt.Sprintf("\nUser: %s, (%s) => Status: %s[%d] - %s%s\n\n\n", *username, functionName, logColor, statusCode, http.StatusText(statusCode), reset)
+	// Handle a nil `username` by using a placeholder
+	user := "Unknown"
+	if username != nil {
+		user = *username
+	}
+
+	logMsg := fmt.Sprintf("\nUser: %s, (%s) => Status: %s[%d] - %s%s\n\n\n", user, functionName, logColor, statusCode, http.StatusText(statusCode), reset)
 	log.Info(logMsg)
 }

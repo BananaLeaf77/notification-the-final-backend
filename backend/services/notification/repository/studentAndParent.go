@@ -345,6 +345,61 @@ func (spr *studentParentRepository) DeleteStudentAndParent(ctx context.Context, 
 	return nil
 }
 
+func (spr *studentParentRepository) DeleteStudentAndParentMass(ctx context.Context, studentIDS *[]int) error {
+	// Start a transaction
+	tx := spr.db.Begin()
+	if err := tx.Error; err != nil {
+		return fmt.Errorf("could not begin transaction: %v", err)
+	}
+
+	// Iterate over the student IDs to delete them in bulk
+	for _, studentID := range *studentIDS {
+		var student domain.Student
+		// Retrieve the parentID from the student record
+		err := tx.WithContext(ctx).
+			Select("parent_id").
+			Where("student_id = ? AND deleted_at IS NULL", studentID).
+			First(&student).Error
+
+		if err != nil {
+			tx.Rollback()
+			if err == gorm.ErrRecordNotFound {
+				return fmt.Errorf("student with ID %d not found", studentID)
+			}
+			return fmt.Errorf("error retrieving student: %v", err)
+		}
+
+		// Soft delete the student
+		err = tx.WithContext(ctx).Where("student_id = ?", studentID).Delete(&domain.Student{}).Error
+		if err != nil {
+			tx.Rollback()
+			return fmt.Errorf("error deleting student with ID %d: %v", studentID, err)
+		}
+
+		// Soft delete the parent if no other students are linked to this parent
+		err = tx.WithContext(ctx).
+			Where("parent_id = ?", student.ParentID).
+			Where("NOT EXISTS (SELECT 1 FROM students WHERE parent_id = ? AND deleted_at IS NULL)", student.ParentID).
+			Delete(&domain.Parent{}).Error
+
+		if err != nil {
+			tx.Rollback()
+			if err == gorm.ErrRecordNotFound {
+				return fmt.Errorf("parent with ID %d not found", student.ParentID)
+			}
+			return fmt.Errorf("error deleting parent with ID %d: %v", student.ParentID, err)
+		}
+	}
+
+	// Commit the transaction
+	err := tx.Commit().Error
+	if err != nil {
+		return fmt.Errorf("could not commit transaction: %v", err)
+	}
+
+	return nil
+}
+
 func (spr *studentParentRepository) GetStudentDetailsByID(ctx context.Context, studentID int) (*domain.StudentAndParent, error) {
 	var result domain.StudentAndParent
 
@@ -370,6 +425,16 @@ func (spr *studentParentRepository) DataChangeRequest(ctx context.Context, datas
 	}
 
 	return nil
+}
+
+func (spr *studentParentRepository) GetAllDataChangeRequest(ctx context.Context) (*[]domain.DataChangeRequest, error) {
+	var req []domain.DataChangeRequest
+
+	if err := spr.db.WithContext(ctx).Where("is_reviewed IS FALSE").Find(&req).Error; err != nil {
+		return nil, fmt.Errorf("could not get all data change request : %v", err)
+	}
+
+	return &req, nil
 }
 
 // func (spr *studentParentRepository) GetClassIDByName(className string) (*int, error) {

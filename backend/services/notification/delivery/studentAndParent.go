@@ -45,6 +45,31 @@ func NewStudentParentHandlerDeploy(app *fiber.App, useCase domain.StudentParentU
 	route.Put("/modify/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.UpdateStudentAndParent)
 	route.Delete("/rm/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteStudentAndParent)
 	route.Get("/student/:id", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetStudentDetailsByID)
+	route.Post("/req/data-change-request", handler.DataChangeRequest)
+	route.Get("/get-all-data-change-request", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.GetAllDataChangeRequest)
+}
+
+func (sph *studentParentHandler) GetAllDataChangeRequest(c *fiber.Ctx) error {
+	userToken := c.Locals("user").(*domain.Claims)
+
+	v, err := sph.uc.GetAllDataChangeRequest(c.Context())
+	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "GetAllDataChangeRequest")
+		return c.Status(fiber.StatusInternalServerError).JSON((fiber.Map{
+			"success": false,
+			"error":   err.Error(),
+			"message": "Failed to get all data change request",
+			"data":    nil,
+		}))
+	}
+
+	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "GetAllDataChangeRequest")
+	return c.Status(fiber.StatusOK).JSON((fiber.Map{
+		"success": true,
+		"message": "Data Change Request Retrieved Successfully",
+		"data":    v,
+	}))
+
 }
 
 func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
@@ -102,8 +127,11 @@ func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
 }
 
 func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
+	userToken, _ := c.Locals("user").(*domain.Claims)
+
 	file, err := c.FormFile("file")
 	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "UploadAndImport")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"error":   err.Error(),
@@ -116,6 +144,7 @@ func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
 	// Ensure upload directory exists
 	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
+			config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "UploadAndImport")
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"success": false,
 				"error":   err.Error(),
@@ -128,6 +157,7 @@ func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
 	filePath := filepath.Join(uploadDir, file.Filename)
 	err = c.SaveFile(file, filePath)
 	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "UploadAndImport")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"error":   err.Error(),
@@ -139,6 +169,7 @@ func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
 	resDupe, invalidTelephones, err := sph.processCSVFile(c.Context(), filePath)
 
 	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "UploadAndImport")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success":            false,
 			"error":              err.Error(),
@@ -148,6 +179,7 @@ func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
 	}
 
 	if resDupe != nil && len(*resDupe) > 0 {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "UploadAndImport")
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"success":    false,
 			"message":    "File processed successfully, but some duplicates were found.",
@@ -155,6 +187,7 @@ func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
 		})
 	}
 
+	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "UploadAndImport")
 	// If no errors and no duplicates, return success
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
@@ -254,8 +287,11 @@ func getStringPointer(s string) *string {
 }
 
 func (sph *studentParentHandler) UpdateStudentAndParent(c *fiber.Ctx) error {
+	userToken, _ := c.Locals("user").(*domain.Claims)
+
 	id := c.Params("id")
 	if id == "" {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "UpdateStudentAndParent")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"message": "ID Required",
@@ -264,6 +300,7 @@ func (sph *studentParentHandler) UpdateStudentAndParent(c *fiber.Ctx) error {
 
 	convertetID, err := strconv.Atoi(id)
 	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "UpdateStudentAndParent")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"message": "Invalid ID",
@@ -273,6 +310,7 @@ func (sph *studentParentHandler) UpdateStudentAndParent(c *fiber.Ctx) error {
 
 	var req domain.StudentAndParent
 	if err := c.BodyParser(&req); err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "UpdateStudentAndParent")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"error":   err.Error(),
@@ -282,6 +320,7 @@ func (sph *studentParentHandler) UpdateStudentAndParent(c *fiber.Ctx) error {
 
 	_, err = govalidator.ValidateStruct(&req)
 	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "UpdateStudentAndParent")
 		validationErrors := govalidator.ErrorsByField(err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
@@ -292,6 +331,7 @@ func (sph *studentParentHandler) UpdateStudentAndParent(c *fiber.Ctx) error {
 
 	errList := sph.uc.UpdateStudentAndParent(c.Context(), convertetID, &req)
 	if errList != nil && len(*errList) > 0 {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "UpdateStudentAndParent")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"error":   *errList,
@@ -299,6 +339,7 @@ func (sph *studentParentHandler) UpdateStudentAndParent(c *fiber.Ctx) error {
 		})
 	}
 
+	config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "UpdateStudentAndParent")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
 		"message": "Student and Parent updated successfully",
@@ -306,8 +347,11 @@ func (sph *studentParentHandler) UpdateStudentAndParent(c *fiber.Ctx) error {
 }
 
 func (sph *studentParentHandler) DeleteStudentAndParent(c *fiber.Ctx) error {
+	userToken, _ := c.Locals("user").(*domain.Claims)
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "DeleteStudentAndParent")
+
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"message": "Invalid student ID",
@@ -316,6 +360,8 @@ func (sph *studentParentHandler) DeleteStudentAndParent(c *fiber.Ctx) error {
 	}
 
 	if err := sph.uc.DeleteStudentAndParent(c.Context(), id); err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "DeleteStudentAndParent")
+
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"message": "Failed to delete student",
@@ -323,6 +369,7 @@ func (sph *studentParentHandler) DeleteStudentAndParent(c *fiber.Ctx) error {
 		})
 	}
 
+	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "DeleteStudentAndParent")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
 		"message": "Student deleted successfully",
@@ -330,8 +377,12 @@ func (sph *studentParentHandler) DeleteStudentAndParent(c *fiber.Ctx) error {
 }
 
 func (sph *studentParentHandler) GetStudentDetailsByID(c *fiber.Ctx) error {
+	userToken, _ := c.Locals("user").(*domain.Claims)
+
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "GetStudentDetailsByID")
+
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"message": "Invalid student ID",
@@ -341,6 +392,8 @@ func (sph *studentParentHandler) GetStudentDetailsByID(c *fiber.Ctx) error {
 
 	student, err := sph.uc.GetStudentDetailsByID(c.Context(), id)
 	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "GetStudentDetailsByID")
+
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"message": "Failed to get student",
@@ -348,6 +401,7 @@ func (sph *studentParentHandler) GetStudentDetailsByID(c *fiber.Ctx) error {
 		})
 	}
 
+	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "GetStudentDetailsByID")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
 		"message": "Student and Parent retrieved successfully",
@@ -356,10 +410,13 @@ func (sph *studentParentHandler) GetStudentDetailsByID(c *fiber.Ctx) error {
 }
 
 func (sph *studentParentHandler) DataChangeRequest(c *fiber.Ctx) error {
+	userClaims := c.Locals("user").(*domain.Claims)
+
 	var datas domain.DataChangeRequest
 
 	err := c.BodyParser(&datas)
 	if err != nil {
+		config.PrintLogInfo(&userClaims.Username, fiber.StatusBadRequest, "DataChangeRequest")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"message": "Invalid Request",
@@ -369,6 +426,7 @@ func (sph *studentParentHandler) DataChangeRequest(c *fiber.Ctx) error {
 
 	err = sph.uc.DataChangeRequest(c.Context(), datas)
 	if err != nil {
+		config.PrintLogInfo(nil, fiber.StatusInternalServerError, "DataChangeRequest")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"message": "Failed to send data change request",
@@ -376,6 +434,7 @@ func (sph *studentParentHandler) DataChangeRequest(c *fiber.Ctx) error {
 		})
 	}
 
+	config.PrintLogInfo(nil, fiber.StatusOK, "DataChangeRequest")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
 		"message": "Successfully sent data changes",

@@ -88,6 +88,18 @@ func (spu *studentParentUseCase) DataChangeRequest(ctx context.Context, datas do
 	return nil
 }
 
+func (spu *studentParentUseCase) GetAllDataChangeRequest(ctx context.Context) (*[]domain.DataChangeRequest, error) {
+
+	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
+	// defer cancel()
+
+	v, err := spu.repo.GetAllDataChangeRequest(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return v, nil
+}
+
 // func (spu *studentParentUseCase) GetClassIDByName(className string) (*int, error) {
 
 // 	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)

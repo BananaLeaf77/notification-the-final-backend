@@ -35,6 +35,7 @@ type StudentParentRepo interface {
 	// GetClassIDByName(className string) (*int, error)
 
 	ImportCSV(ctx context.Context, payload *[]StudentAndParent) (*[]string, error)
+	GetAllDataChangeRequest(ctx context.Context) (*[]DataChangeRequest, error)
 	DataChangeRequest(ctx context.Context, datas DataChangeRequest) error
 }
 
@@ -46,5 +47,6 @@ type StudentParentUseCase interface {
 	// GetClassIDByName(className string) (*int, error)
 
 	ImportCSV(ctx context.Context, payload *[]StudentAndParent) (*[]string, error)
+	GetAllDataChangeRequest(ctx context.Context) (*[]DataChangeRequest, error)
 	DataChangeRequest(ctx context.Context, datas DataChangeRequest) error
 }
