@@ -1,6 +1,7 @@
 package delivery
 
 import (
+	"notification/config"
 	"notification/domain"
 	"notification/middleware"
 
@@ -38,17 +39,22 @@ func (h *senderHandler) sendMassHandler(c *fiber.Ctx) error {
 	userID := userToken.UserID
 
 	if err := c.BodyParser(&payload); err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "sendMassHandler")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "invalid request body",
 		})
 	}
 
 	if err := h.suc.SendMass(c.Context(), &payload.IDs, &userID); err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "sendMassHandler")
+
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":  "failed to send notifications",
 			"detail": err.Error(),
 		})
 	}
+
+	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "sendMassHandler")
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "notifications sent successfully",
