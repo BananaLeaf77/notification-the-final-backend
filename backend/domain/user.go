@@ -38,7 +38,7 @@ type UserRepo interface {
 	GetAllSubject(ctx context.Context) (*[]Subject, error)
 	UpdateSubject(ctx context.Context, id int, newSubjectData *Subject) error
 	DeleteSubject(ctx context.Context, id int) error
-
+	
 	GetSubjectsForTeacher(ctx context.Context, userID int) (*[]Subject, error)
 	InputTestScores(ctx context.Context, teacherID int, testScores *[]TestScore) error
 
