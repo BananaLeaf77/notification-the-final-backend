@@ -434,7 +434,46 @@ func (ur *userRepository) DeleteSubject(ctx context.Context, id int) error {
 	return nil
 }
 
+func (spr *userRepository) DeleteStaffMass(ctx context.Context, ids *[]int) error {
+	var users []domain.User
+	err := spr.db.WithContext(ctx).
+		Where("user_id IN (?) AND deleted_at IS NULL", *ids).
+		Find(&users).Error
+	if err != nil {
+		return fmt.Errorf("could not retrieve staff details: %v", err)
+	}
 
+	var staffToDelete []domain.User
+	for _, user := range users {
+		if user.Role != "admin" {
+			staffToDelete = append(staffToDelete, user)
+		}
+	}
+
+	if len(staffToDelete) == 0 {
+		return fmt.Errorf("no staff eligible for deletion")
+	}
+
+	now := time.Now()
+	err = spr.db.WithContext(ctx).
+		Model(&domain.User{}).
+		Where("user_id IN ?", getIdsFromUsers(staffToDelete)).
+		Update("deleted_at", now).Error
+	if err != nil {
+		return fmt.Errorf("could not delete staff: %v", err)
+	}
+
+	return nil
+}
+
+// Helper function to extract IDs from the filtered list of users
+func getIdsFromUsers(users []domain.User) []int {
+	ids := make([]int, len(users))
+	for i, user := range users {
+		ids[i] = user.UserID
+	}
+	return ids
+}
 
 // func (ur *userRepository) GetlAllClass(ctx context.Context) (*[]domain.Class, error) {
 // 	var classess []domain.Class

@@ -32,6 +32,8 @@ type UserRepo interface {
 	UpdateStaff(ctx context.Context, id int, payload *User, subjectIDs []int) error
 	CreateStaff(ctx context.Context, payload *User, subjectIDs []int) (*User, error)
 	DeleteStaff(ctx context.Context, id int) error
+	DeleteStaffMass(ctx context.Context, ids *[]int) error
+
 
 	CreateSubject(ctx context.Context, subject *Subject) error
 	CreateSubjectBulk(ctx context.Context, subjects *[]Subject) (*[]string, error)
@@ -56,6 +58,7 @@ type UserUseCase interface {
 	UpdateStaff(ctx context.Context, id int, payload *User, subjectIDs []int) error
 	CreateStaff(ctx context.Context, payload *User, subjectIDs []int) (*User, error)
 	DeleteStaff(ctx context.Context, id int) error
+	DeleteStaffMass(ctx context.Context, ids *[]int) error
 
 	CreateSubject(ctx context.Context, subject *Subject) error
 	CreateSubjectBulk(ctx context.Context, subjects *[]Subject) (*[]string, error)

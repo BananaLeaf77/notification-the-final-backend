@@ -52,6 +52,41 @@ func NewUserHandlerDeploy(app *fiber.App, useCase domain.UserUseCase) {
 	group.Get("/show-students-subjects", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetSubjectsForTeacher)
 	group.Post("/input-test-scores", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.InputTestScores)
 	group.Get("/profile-dashboard", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.ShowProfile)
+	group.Post("/rm/users", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteStaffMass)
+}
+
+func (h *uHandler) DeleteStaffMass(c *fiber.Ctx) error {
+	userToken := c.Locals("user").(*domain.Claims)
+	var payload struct {
+		IDS []int `json:"ids"`
+	}
+
+	err := c.BodyParser(&payload)
+	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "DeleteStaffMass")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "Failed to delete users",
+			"error":   err.Error(),
+		})
+	}
+
+	err = h.uc.DeleteStaffMass(c.Context(), &payload.IDS)
+	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "DeleteStaffMass")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Failed to delete users",
+			"error":   err.Error(),
+		})
+	}
+
+	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "DeleteStaffMass")
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Deletion Success",
+	})
 }
 
 func (h *uHandler) ShowProfile(c *fiber.Ctx) error {

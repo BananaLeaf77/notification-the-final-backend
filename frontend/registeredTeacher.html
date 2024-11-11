@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>SINOAN Dashboard</title>
+    <title>SINOAN Registered Teacher</title>
     <meta
       content="width=device-width, initial-scale=1.0, shrink-to-fit=no"
       name="viewport"
@@ -135,12 +135,9 @@
         <div class="sidebar-wrapper scrollbar scrollbar-inner">
           <div class="sidebar-content">
             <ul class="nav nav-secondary">
-              <li class="nav-item active">
+              <li class="nav-item">
                 <a
-                  data-bs-toggle="collapse"
                   href="index.html"
-                  class="collapsed"
-                  aria-expanded="false"
                 >
                   <i class="fas fa-home"></i>
                   <p>Dashboard</p>
@@ -158,8 +155,8 @@
                   <p>Test Score Input</p>
                 </a>               
               </li>
-              <li class="nav-item">
-                <a href="registeredTeacher.html">
+              <li class="nav-item active">
+                <a href="#">
                   <i class="fas fa-users"></i>
                   <p>Registered Teacher</p>
                 </a>               
@@ -341,7 +338,7 @@
               class="d-flex align-items-left align-items-md-center flex-column flex-md-row pt-2 pb-4"
             >
               <div>
-                <h3 class="fw-bold mb-3">Dashboard</h3>
+                <h3 class="fw-bold mb-3">Registered Teacher</h3>
               </div>
               
             </div>
@@ -367,34 +364,13 @@
                   </div>
                 </div>
               </div>
-              <div class="col-sm-6 col-md-3">
-                <div class="card card-stats card-round">
-                  <div class="card-body">
-                    <div class="row align-items-center">
-                      <div class="col-icon">
-                        <div
-                          class="icon-big text-center icon-info bubble-shadow-small"
-                        >
-                          <i class="fas fa-book"></i>
-                        </div>
-                      </div>
-                      <div class="col col-stats ms-3 ms-sm-0">
-                        <div class="numbers">
-                          <p class="card-category">Registered Subject</p>
-                          <h4 class="card-title" id="daftarMapel">Loading...</h4>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
             <div class="row">
               <div class="col-md-12">
                 <div class="card card-round">
                   <div class="card-header">
                     <div class="card-head-row card-tools-still-right">
-                      <h4 class="card-title">Student List</h4>
+                      <h4 class="card-title">Teacher List</h4>
                       <div class="card-tools d-flex justify-content-between align-items-center">
                         <div>
                           <a href="addStudent.html" class="btn btn-success btn-round">
@@ -402,8 +378,8 @@
                           </a>
                         </div>
                         <div>
-                          <a href="#" class="btn btn-danger btn-round">
-                            <i class="fas fa-trash"></i> Delete
+                          <a href="#" class="btn btn-danger btn-round" onclick="deleteMass()">
+                              <i class="fas fa-trash"></i> Delete
                           </a>
                         </div>
                         <div class="timeline-badge">
@@ -422,18 +398,18 @@
                       <div class="col-md-13">
                         <div class="table-responsive table-hover table-sales">
                           <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Select</th>
-                                    <th>Class</th>
-                                    <th>Name</th>
-                                    <th>Gender</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="studentTable">
-                                <!-- Dynamic rows will be populated here -->
-                            </tbody>
+                              <thead>
+                                  <tr>
+                                      <th>Select</th>
+                                      <th>Username</th>
+                                      <th>Role</th>
+                                      <th>Assigned Subject</th>
+                                      <th>Action</th>
+                                  </tr>
+                              </thead>
+                              <tbody id="userTable">
+                                  <!-- Dynamic rows will be populated here -->
+                              </tbody>
                           </table>
                         </div>
                       </div>
@@ -537,7 +513,48 @@
         // Show the confirmation modal
         $('#logoutConfirmationModal').modal('show');
       }
-    
+      
+      let selectedUserIds = []
+
+      function deleteMass() {
+        const token = localStorage.getItem("authToken");
+
+        const selectedCheckboxes = document.querySelectorAll('.user-checkbox:checked');
+        
+        if (selectedUserIds.length === 0) {
+            alert("Please select at least one user to delete.");
+            return;
+        }
+        let lol = JSON.stringify({
+          ids: selectedUserIds
+        })          
+
+        console.log(lol)
+        // The rest of the function
+        fetch("http://127.0.0.1:8000/user/rm/users", {
+            method: "POST",
+            headers: {
+                "Authorization": `${token}`, // Replace with actual token
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              ids: selectedUserIds
+            })          
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert("Selected users deleted successfully.");
+                fetchUsers(`${token}`,); // Refresh user list
+            } else {
+                alert(`Failed to delete users: ${data.message}`);
+            }
+        })
+        .catch(error => {
+            console.error("Error during mass deletion:", error);
+            alert("An error occurred while deleting users.");
+        });
+      }
       // Event listener for confirming logout
       document.getElementById("confirmLogoutButton").addEventListener("click", function () {
           // Remove the token from local storage
@@ -586,13 +603,11 @@
     
         // If the token exists, run the functions without waiting for backend verification
         fetchProfileData(token);
-        fetchStudents(token);
+        fetchUsers(token);
         fetchUserCount(token);
-        fetchSubjectsCount(token);
         fetchDataChangeRequestCount(token);
       });
     
-
       function fetchUserCount(token) {
         fetch("http://127.0.0.1:8000/user/get-all", {
             method: "GET",
@@ -657,141 +672,88 @@
         .catch(error => console.error("Error:", error));
       }
 
-      // Array to store selected student IDs
-      let selectedStudentIds = [];
+      // Fetch users and populate the table
+      function fetchUsers(token) {
+        fetch("http://127.0.0.1:8000/user/get-all", {
+            method: "GET",
+            headers: {
+                "Authorization": `${token}`,
+                "Content-Type": "application/json"
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const userTable = document.getElementById('userTable');
+            userTable.innerHTML = '';
 
-      // Fetch students and populate the table
-      function fetchStudents(token) {
-          fetch("http://127.0.0.1:8000/student/get-all", {
-              method: "GET",
-              headers: {
-                  "Authorization": token,
-                  "Content-Type": "application/json"
-              }
-          })
-          .then(response => response.json())
-          .then(data => {
-              const studentTable = document.getElementById('studentTable');
-              studentTable.innerHTML = '';
+            // Sort users by username
+            const sortedUsers = data.data.sort((a, b) => a.username.localeCompare(b.username));
 
-              // Sort students by class
-              const sortedStudents = data.data.sort((a, b) => sortStudentsByClass(a.class, b.class));
-
-              // Populate table rows
-              sortedStudents.forEach(student => {
-                  const row = createStudentRow(student);
-                  studentTable.appendChild(row);
-              });
-          })
-          .catch(error => {
-              console.error("Error fetching students:", error);
-              showError("Failed to load student data.");
-          });
+            // Populate table rows
+            sortedUsers.forEach(user => {
+                const row = createUserRow(user);
+                userTable.appendChild(row);
+            });
+        })
+        .catch(error => {
+            console.error("Error fetching users:", error);
+            showError("Failed to load user data.");
+        });
       }
 
-      // Create and return a student row with a checkbox and onclick handler for navigation
-      function createStudentRow(student) {
-          const row = document.createElement('tr');
-          row.classList.add('student-row');
+      // Create and return a user row with a checkbox and onclick handler for navigation
+      function createUserRow(user) {
+        const row = document.createElement('tr');
+        row.classList.add('user-row');
 
-          // Navigate to detail page when row is clicked (except for the checkbox click)
-          row.addEventListener("click", () => {
-              window.location.href = `detailStudent.html?student_id=${student.student_id}`;
-          });
+        // Generate assigned subjects as a comma-separated list or "None" if empty
+        const assignedSubjects = user.teaching.length > 0 
+            ? user.teaching.map(subject => subject.name).join(', ') 
+            : "None";
 
-          row.innerHTML = `
-              <td>
-                  <input type="checkbox" class="student-checkbox" data-id="${student.student_id}" onclick="toggleStudentSelection(event, ${student.student_id})">
-              </td>
-              <td>${student.class}</td>
-              <td>${student.name}</td>
-              <td>${student.gender}</td>
-              <td>
-                  <button class="btn btn-warning btn-sm update-btn" onclick="event.stopPropagation(); fetchStudentDetails(${student.student_id})">Update</button>
-                  <button class="btn btn-danger btn-sm delete-btn" onclick="event.stopPropagation(); showDeleteModal(${student.student_id}, '${student.name}')">Delete</button>
-              </td>
-          `;
-          return row;
+        // Navigate to detail page when row is clicked (except for the checkbox click)
+        row.addEventListener("click", () => {
+            window.location.href = `detailUser.html?user_id=${user.user_id}`;
+        });
+
+        row.innerHTML = `
+            <td>
+                <input type="checkbox" class="user-checkbox" data-id="${user.user_id}" onclick="toggleUserSelection(event, ${user.user_id})">
+            </td>
+            <td>${user.username}</td>
+            <td>${user.role}</td>
+            <td>${assignedSubjects}</td>
+            <td>
+                <button class="btn btn-warning btn-sm update-btn" onclick="event.stopPropagation(); fetchUserDetails(${user.user_id})">Update</button>
+                <button class="btn btn-danger btn-sm delete-btn" onclick="event.stopPropagation(); showDeleteModal(${user.user_id}, '${user.username}')">Delete</button>
+            </td>
+        `;
+        return row;
       }
 
       // Prevent row click when checkbox is clicked and toggle selection
-      function toggleStudentSelection(event, studentId) {
-          event.stopPropagation(); // Prevents row click event
+      function toggleUserSelection(event, userId) {
+        console.log("user id  = ", userId)
+        event.stopPropagation(); // Prevents row click event
 
-          const checkbox = event.target;
-          if (checkbox.checked) {
-              selectedStudentIds.push(studentId);
-          } else {
-              selectedStudentIds = selectedStudentIds.filter(id => id !== studentId);
-          }
-      }
-
-      // Helper function to parse class strings (e.g., "2A" to [2, "A"])
-      function parseClass(classStr) {
-          const match = classStr.match(/^(\d+)([A-Z])$/);
-          return match ? [parseInt(match[1], 10), match[2]] : [0, ''];
-      }
-
-      // Sort helper function for class format
-      function sortStudentsByClass(classA, classB) {
-          const [aClassNum, aClassLetter] = parseClass(classA);
-          const [bClassNum, bClassLetter] = parseClass(classB);
-
-          if (aClassNum !== bClassNum) return aClassNum - bClassNum;
-          return aClassLetter.localeCompare(bClassLetter);
+        const checkbox = event.target;
+        if (checkbox.checked) {
+            selectedUserIds.push(userId);
+        } else {
+            selectedUserIds = selectedUserIds.filter(id => id !== userId);
+        }
+        console.log(selectedUserIds)
       }
 
       // Convert selected IDs to JSON format
       function getSelectedIdsJson() {
-          return JSON.stringify({ ids: selectedStudentIds });
+        return JSON.stringify({ ids: selectedUserIds });
       }
 
       // Show an error message with Bootstrap alert (or custom UI)
       function showError(message) {
           alert(message); // Replace with a Bootstrap modal or custom UI if desired
       }
-
-
-      // Create and return a student row with update and delete actions
-      function createStudentRow(student) {
-        const row = document.createElement('tr');
-        row.classList.add('student-row');
-        row.innerHTML = `
-            <td>${student.class}</td>
-            <td>${student.name}</td>
-            <td>${student.gender}</td>
-            <td>
-                <button class="btn btn-warning btn-sm update-btn" onclick="fetchStudentDetails(${student.student_id})">Update</button>
-                <button class="btn btn-danger btn-sm delete-btn" onclick="showDeleteModal(${student.student_id}, '${student.name}')">Delete</button>
-            </td>
-        `;
-        return row;
-      }
-
-      function createStudentRow(student) {
-        const row = document.createElement('tr');
-        row.classList.add('student-row');
-    
-        // Add onclick event to navigate to detailStudent.html
-        row.addEventListener("click", () => {
-            window.location.href = `detailStudent.html?student_id=${student.student_id}`;
-        });
-    
-        row.innerHTML = `
-            <td>
-                <input type="checkbox" class="student-checkbox" data-id="${student.student_id}" onclick="toggleStudentSelection(event, ${student.student_id})">
-            </td>
-            <td>${student.class}</td>
-            <td>${student.name}</td>
-            <td>${student.gender}</td>
-            <td>
-                <button class="btn btn-warning btn-sm update-btn" onclick="event.stopPropagation(); fetchStudentDetails(${student.student_id})">Update</button>
-                <button class="btn btn-danger btn-sm delete-btn" onclick="event.stopPropagation(); showDeleteModal(${student.student_id}, '${student.name}')">Delete</button>
-            </td>
-        `;
-        return row;
-    }
-    
 
       function fetchProfileData(token) {
         fetch("http://127.0.0.1:8000/user/profile-dashboard", {

@@ -141,6 +141,14 @@ func (u *userUC) InputTestScores(ctx context.Context, teacherID int, testScores 
 	return nil
 }
 
+func (u *userUC) DeleteStaffMass(ctx context.Context, ids *[]int) error{
+	err := u.userRepo.DeleteStaffMass(ctx, ids)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 
 // func (u *userUC) GetAllAssignedSubject(ctx context.Context, userID int) (*[]domain.Subject, error) {
