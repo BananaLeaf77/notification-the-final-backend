@@ -544,10 +544,11 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert("Selected users deleted successfully.");
-                fetchUsers(`${token}`,); // Refresh user list
+              alert("Selected users deleted successfully.");
+              fetchUsers(`${token}`,); // Refresh user list
+              fetchUserCount(token);
             } else {
-                alert(`Failed to delete users: ${data.message}`);
+              alert(`Failed to delete users: ${data.message}`);
             }
         })
         .catch(error => {
@@ -618,18 +619,22 @@
         })
         .then(response => response.json())
         .then(data => {
-            if (data.success && data.data) {
-                // Count the users with role 'staff'
-                staffCount = data.data.filter(user => user.role === "staff").length;
-                
-                // Update the h4 element with the count
-                document.getElementById("guruTerdaftar").textContent = staffCount;
+            if (data.success) {
+                if (data.data === null || data.data.length === 0) {
+                    // If data is null or empty, set the count to 0
+                    document.getElementById("guruTerdaftar").textContent = 0;
+                } else {
+                    // Count the users with role 'staff'
+                    const staffCount = data.data.filter(user => user.role === "staff").length;
+                    document.getElementById("guruTerdaftar").textContent = staffCount;
+                }
             } else {
                 console.error("Failed to fetch data or no data available.");
             }
         })
         .catch(error => console.error("Error:", error));
       }
+    
 
       function fetchDataChangeRequestCount(token) {
         fetch("http://127.0.0.1:8000/student-and-parent/get-all-data-change-request", {
@@ -697,7 +702,6 @@
         })
         .catch(error => {
             console.error("Error fetching users:", error);
-            showError("Failed to load user data.");
         });
       }
 

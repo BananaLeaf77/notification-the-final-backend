@@ -603,18 +603,22 @@
         })
         .then(response => response.json())
         .then(data => {
-            if (data.success && data.data) {
-                // Count the users with role 'staff'
-                staffCount = data.data.filter(user => user.role === "staff").length;
-                
-                // Update the h4 element with the count
-                document.getElementById("guruTerdaftar").textContent = staffCount;
+            if (data.success) {
+                if (data.data === null || data.data.length === 0) {
+                    // If data is null or empty, set the count to 0
+                    document.getElementById("guruTerdaftar").textContent = 0;
+                } else {
+                    // Count the users with role 'staff'
+                    const staffCount = data.data.filter(user => user.role === "staff").length;
+                    document.getElementById("guruTerdaftar").textContent = staffCount;
+                }
             } else {
                 console.error("Failed to fetch data or no data available.");
             }
         })
         .catch(error => console.error("Error:", error));
       }
+    
 
       function fetchDataChangeRequestCount(token) {
         fetch("http://127.0.0.1:8000/student-and-parent/get-all-data-change-request", {
@@ -648,6 +652,9 @@
         .then(data => {
             if (data.success && data.data) {
                 dataLength = data.data.length
+                if (dataLength == null){
+                  document.getElementById("daftarMapel").textContent = 0;
+                }
                 // Update the h4 element with the count
                 document.getElementById("daftarMapel").textContent = dataLength;
             } else {
