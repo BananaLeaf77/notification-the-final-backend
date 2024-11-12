@@ -1,10 +1,5 @@
-add goroutine di funcs berat ajng lo
-
-steiap stud berelasi ke tiap matapelajaran walaupun beda jurusan, and nil type nilainya ???
-
 (di importcsv check length no telphone)
 
 (fitur find by no telphone / email) untuk 
 
-if one to many parent dengan siswa bagaimana pengecekan nama yang sama nomer yang sama email yang sama solusi saya pakai wali
-
+pas create staff onden ngidang ngijin mapel to

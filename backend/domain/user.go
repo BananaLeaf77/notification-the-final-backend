@@ -30,17 +30,16 @@ type UserRepo interface {
 	GetStaffDetail(ctx context.Context, id int) (*SafeStaffData, error)
 	FindUserByUsername(ctx context.Context, username string) (*User, error)
 	UpdateStaff(ctx context.Context, id int, payload *User, subjectIDs []int) error
-	CreateStaff(ctx context.Context, payload *User, subjectIDs []int) (*User, error)
+	CreateStaff(ctx context.Context, payload *User) (*User, error)
 	DeleteStaff(ctx context.Context, id int) error
 	DeleteStaffMass(ctx context.Context, ids *[]int) error
-
 
 	CreateSubject(ctx context.Context, subject *Subject) error
 	CreateSubjectBulk(ctx context.Context, subjects *[]Subject) (*[]string, error)
 	GetAllSubject(ctx context.Context) (*[]Subject, error)
 	UpdateSubject(ctx context.Context, id int, newSubjectData *Subject) error
 	DeleteSubject(ctx context.Context, id int) error
-	
+
 	GetSubjectsForTeacher(ctx context.Context, userID int) (*[]Subject, error)
 	InputTestScores(ctx context.Context, teacherID int, testScores *[]TestScore) error
 
@@ -56,7 +55,7 @@ type UserUseCase interface {
 	GetStaffDetail(ctx context.Context, id int) (*SafeStaffData, error)
 	FindUserByUsername(ctx context.Context, username string) (*User, error)
 	UpdateStaff(ctx context.Context, id int, payload *User, subjectIDs []int) error
-	CreateStaff(ctx context.Context, payload *User, subjectIDs []int) (*User, error)
+	CreateStaff(ctx context.Context, payload *User) (*User, error)
 	DeleteStaff(ctx context.Context, id int) error
 	DeleteStaffMass(ctx context.Context, ids *[]int) error
 

@@ -8,14 +8,15 @@ import (
 
 
 type SafeStaffData struct {
-	UserID    int        `json:"user_id"`
-	Username  string     `json:"username"`
-	Role      string     `json:"role"`
-	Teaching  []Subject  `json:"teaching"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
-	DeletedAt *time.Time `json:"deleted_at"`
+    UserID    int            `json:"user_id"`
+    Username  string         `json:"username"`
+    Role      string         `json:"role"`
+    CreatedAt time.Time      `json:"created_at"`
+    UpdatedAt time.Time      `json:"updated_at"`
+    DeletedAt *time.Time    `json:"deleted_at"`
+    Teaching  []Subject      `json:"teaching"`
 }
+
 
 type SafeStaffUpdatePayload struct {
 	UserID    int       `json:"user_id"`

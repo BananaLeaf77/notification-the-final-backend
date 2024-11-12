@@ -244,11 +244,13 @@ func (uh *uHandler) GetAllSubject(c *fiber.Ctx) error {
 }
 
 func (uh *uHandler) UpdateSubject(c *fiber.Ctx) error {
+	userClaims := c.Locals("user").(*domain.Claims)
 	var subject domain.Subject
 
 	id := c.Params("id")
 	subjectID, err := strconv.Atoi(id)
 	if err != nil {
+		config.PrintLogInfo(&userClaims.Username, fiber.StatusBadRequest, "UpdateSubject")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   "String to Int Converter failure",
 			"success": false,
@@ -258,6 +260,7 @@ func (uh *uHandler) UpdateSubject(c *fiber.Ctx) error {
 
 	err = c.BodyParser(&subject)
 	if err != nil {
+		config.PrintLogInfo(&userClaims.Username, fiber.StatusBadRequest, "UpdateSubject")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   err.Error(),
 			"success": false,
@@ -267,6 +270,8 @@ func (uh *uHandler) UpdateSubject(c *fiber.Ctx) error {
 
 	err = uh.uc.UpdateSubject(c.Context(), subjectID, &subject)
 	if err != nil {
+		config.PrintLogInfo(&userClaims.Username, fiber.StatusInternalServerError, "UpdateSubject")
+
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":   err.Error(),
 			"success": false,
@@ -274,6 +279,7 @@ func (uh *uHandler) UpdateSubject(c *fiber.Ctx) error {
 		})
 	}
 
+	config.PrintLogInfo(&userClaims.Username, fiber.StatusOK, "UpdateSubject")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
 		"message": "Subjects successsfully updated",
@@ -281,10 +287,12 @@ func (uh *uHandler) UpdateSubject(c *fiber.Ctx) error {
 }
 
 func (uh *uHandler) DeleteSubject(c *fiber.Ctx) error {
+	userClaims := c.Locals("user").(*domain.Claims)
 
 	id := c.Params("id")
 	subjectID, err := strconv.Atoi(id)
 	if err != nil {
+		config.PrintLogInfo(&userClaims.Username, fiber.StatusBadRequest, "DeleteSubject")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   err.Error(),
 			"success": false,
@@ -294,6 +302,8 @@ func (uh *uHandler) DeleteSubject(c *fiber.Ctx) error {
 
 	err = uh.uc.DeleteSubject(c.Context(), subjectID)
 	if err != nil {
+		config.PrintLogInfo(&userClaims.Username, fiber.StatusInternalServerError, "DeleteSubject")
+
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":   err.Error(),
 			"success": false,
@@ -301,6 +311,7 @@ func (uh *uHandler) DeleteSubject(c *fiber.Ctx) error {
 		})
 	}
 
+	config.PrintLogInfo(&userClaims.Username, fiber.StatusOK, "DeleteSubject")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
 		"message": "Subjects successsfully deleted",
@@ -313,25 +324,35 @@ type CreateStaffRequest struct {
 }
 
 func (uh *uHandler) CreateStaff(c *fiber.Ctx) error {
-	var req CreateStaffRequest
+	userClaims := c.Locals("user").(*domain.Claims)
+	var req domain.User
 
 	if err := c.BodyParser(&req); err != nil {
+		config.PrintLogInfo(&userClaims.Username, fiber.StatusBadRequest, "CreateStaff")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   err.Error(),
 			"success": false,
 		})
 	}
 
-	req.User.Role = "staff"
+	if req.Username == "" || req.Password == "" {
+		config.PrintLogInfo(&userClaims.Username, fiber.StatusBadRequest, "CreateStaff")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   "invalid data",
+			"success": false,
+		})
+	}
 
-	_, err := uh.uc.CreateStaff(c.Context(), &req.User, req.SubjectIDs)
+	_, err := uh.uc.CreateStaff(c.Context(), &req)
 	if err != nil {
+		config.PrintLogInfo(&userClaims.Username, fiber.StatusInternalServerError, "CreateStaff")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":   err.Error(),
 			"success": false,
 		})
 	}
 
+	config.PrintLogInfo(&userClaims.Username, fiber.StatusOK, "CreateStaff")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
 		"message": "Account created successfully",
@@ -339,14 +360,18 @@ func (uh *uHandler) CreateStaff(c *fiber.Ctx) error {
 }
 
 func (uh *uHandler) GetAllStaff(c *fiber.Ctx) error {
+	userClaims := c.Locals("user").(*domain.Claims)
+
 	v, err := uh.uc.GetAllStaff(c.Context())
 	if err != nil {
+		config.PrintLogInfo(&userClaims.Username, fiber.StatusInternalServerError, "GetAllStaff")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":   err.Error(),
 			"success": false,
 		})
 	}
 
+	config.PrintLogInfo(&userClaims.Username, fiber.StatusOK, "GetAllStaff")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
 		"message": "Staff retrieved successfully",
@@ -355,8 +380,11 @@ func (uh *uHandler) GetAllStaff(c *fiber.Ctx) error {
 }
 
 func (uh *uHandler) DeleteStaff(c *fiber.Ctx) error {
+	userClaims := c.Locals("user").(*domain.Claims)
+
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
+		config.PrintLogInfo(&userClaims.Username, fiber.StatusBadRequest, "DeleteStaff")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   "converter failure",
 			"success": false,
@@ -365,11 +393,15 @@ func (uh *uHandler) DeleteStaff(c *fiber.Ctx) error {
 
 	err = uh.uc.DeleteStaff(c.Context(), id)
 	if err != nil {
+		config.PrintLogInfo(&userClaims.Username, fiber.StatusInternalServerError, "DeleteStaff")
+
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":   err.Error(),
 			"success": false,
 		})
 	}
+
+	config.PrintLogInfo(&userClaims.Username, fiber.StatusOK, "DeleteStaff")
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
@@ -378,8 +410,12 @@ func (uh *uHandler) DeleteStaff(c *fiber.Ctx) error {
 }
 
 func (uh *uHandler) GetStaffDetail(c *fiber.Ctx) error {
+	userClaims := c.Locals("user").(*domain.Claims)
+
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
+		config.PrintLogInfo(&userClaims.Username, fiber.StatusBadRequest, "GetStaffDetail")
+
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   "converter failure",
 			"success": false,
@@ -388,12 +424,15 @@ func (uh *uHandler) GetStaffDetail(c *fiber.Ctx) error {
 
 	v, err := uh.uc.GetStaffDetail(c.Context(), id)
 	if err != nil {
+		config.PrintLogInfo(&userClaims.Username, fiber.StatusInternalServerError, "GetStaffDetail")
+
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":   err.Error(),
 			"success": false,
 		})
 	}
 
+	config.PrintLogInfo(&userClaims.Username, fiber.StatusOK, "GetStaffDetail")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
 		"message": "Staff retrieved successfully",
@@ -403,9 +442,12 @@ func (uh *uHandler) GetStaffDetail(c *fiber.Ctx) error {
 }
 
 func (uh *uHandler) ModifyStaff(c *fiber.Ctx) error {
+	userClaims := c.Locals("user").(*domain.Claims)
+
 	idParam := c.Params("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
+		config.PrintLogInfo(&userClaims.Username, fiber.StatusBadRequest, "ModifyStaff")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"message": "Invalid staff ID",
@@ -418,16 +460,18 @@ func (uh *uHandler) ModifyStaff(c *fiber.Ctx) error {
 	}
 
 	if err := c.BodyParser(&payload); err != nil {
+		config.PrintLogInfo(&userClaims.Username, fiber.StatusBadRequest, "ModifyStaff")
+
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"message": "Invalid input",
 		})
 	}
 
-	payload.User.Role = "staff"
-
 	err = uh.uc.UpdateStaff(c.Context(), id, &payload.User, payload.SubjectIDs)
 	if err != nil {
+		config.PrintLogInfo(&userClaims.Username, fiber.StatusInternalServerError, "ModifyStaff")
+
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"message": "Failed to modify staff",
@@ -435,6 +479,7 @@ func (uh *uHandler) ModifyStaff(c *fiber.Ctx) error {
 		})
 	}
 
+	config.PrintLogInfo(&userClaims.Username, fiber.StatusOK, "ModifyStaff")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
 		"message": "Staff modified successfully",

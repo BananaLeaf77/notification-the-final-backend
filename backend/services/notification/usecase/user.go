@@ -29,10 +29,10 @@ func (u *userUC) FindUserByUsername(ctx context.Context, username string) (*doma
 	return v, nil
 }
 
-func (u *userUC) CreateStaff(ctx context.Context, payload *domain.User, subjectIDs []int) (*domain.User, error) {
+func (u *userUC) CreateStaff(ctx context.Context, payload *domain.User) (*domain.User, error) {
 	// ctx, cancel := context.WithTimeout(ctx, mUC.TimeOut)
 	// defer cancel()
-	v, err := u.userRepo.CreateStaff(ctx, payload, subjectIDs)
+	v, err := u.userRepo.CreateStaff(ctx, payload)
 	if err != nil {
 		return nil, err
 	}
