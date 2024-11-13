@@ -388,6 +388,27 @@
                   </div>
                 </div>
               </div>
+              <div class="col-sm-6 col-md-3">
+                <div class="card card-stats card-round">
+                  <div class="card-body">
+                    <div class="row align-items-center">
+                      <div class="col-icon">
+                        <div
+                          class="icon-big text-center icon-info bubble-shadow-small"
+                        >
+                          <i class="far fa-id-card"></i>
+                        </div>
+                      </div>
+                      <div class="col col-stats ms-3 ms-sm-0">
+                        <div class="numbers">
+                          <p class="card-category">Student Total</p>
+                          <h4 class="card-title" id="studentCount">Loading...</h4>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="row">
               <div class="col-md-12">
@@ -587,6 +608,7 @@
         // If the token exists, run the functions without waiting for backend verification
         fetchProfileData(token);
         fetchStudents(token);
+        fetchStudentCount(token);
         fetchUserCount(token);
         fetchSubjectsCount(token);
         fetchDataChangeRequestCount(token);
@@ -618,7 +640,31 @@
         })
         .catch(error => console.error("Error:", error));
       }
-    
+
+      function fetchStudentCount(token) {
+        fetch("http://127.0.0.1:8000/student/get-all", {
+            method: "GET",
+            headers: {
+                "Authorization": `${token}`,
+                "Content-Type": "application/json"
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Check if data.data is null or empty
+                if (data.data === null || data.data.length === 0) {
+                    document.getElementById("studentCount").textContent = 0;
+                } else {
+                    // Set the student count
+                    document.getElementById("studentCount").textContent = data.data.length;
+                }
+            } else {
+                console.error("Failed to fetch data or no data available.");
+            }
+        })
+        .catch(error => console.error("Error:", error));
+    }
 
       function fetchDataChangeRequestCount(token) {
         fetch("http://127.0.0.1:8000/student-and-parent/get-all-data-change-request", {
