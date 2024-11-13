@@ -140,7 +140,6 @@ func (r *userRepository) GetSubjectsForTeacher(ctx context.Context, userID int) 
 func (ur *userRepository) CreateStaff(ctx context.Context, payload *domain.User) (*domain.User, error) {
 	payloadUsernameLowered := strings.ToLower(payload.Username)
 
-	fmt.Println(payloadUsernameLowered)
 	// Check if username already exists
 	var existingUser domain.User
 	err := ur.db.WithContext(ctx).Where("username = ? AND deleted_at IS NULL", payloadUsernameLowered).First(&existingUser).Error
@@ -157,6 +156,7 @@ func (ur *userRepository) CreateStaff(ctx context.Context, payload *domain.User)
 
 	// Save the new user (this creates a user record in the user table)
 	payload.Username = payloadUsernameLowered
+	payload.Role = "staff"
 	err = ur.db.WithContext(ctx).Create(payload).Error
 	if err != nil {
 		return nil, fmt.Errorf("could not create user: %v", err)
