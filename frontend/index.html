@@ -715,43 +715,48 @@
 
       // Fetch students and populate the table
       function fetchStudents(token) {
-          fetch("http://127.0.0.1:8000/student/get-all", {
-              method: "GET",
-              headers: {
-                  "Authorization": token,
-                  "Content-Type": "application/json"
-              }
-          })
-          .then(response => response.json())
-          .then(data => {
-              const studentTable = document.getElementById('studentTable');
-              studentTable.innerHTML = '';
-
-              // Sort students by class
-              const sortedStudents = data.data.sort((a, b) => sortStudentsByClass(a.class, b.class));
-
-              // Populate table rows
-              sortedStudents.forEach(student => {
-                  const row = createStudentRow(student);
-                  studentTable.appendChild(row);
-              });
-          })
-          .catch(error => {
-              console.error("Error fetching students:", error);
-              showError("Failed to load student data.");
-          });
+        fetch("http://127.0.0.1:8000/student/get-all", {
+            method: "GET",
+            headers: {
+                "Authorization": token,
+                "Content-Type": "application/json"
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const studentTable = document.getElementById('studentTable');
+            studentTable.innerHTML = '';
+    
+            // Process and sort students by class (merge grade and grade_label)
+            const students = data.data.map(student => ({
+                ...student,
+                class: `${student.grade}${student.grade_label}` // Merge grade and grade_label
+            }));
+            
+            const sortedStudents = students.sort((a, b) => sortStudentsByClass(a.class, b.class));
+    
+            // Populate table rows
+            sortedStudents.forEach(student => {
+                const row = createStudentRow(student);
+                studentTable.appendChild(row);
+            });
+        })
+        .catch(error => {
+            console.error("Error fetching students:", error);
+            showError("Failed to load student data.");
+        });
       }
-
+    
       // Create and return a student row with a checkbox and onclick handler for navigation
       function createStudentRow(student) {
           const row = document.createElement('tr');
           row.classList.add('student-row');
-
+      
           // Navigate to detail page when row is clicked (except for the checkbox click)
           row.addEventListener("click", () => {
               window.location.href = `detailStudent.html?student_id=${student.student_id}`;
           });
-
+      
           row.innerHTML = `
               <td>
                   <input type="checkbox" class="student-checkbox" data-id="${student.student_id}" onclick="toggleStudentSelection(event, ${student.student_id})">
@@ -764,9 +769,18 @@
                   <button class="btn btn-danger btn-sm delete-btn" onclick="event.stopPropagation(); showDeleteModal(${student.student_id}, '${student.name}')">Delete</button>
               </td>
           `;
-          return row;
+        return row;
       }
 
+      // Sort helper function for class format
+      function sortStudentsByClass(classA, classB) {
+        const [aClassNum, aClassLetter] = parseClass(classA);
+        const [bClassNum, bClassLetter] = parseClass(classB);
+
+        if (aClassNum !== bClassNum) return aClassNum - bClassNum;
+        return aClassLetter.localeCompare(bClassLetter);
+      }
+    
       // Prevent row click when checkbox is clicked and toggle selection
       function toggleStudentSelection(event, studentId) {
           event.stopPropagation(); // Prevents row click event
@@ -783,15 +797,6 @@
       function parseClass(classStr) {
           const match = classStr.match(/^(\d+)([A-Z])$/);
           return match ? [parseInt(match[1], 10), match[2]] : [0, ''];
-      }
-
-      // Sort helper function for class format
-      function sortStudentsByClass(classA, classB) {
-          const [aClassNum, aClassLetter] = parseClass(classA);
-          const [bClassNum, bClassLetter] = parseClass(classB);
-
-          if (aClassNum !== bClassNum) return aClassNum - bClassNum;
-          return aClassLetter.localeCompare(bClassLetter);
       }
 
       // Convert selected IDs to JSON format

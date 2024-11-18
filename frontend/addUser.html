@@ -506,15 +506,7 @@
             // Reset form fields
             document.getElementById('user-form').reset();
           } else {
-            // Failure message with error details
-            let errorMessage = responseData.message + ":";
-            if (responseData.error && responseData.error.length > 0) {
-              errorMessage += "<ul>";
-              responseData.error.forEach(err => {
-                errorMessage += `<li>${err}</li>`;
-              });
-              errorMessage += "</ul>";
-            }
+            errorMessage = responseData.error
             messageElement.innerHTML = errorMessage;
             messageElement.classList.remove("text-success");
             messageElement.classList.add("text-danger");
@@ -527,7 +519,7 @@
           console.error('Error:', error);
           // Display error message in modal
           const messageElement = document.getElementById("msgs");
-          messageElement.textContent = "An error occurred. Please check the console for details.";
+          messageElement.textContent = errorMessage;
           messageElement.classList.remove("text-success");
           messageElement.classList.add("text-danger");
       

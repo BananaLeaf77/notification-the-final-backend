@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"notification/domain"
+	"regexp"
 	"strings"
 	"time"
 
@@ -25,7 +26,11 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 	var errList []string
 	var existingStudent domain.Student
 	var existingParent domain.Parent
-
+	// Check Grade Label
+	match, _ := regexp.MatchString("^[A-Za-z]+$", req.Student.GradeLabel)
+	if !match {
+		errList = append(errList, fmt.Sprintf("Invalid Grade Label: %s. Only letters (A-Z, a-z) are allowed.", req.Student.GradeLabel))
+	}
 	// Check if the student telephone already exists
 	err := spr.db.WithContext(ctx).Where("telephone = ? AND deleted_at IS NULL", req.Student.Telephone).First(&existingStudent).Error
 	if err == nil {
@@ -75,8 +80,7 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 		return &errList
 	}
 
-	req.Student.Class = strings.ToUpper(req.Student.Class)
-	fmt.Println(req.Student.Class)
+	req.Student.GradeLabel = strings.ToUpper(req.Student.GradeLabel)
 	tx := spr.db.Begin()
 	if err := tx.Error; err != nil {
 		return &[]string{fmt.Sprintf("could not begin transaction: %v", err)}

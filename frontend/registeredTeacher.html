@@ -525,6 +525,10 @@
     </script>
     <!-- API HIT -->
     <script>
+      document.getElementById("confirmAPIResponse").addEventListener("click", function() {
+        $('#APIResponse').modal('hide');
+      });
+
       function logout() {
         // Show the confirmation modal
         $('#logoutConfirmationModal').modal('show');
@@ -533,14 +537,23 @@
       let selectedUserIds = []
 
       function deleteMass() {
+        showDeleteModalMass()
+
         const token = localStorage.getItem("authToken");
 
         const selectedCheckboxes = document.querySelectorAll('.user-checkbox:checked');
         
         if (selectedUserIds.length === 0) {
-            alert("Please select at least one user to delete.");
-            return;
+          const messageElement = document.getElementById("msgs");
+          messageElement.innerHTML = "Please select at least one user to delete."; 
+          messageElement.classList.remove("text-success");
+          messageElement.classList.add("text-danger");
+      
+          const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+          apiResponseModal.show();
+          return
         }
+      
         let lol = JSON.stringify({
           ids: selectedUserIds
         })          
@@ -559,16 +572,27 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-              alert("Selected users deleted successfully.");
+              const messageElement = document.getElementById("msgs");
+              messageElement.innerHTML = data.message; 
+              messageElement.classList.remove("text-success");
+              messageElement.classList.add("text-danger");
+          
+              const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+              apiResponseModal.show();
               fetchUsers(`${token}`,); // Refresh user list
               fetchUserCount(token);
             } else {
-              alert(`Failed to delete users: ${data.message}`);
+              const messageElement = document.getElementById("msgs");
+              messageElement.innerHTML = "Failed to delete users"; 
+              messageElement.classList.remove("text-success");
+              messageElement.classList.add("text-danger");
+          
+              const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+              apiResponseModal.show();
             }
         })
         .catch(error => {
             console.error("Error during mass deletion:", error);
-            alert("An error occurred while deleting users.");
         });
       }
       // Event listener for confirming logout
@@ -751,18 +775,35 @@
         `;
         return row;
       }
-    
+      
+      function showDeleteModalMass() {
+        const selectedNames = getSelectedUserNames();
+        const messageElement = document.getElementById("msgs");
+        messageElement.innerHTML = selectedNames 
+            ? `You are about to delete: ${selectedNames}` 
+            : "No users selected.";
+        
+        const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+        apiResponseModal.show();
+      }
 
-      // Prevent row click when checkbox is clicked and toggle selection
-      function toggleUserSelection(event, userId) {
+      function toggleUserSelection(event, userId, userName) {
         event.stopPropagation(); // Prevents row click event
-
+    
         const checkbox = event.target;
         if (checkbox.checked) {
-            selectedUserIds.push(userId);
+            selectedUsers.push({ id: userId, name: userName });
         } else {
-            selectedUserIds = selectedUserIds.filter(id => id !== userId);
+            selectedUsers = selectedUsers.filter(user => user.id !== userId);
         }
+    
+        // Optional: Log selected users for debugging
+        console.log("Selected Users:", selectedUsers);
+      }
+      
+      // Example of how to display selected names
+      function getSelectedUserNames() {
+          return selectedUsers.map(user => user.name).join(", ");
       }
 
       // Convert selected IDs to JSON format
