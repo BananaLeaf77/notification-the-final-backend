@@ -537,7 +537,6 @@
       let selectedUserIds = []
 
       function deleteMass() {
-        showDeleteModalMass()
 
         const token = localStorage.getItem("authToken");
 
@@ -775,35 +774,16 @@
         `;
         return row;
       }
-      
-      function showDeleteModalMass() {
-        const selectedNames = getSelectedUserNames();
-        const messageElement = document.getElementById("msgs");
-        messageElement.innerHTML = selectedNames 
-            ? `You are about to delete: ${selectedNames}` 
-            : "No users selected.";
-        
-        const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
-        apiResponseModal.show();
-      }
 
-      function toggleUserSelection(event, userId, userName) {
+      function toggleUserSelection(event, userId) {
         event.stopPropagation(); // Prevents row click event
-    
+        
         const checkbox = event.target;
         if (checkbox.checked) {
-            selectedUsers.push({ id: userId, name: userName });
+            selectedUserIds.push(userId);
         } else {
-            selectedUsers = selectedUsers.filter(user => user.id !== userId);
+            selectedUserIds = selectedUserIds.filter(id => id !== userId);
         }
-    
-        // Optional: Log selected users for debugging
-        console.log("Selected Users:", selectedUsers);
-      }
-      
-      // Example of how to display selected names
-      function getSelectedUserNames() {
-          return selectedUsers.map(user => user.name).join(", ");
       }
 
       // Convert selected IDs to JSON format
