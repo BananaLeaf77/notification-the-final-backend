@@ -114,95 +114,94 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 
 func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]domain.StudentAndParent) (*[]string, error) {
 	var duplicateMessages []string
-
+	var readyToExecute []domain.StudentAndParent
 	now := time.Now()
 
+	// Validate and filter the records
 	for index, record := range *payload {
-		// Check if parent already exists by telephone
 		var parentExists domain.Parent
-
-		if len(record.Student.Telephone) > 15 {
-			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student with telephone %s is too long", index+1, record.Parent.Telephone))
-		}
-
+		var studentExists domain.Student
+	
+		// Check for errors independently for each field
+		isDuplicate := false
+	
+		// Check Parent Telephone
 		if len(record.Parent.Telephone) > 15 {
 			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with telephone %s is too long", index+1, record.Parent.Telephone))
-		}
-
-		err := spr.db.WithContext(ctx).Where("telephone = ? AND deleted_at IS NULL", record.Parent.Telephone).First(&parentExists).Error
-		if err == nil {
+			isDuplicate = true
+		} else if err := spr.db.WithContext(ctx).Where("telephone = ? AND deleted_at IS NULL", record.Parent.Telephone).First(&parentExists).Error; err == nil {
 			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with telephone %s already exists", index+1, record.Parent.Telephone))
-			continue
-		} else if err != gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("row %d: error checking if parent exists by telephone: %v", index+1, err)
+			isDuplicate = true
 		}
-
-		if record.Parent.Email != nil {
-			err = spr.db.WithContext(ctx).Where("email = ? AND deleted_at IS NULL", record.Parent.Email).First(&parentExists).Error
-			if err == nil {
-				duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with email %s already exists", index+1, *record.Parent.Email))
-				continue
-			} else if err != gorm.ErrRecordNotFound {
-				return nil, fmt.Errorf("row %d: error checking if parent exists by email: %v", index+1, err)
-			}
-		}
-
-		// Check if parent already exists by name
-		err = spr.db.WithContext(ctx).Where("name = ? AND deleted_at IS NULL", record.Parent.Name).First(&parentExists).Error
-		if err == nil {
+	
+		// Check Parent Name
+		if err := spr.db.WithContext(ctx).Where("name = ? AND deleted_at IS NULL", record.Parent.Name).First(&parentExists).Error; err == nil {
 			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with name %s already exists", index+1, record.Parent.Name))
-			continue
-		} else if err != gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("row %d: error checking if parent exists by name: %v", index+1, err)
+			isDuplicate = true
 		}
-
-		// Check if student already exists by telephone
-		var studentExists domain.Student
-		err = spr.db.WithContext(ctx).Where("telephone = ? AND deleted_at IS NULL", record.Student.Telephone).First(&studentExists).Error
-		if err == nil {
+	
+		// Check Parent Email
+		if record.Parent.Email != nil && *record.Parent.Email != "" {
+			parentEmailLowered := strings.ToLower(*record.Parent.Email)
+			if err := spr.db.WithContext(ctx).Where("email = ? AND deleted_at IS NULL", parentEmailLowered).First(&parentExists).Error; err == nil {
+				duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with email %s already exists", index+1, parentEmailLowered))
+				isDuplicate = true
+			}
+			record.Parent.Email = &parentEmailLowered
+		}
+	
+		// Check Student Telephone
+		if len(record.Student.Telephone) > 15 {
+			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student with telephone %s is too long", index+1, record.Student.Telephone))
+			isDuplicate = true
+		} else if err := spr.db.WithContext(ctx).Where("telephone = ? AND deleted_at IS NULL", record.Student.Telephone).First(&studentExists).Error; err == nil {
 			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student with telephone %s already exists", index+1, record.Student.Telephone))
-			continue
-		} else if err != gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("row %d: error checking if student exists: %v", index+1, err)
+			isDuplicate = true
 		}
-
-		// Check if student already exists by name
-		err = spr.db.WithContext(ctx).Where("name = ? AND deleted_at IS NULL", record.Student.Name).First(&studentExists).Error
-		if err == nil {
+	
+		// Check Student Name
+		if err := spr.db.WithContext(ctx).Where("name = ? AND deleted_at IS NULL", record.Student.Name).First(&studentExists).Error; err == nil {
 			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student with name %s already exists", index+1, record.Student.Name))
+			isDuplicate = true
+		}
+	
+		// Skip the record if any duplication was found
+		if isDuplicate {
 			continue
-		} else if err != gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("row %d: error checking if student exists by name: %v", index+1, err)
 		}
-
-		// Insert parent and student
-		tx := spr.db.Begin()
-		if err := tx.Error; err != nil {
-			return nil, fmt.Errorf("could not begin transaction: %v", err)
-		}
-
 		record.Parent.CreatedAt = now
 		record.Parent.UpdatedAt = now
-		err = tx.WithContext(ctx).Create(&record.Parent).Error
-		if err != nil {
-			tx.Rollback()
-			return nil, fmt.Errorf("row %d: could not insert parent: %v", index+1, err)
-		}
-
-		record.Student.ParentID = record.Parent.ParentID
 		record.Student.CreatedAt = now
 		record.Student.UpdatedAt = now
-		err = tx.WithContext(ctx).Create(&record.Student).Error
-		if err != nil {
-			tx.Rollback()
-			return nil, fmt.Errorf("row %d: could not insert student: %v", index+1, err)
-		}
-
-		tx.Commit()
+		// If no duplicates found, add to readyToExecute
+		readyToExecute = append(readyToExecute, record)
 	}
 
+	// If there are duplicate messages, return them
 	if len(duplicateMessages) > 0 {
 		return &duplicateMessages, nil
+	}
+
+	// Insert the valid records into the database
+	err := spr.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		for _, record := range readyToExecute {
+			// Insert parent
+			if err := tx.Create(&record.Parent).Error; err != nil {
+				return fmt.Errorf("failed to insert parent: %w", err)
+			}
+
+			// Assign the parent ID to the student
+			record.Student.ParentID = record.Parent.ParentID
+
+			// Insert student
+			if err := tx.Create(&record.Student).Error; err != nil {
+				return fmt.Errorf("failed to insert student: %w", err)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute database transaction: %w", err)
 	}
 
 	return nil, nil

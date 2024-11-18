@@ -1,10 +1,19 @@
 package delivery
 
 import (
+	"context"
+	"encoding/csv"
+	"fmt"
+	"log"
 	"notification/config"
 	"notification/domain"
 	"notification/middleware"
+	"os"
+	"path/filepath"
+	"regexp"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/gofiber/fiber/v2"
@@ -21,7 +30,7 @@ func NewStudentParentHandler(app *fiber.App, useCase domain.StudentParentUseCase
 
 	route := app.Group("/student-and-parent")
 	route.Post("/insert", handler.CreateStudentAndParent)
-	// route.Post("/import", handler.UploadAndImport)
+	route.Post("/import", handler.UploadAndImport)
 	route.Put("/modify/:id", handler.UpdateStudentAndParent)
 	route.Delete("/rm/:id", handler.DeleteStudentAndParent)
 	route.Get("/student/:id", handler.GetStudentDetailsByID)
@@ -34,7 +43,7 @@ func NewStudentParentHandlerDeploy(app *fiber.App, useCase domain.StudentParentU
 
 	route := app.Group("/student-and-parent")
 	route.Post("/insert", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.CreateStudentAndParent)
-	// route.Post("/import", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.UploadAndImport)
+	route.Post("/import", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.UploadAndImport)
 	route.Put("/modify/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.UpdateStudentAndParent)
 	route.Delete("/rm/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteStudentAndParent)
 	route.Get("/student/:id", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetStudentDetailsByID)
@@ -128,157 +137,188 @@ func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
 	})
 }
 
-// func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
-// 	userToken, _ := c.Locals("user").(*domain.Claims)
+func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
+	userToken, _ := c.Locals("user").(*domain.Claims)
 
-// 	file, err := c.FormFile("file")
-// 	if err != nil {
-// 		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "UploadAndImport")
-// 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-// 			"success": false,
-// 			"error":   err.Error(),
-// 			"message": "Failed to parse file",
-// 		})
-// 	}
+	file, err := c.FormFile("file")
+	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "UploadAndImport")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"error":   err.Error(),
+			"message": "Failed to parse file",
+		})
+	}
 
-// 	// Define upload directory
-// 	uploadDir := "./uploads"
-// 	// Ensure upload directory exists
-// 	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
-// 		if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
-// 			config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "UploadAndImport")
-// 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-// 				"success": false,
-// 				"error":   err.Error(),
-// 				"message": "Failed to create upload directory",
-// 			})
-// 		}
-// 	}
+	// Define upload directory
+	uploadDir := "./uploads"
+	// Ensure upload directory exists
+	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
+			config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "UploadAndImport")
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"success": false,
+				"error":   err.Error(),
+				"message": "Failed to create upload directory",
+			})
+		}
+	}
 
-// 	// Save the file
-// 	filePath := filepath.Join(uploadDir, file.Filename)
-// 	err = c.SaveFile(file, filePath)
-// 	if err != nil {
-// 		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "UploadAndImport")
-// 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-// 			"success": false,
-// 			"error":   err.Error(),
-// 			"message": "Failed to save file",
-// 		})
-// 	}
+	// Save the file
+	filePath := filepath.Join(uploadDir, file.Filename)
+	err = c.SaveFile(file, filePath)
+	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "UploadAndImport")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"error":   err.Error(),
+			"message": "Failed to save file",
+		})
+	}
 
-// 	// Process the CSV file and get duplicate records
-// 	resDupe, invalidTelephones, err := sph.processCSVFile(c.Context(), filePath)
+	// Process the CSV file and get duplicate records
+	badRequests, internalServerResponse, _ := sph.processCSVFile(c.Context(), filePath)
 
-// 	if err != nil {
-// 		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "UploadAndImport")
-// 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-// 			"success":            false,
-// 			"error":              err.Error(),
-// 			"message":            "Failed to process CSV file",
-// 			"invalid_telephones": invalidTelephones,
-// 		})
-// 	}
+	if badRequests != nil && len(*badRequests) > 0 {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "UploadAndImport")
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"success": false,
+			"message": "Import Failure, bad input found.",
+			"error":   badRequests,
+		})
+	}
 
-// 	if resDupe != nil && len(*resDupe) > 0 {
-// 		config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "UploadAndImport")
-// 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
-// 			"success":    false,
-// 			"message":    "File processed successfully, but some duplicates were found.",
-// 			"duplicates": resDupe,
-// 		})
-// 	}
+	if internalServerResponse != nil && len(*internalServerResponse) > 0 {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "UploadAndImport")
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"success": false,
+			"message": "Import Failure, duplicates found.",
+			"error":   internalServerResponse,
+		})
+	}
 
-// 	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "UploadAndImport")
-// 	// If no errors and no duplicates, return success
-// 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-// 		"success": true,
-// 		"message": "File processed successfully",
-// 	})
-// }
+	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "UploadAndImport")
+	// If no errors and no duplicates, return success
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "File processed successfully",
+	})
+}
 
-// func (sph *studentParentHandler) processCSVFile(c context.Context, filePath string) (*[]string, *[]string, error) {
-// 	if sph.uc == nil {
-// 		return nil, nil, fmt.Errorf("use case service is not initialized")
-// 	}
+func (sph *studentParentHandler) processCSVFile(c context.Context, filePath string) (*[]string, *[]string, error) {
+	var errList []string
+	var listStudentAndParent []domain.StudentAndParent
+	var parentDataHolder domain.Parent
+	var studentDataHolder domain.Student
 
-// 	var listStudentAndParent []domain.StudentAndParent
-// 	var parentDataHolder domain.Parent
-// 	var studentDataHolder domain.Student
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to open CSV file: %v", err)
+	}
+	defer file.Close()
+	defer func() {
+		if err := os.Remove(filePath); err != nil {
+			log.Printf("Failed to delete file: %v", err)
+		}
+	}()
 
-// 	file, err := os.Open(filePath)
-// 	if err != nil {
-// 		return nil, nil, fmt.Errorf("failed to open CSV file: %v", err)
-// 	}
-// 	defer file.Close()
-// 	defer func() {
-// 		if err := os.Remove(filePath); err != nil {
-// 			log.Printf("Failed to delete file: %v", err)
-// 		}
-// 	}()
+	reader := csv.NewReader(file)
+	records, err := reader.ReadAll()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to read CSV file: %v", err)
+	}
 
-// 	reader := csv.NewReader(file)
-// 	records, err := reader.ReadAll()
-// 	if err != nil {
-// 		return nil, nil, fmt.Errorf("failed to read CSV file: %v", err)
-// 	}
+	// Precompile the regular expression outside the loop
+	gradeLabelRegex, err := regexp.Compile("^[A-Za-z]+$")
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to compile regular expression: %v", err)
+	}
 
-// 	// Start from row 2 because row 1 is the header
-// 	for i, row := range records[1:] {
-// 		if len(row) < 8 {
-// 			log.Printf("Skipping row %d due to insufficient columns", i+2)
-// 			continue
-// 		}
+	// Start from row 2 because row 1 is the header
+	for i, row := range records[1:] {
+		if len(row) < 8 {
+			log.Printf("Skipping row %d due to insufficient columns", i+2)
+			continue
+		}
+		// conv row grade
+		convertedGrade, err := strconv.Atoi(row[1])
+		if err != nil {
+			errList = append(errList, fmt.Sprintf("row %d: grade should be number: %s", i+2, row[1]))
+		}
 
-// 		studentDataHolder = domain.Student{
-// 			Name:      row[0],
-// 			Class:     row[1],
-// 			Gender:    row[2],
-// 			Telephone: row[3],
-// 			ParentID:  0,
-// 			CreatedAt: time.Now(),
-// 			UpdatedAt: time.Now(),
-// 		}
+		match := gradeLabelRegex.MatchString(row[2])
+		if !match {
+			errList = append(errList, fmt.Sprintf("row %d: Invalid Grade Label: %s. Only letters (A-Z, a-z) are allowed", i+2, row[1]))
+		}
 
-// 		_, err = govalidator.ValidateStruct(studentDataHolder)
-// 		if err != nil {
-// 			return nil, nil, fmt.Errorf("row %d: error validating student: %v", i+2, err)
-// 		}
+		genderLowered := strings.ToLower(row[3])
+		if genderLowered != "male" && genderLowered != "female" {
+			errList = append(errList, fmt.Sprintf("row %d: Invalid student gender: %s, gender should be male / female", i+2, genderLowered))
+		}
 
-// 		parentDataHolder = domain.Parent{
-// 			Name:      row[4],
-// 			Gender:    row[5],
-// 			Telephone: row[6],
-// 			Email:     getStringPointer(row[7]),
-// 			CreatedAt: time.Now(),
-// 			UpdatedAt: time.Now(),
-// 		}
+		_, err = strconv.Atoi(row[4])
+		if err != nil {
+			errList = append(errList, fmt.Sprintf("row %d: Invalid student telephone: %s, telephone should be numeric", i+2, row[4]))
+		}
 
-// 		_, err = govalidator.ValidateStruct(parentDataHolder)
-// 		if err != nil {
-// 			log.Printf("Parent validation failed on row %d: %v", i+2, err)
-// 			return nil, nil, fmt.Errorf("row %d: error validating parent: %v", i+2, err)
-// 		}
+		if len(row[4]) > 15 {
+			errList = append(errList, fmt.Sprintf("row %d: Invalid student telephone: %s, telephone should be 15 number max", i+2, genderLowered))
+		}
 
-// 		studNParent := domain.StudentAndParent{
-// 			Student: studentDataHolder,
-// 			Parent:  parentDataHolder,
-// 		}
-// 		// Append to the list
-// 		listStudentAndParent = append(listStudentAndParent, studNParent)
-// 	}
+		studentDataHolder = domain.Student{
+			Name:       row[0],
+			Grade:      convertedGrade,
+			GradeLabel: row[2],
+			Gender:     genderLowered,
+			Telephone:  row[4],
+			ParentID:   0,
+			CreatedAt:  time.Now(),
+			UpdatedAt:  time.Now(),
+		}
 
-// 	duplicates, err := sph.uc.ImportCSV(c, &listStudentAndParent)
-// 	if err != nil {
-// 		return nil, nil, fmt.Errorf("error importing CSV data: %v", err)
-// 	}
+		genderParentLowered := strings.ToLower(row[6])
+		if genderParentLowered != "male" && genderParentLowered != "female" {
+			errList = append(errList, fmt.Sprintf("row %d: Invalid gender: %s, gender should be male / female", i+2, genderParentLowered))
+		}
 
-// 	if duplicates != nil && len(*duplicates) > 0 {
-// 		return duplicates, nil, nil
-// 	}
+		_, err = strconv.Atoi(row[7])
+		if err != nil {
+			errList = append(errList, fmt.Sprintf("row %d: Invalid parent telephone: %s, telephone should be numeric", i+2, row[7]))
+		}
 
-// 	return nil, nil, nil
-// }
+		if len(row[7]) > 15 {
+			errList = append(errList, fmt.Sprintf("row %d: Invalid parent telephone: %s, telephone should be 15 number max", i+2, genderParentLowered))
+		}
+
+		parentDataHolder = domain.Parent{
+			Name:      row[5],
+			Gender:    row[6],
+			Telephone: row[7],
+			Email:     getStringPointer(row[8]),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+
+		studNParent := domain.StudentAndParent{
+			Student: studentDataHolder,
+			Parent:  parentDataHolder,
+		}
+
+		listStudentAndParent = append(listStudentAndParent, studNParent)
+	}
+
+	if len(errList) > 0 {
+		return &errList, nil, nil
+	}
+
+	duplicates, _ := sph.uc.ImportCSV(c, &listStudentAndParent)
+
+	if duplicates != nil && len(*duplicates) > 0 {
+		return nil, duplicates, nil
+	}
+
+	return nil, nil, nil
+}
 
 // Helper function to get a pointer to a string
 func getStringPointer(s string) *string {
