@@ -742,8 +742,14 @@
             });
         })
         .catch(error => {
-            console.error("Error fetching students:", error);
-            showError("Failed to load student data.");
+          const messageElement = document.getElementById("msgs");
+          messageElement.innerHTML = data.error; 
+          messageElement.classList.remove("text-success");
+          messageElement.classList.add("text-danger");
+      
+          const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+          apiResponseModal.show();
+          return
         });
       }
     
@@ -872,12 +878,26 @@
                 const pRole = document.getElementById("clickedProfileRole");
                 pRole.textContent = `Role : ${data.data.role}`;
             } else {
-                alert("Failed to load profile information.");
+                const messageElement = document.getElementById("msgs");
+                messageElement.innerHTML = data.error; 
+                messageElement.classList.remove("text-success");
+                messageElement.classList.add("text-danger");
+            
+                const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+                apiResponseModal.show();
+                return
             }
         })
         .catch(error => {
             console.error("Error fetching profile data:", error);
-            alert("An error occurred while fetching profile information.");
+            const messageElement = document.getElementById("msgs");
+            messageElement.innerHTML = data.error; 
+            messageElement.classList.remove("text-success");
+            messageElement.classList.add("text-danger");
+        
+            const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+            apiResponseModal.show();
+            return
         });
       }
 
@@ -908,9 +928,14 @@
         const token = localStorage.getItem("authToken");
 
         if (!token) {
-            alert("You are not authorized. Please log in first.");
-            window.location.href = "login.html";
-            return;
+          const messageElement = document.getElementById("msgs");
+          messageElement.innerHTML = "You are not authorized. Please log in first."; 
+          messageElement.classList.remove("text-success");
+          messageElement.classList.add("text-danger");
+      
+          const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+          apiResponseModal.show();
+          window.location.href = "login.html";
         }
 
         fetch(`http://127.0.0.1:8000/student-and-parent/rm/${studentId}`, {
@@ -924,7 +949,14 @@
             if (response.ok) {
                 fetchStudents(token); // Refresh the list of students
             } else {
-                alert("Failed to delete student.");
+              const messageElement = document.getElementById("msgs");
+              messageElement.innerHTML = response.error; 
+              messageElement.classList.remove("text-success");
+              messageElement.classList.add("text-danger");
+          
+              const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+              apiResponseModal.show();
+              return
             }
         })
         .catch(error => console.error('Error:', error));

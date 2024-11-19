@@ -194,7 +194,7 @@ func (uh *uHandler) CreateSubjectBulk(c *fiber.Ctx) error {
 	if err != nil {
 		config.PrintLogInfo(&userClaims.Username, fiber.StatusBadRequest, "CreateSubjectBulk")
 
-	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   err.Error(),
 			"success": false,
 			"message": "Failed to create subject bulk",

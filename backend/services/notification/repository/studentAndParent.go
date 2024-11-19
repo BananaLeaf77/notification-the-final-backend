@@ -24,89 +24,87 @@ func NewStudentParentRepository(database *gorm.DB) domain.StudentParentRepo {
 
 func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, req *domain.StudentAndParent) *[]string {
 	var errList []string
-	var existingStudent domain.Student
-	var existingParent domain.Parent
-	// Check Grade Label
+
+	if req.Parent.Email != nil {
+		emailLowered := strings.ToLower(strings.TrimSpace(*req.Parent.Email))
+		req.Parent.Email = &emailLowered
+	}
+
 	match, _ := regexp.MatchString("^[A-Za-z]+$", req.Student.GradeLabel)
 	if !match {
 		errList = append(errList, fmt.Sprintf("Invalid Grade Label: %s. Only letters (A-Z, a-z) are allowed.", req.Student.GradeLabel))
 	}
-	// Check if the student telephone already exists
-	err := spr.db.WithContext(ctx).Where("telephone = ? AND deleted_at IS NULL", req.Student.Telephone).First(&existingStudent).Error
-	if err == nil {
-		errList = append(errList, fmt.Sprintf("student with telephone %s already exists", req.Student.Telephone))
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		errList = append(errList, fmt.Sprintf("error checking student telephone: %v", err))
+
+	var studentCount int64
+	err := spr.db.WithContext(ctx).Model(&domain.Student{}).Where("telephone = ? AND deleted_at IS NULL", req.Student.Telephone).Count(&studentCount).Error
+	if err != nil {
+		errList = append(errList, fmt.Sprintf("Error checking for student telephone: %v", err))
+	} else if studentCount > 0 {
+		errList = append(errList, fmt.Sprintf("Student with telephone %s already exists", req.Student.Telephone))
 	}
 
-	// Check if the parent telephone already exists
-	err = spr.db.WithContext(ctx).Where("telephone = ? AND deleted_at IS NULL", req.Parent.Telephone).First(&existingParent).Error
-	if err == nil {
-		errList = append(errList, fmt.Sprintf("parent with telephone %s already exists", req.Parent.Telephone))
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		errList = append(errList, fmt.Sprintf("error checking parent telephone: %v", err))
+	var parentCount int64
+	err = spr.db.WithContext(ctx).Model(&domain.Parent{}).Where("telephone = ? AND deleted_at IS NULL", req.Parent.Telephone).Count(&parentCount).Error
+	if err != nil {
+		errList = append(errList, fmt.Sprintf("Error checking for parent telephone: %v", err))
+	} else if parentCount > 0 {
+		errList = append(errList, fmt.Sprintf("Parent with telephone %s already exists", req.Parent.Telephone))
 	}
 
-	// Check if the parent email already exists
-	if req.Parent.Email != nil {
-		parentEmailLowered := strings.ToLower(*req.Parent.Email)
-		req.Parent.Email = &parentEmailLowered
-
-		err = spr.db.WithContext(ctx).Where("email = ? AND deleted_at IS NULL", parentEmailLowered).First(&existingParent).Error
-		if err == nil {
-			errList = append(errList, fmt.Sprintf("parent with email %s already exists", parentEmailLowered))
-		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-			errList = append(errList, fmt.Sprintf("error checking parent email: %v", err))
+	if req.Parent.Email != nil && *req.Parent.Email != "" {
+		err = spr.db.WithContext(ctx).Model(&domain.Parent{}).Where("email = ? AND deleted_at IS NULL", *req.Parent.Email).Count(&parentCount).Error
+		if err != nil {
+			errList = append(errList, fmt.Sprintf("Error checking for parent email: %v", err))
+		} else if parentCount > 0 {
+			errList = append(errList, fmt.Sprintf("Parent with email %s already exists", *req.Parent.Email))
 		}
 	}
 
-	// Check if the student name already exists
-	err = spr.db.WithContext(ctx).Where("name = ? AND deleted_at IS NULL", req.Student.Name).First(&existingStudent).Error
-	if err == nil {
-		errList = append(errList, fmt.Sprintf("student with name %s already exists", req.Student.Name))
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		errList = append(errList, fmt.Sprintf("error checking student name: %v", err))
+	err = spr.db.WithContext(ctx).Model(&domain.Student{}).Where("name = ? AND deleted_at IS NULL", req.Student.Name).Count(&studentCount).Error
+	if err != nil {
+		errList = append(errList, fmt.Sprintf("Error checking for student name: %v", err))
+	} else if studentCount > 0 {
+		errList = append(errList, fmt.Sprintf("Student with name %s already exists", req.Student.Name))
 	}
 
-	// Check if the parent name already exists
-	err = spr.db.WithContext(ctx).Where("name = ? AND deleted_at IS NULL", req.Parent.Name).First(&existingParent).Error
-	if err == nil {
-		errList = append(errList, fmt.Sprintf("parent with name %s already exists", req.Parent.Name))
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		errList = append(errList, fmt.Sprintf("error checking parent name: %v", err))
+	err = spr.db.WithContext(ctx).Model(&domain.Parent{}).Where("name = ? AND deleted_at IS NULL", req.Parent.Name).Count(&parentCount).Error
+	if err != nil {
+		errList = append(errList, fmt.Sprintf("Error checking for parent name: %v", err))
+	} else if parentCount > 0 {
+		errList = append(errList, fmt.Sprintf("Parent with name %s already exists", req.Parent.Name))
 	}
 
 	if len(errList) > 0 {
 		return &errList
 	}
 
-	req.Student.GradeLabel = strings.ToUpper(req.Student.GradeLabel)
 	tx := spr.db.Begin()
-	if err := tx.Error; err != nil {
-		return &[]string{fmt.Sprintf("could not begin transaction: %v", err)}
+	if tx.Error != nil {
+		return &[]string{fmt.Sprintf("Could not begin transaction: %v", tx.Error)}
 	}
 
-	// Insert parent
+	// Insert Parent
 	req.Parent.CreatedAt = time.Now()
 	req.Parent.UpdatedAt = req.Parent.CreatedAt
-	if err = tx.WithContext(ctx).Create(&req.Parent).Error; err != nil {
+	if err := tx.WithContext(ctx).Create(&req.Parent).Error; err != nil {
 		tx.Rollback()
-		return &[]string{fmt.Sprintf("could not insert parent: %v", err)}
+		return &[]string{fmt.Sprintf("Could not insert parent: %v", err)}
 	}
 
-	// Set the ParentID after inserting the parent
+	// Set ParentID for Student
 	req.Student.ParentID = req.Parent.ParentID
-
-	// Insert student
 	req.Student.CreatedAt = time.Now()
 	req.Student.UpdatedAt = req.Student.CreatedAt
-	if err = tx.WithContext(ctx).Create(&req.Student).Error; err != nil {
+
+	// Insert Student
+	if err := tx.WithContext(ctx).Create(&req.Student).Error; err != nil {
 		tx.Rollback()
-		return &[]string{fmt.Sprintf("could not insert student: %v", err)}
+		return &[]string{fmt.Sprintf("Could not insert student: %v", err)}
 	}
 
-	if err = tx.Commit().Error; err != nil {
-		return &[]string{fmt.Sprintf("could not commit transaction: %v", err)}
+	// Commit Transaction
+	if err := tx.Commit().Error; err != nil {
+		return &[]string{fmt.Sprintf("Could not commit transaction: %v", err)}
 	}
 
 	return nil
@@ -121,50 +119,50 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 	for index, record := range *payload {
 		var parentExists domain.Parent
 		var studentExists domain.Student
-	
+
 		// Check for errors independently for each field
 		isDuplicate := false
-	
+
 		// Check Parent Telephone
 		if len(record.Parent.Telephone) > 15 {
-			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with telephone %s is too long", index+1, record.Parent.Telephone))
+			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with telephone %s is too long", index+2, record.Parent.Telephone))
 			isDuplicate = true
 		} else if err := spr.db.WithContext(ctx).Where("telephone = ? AND deleted_at IS NULL", record.Parent.Telephone).First(&parentExists).Error; err == nil {
-			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with telephone %s already exists", index+1, record.Parent.Telephone))
+			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with telephone %s already exists", index+2, record.Parent.Telephone))
 			isDuplicate = true
 		}
-	
+
 		// Check Parent Name
 		if err := spr.db.WithContext(ctx).Where("name = ? AND deleted_at IS NULL", record.Parent.Name).First(&parentExists).Error; err == nil {
-			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with name %s already exists", index+1, record.Parent.Name))
+			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with name %s already exists", index+2, record.Parent.Name))
 			isDuplicate = true
 		}
-	
+
 		// Check Parent Email
 		if record.Parent.Email != nil && *record.Parent.Email != "" {
 			parentEmailLowered := strings.ToLower(*record.Parent.Email)
 			if err := spr.db.WithContext(ctx).Where("email = ? AND deleted_at IS NULL", parentEmailLowered).First(&parentExists).Error; err == nil {
-				duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with email %s already exists", index+1, parentEmailLowered))
+				duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with email %s already exists", index+2, parentEmailLowered))
 				isDuplicate = true
 			}
 			record.Parent.Email = &parentEmailLowered
 		}
-	
+
 		// Check Student Telephone
 		if len(record.Student.Telephone) > 15 {
-			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student with telephone %s is too long", index+1, record.Student.Telephone))
+			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student with telephone %s is too long", index+2, record.Student.Telephone))
 			isDuplicate = true
 		} else if err := spr.db.WithContext(ctx).Where("telephone = ? AND deleted_at IS NULL", record.Student.Telephone).First(&studentExists).Error; err == nil {
-			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student with telephone %s already exists", index+1, record.Student.Telephone))
+			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student with telephone %s already exists", index+2, record.Student.Telephone))
 			isDuplicate = true
 		}
-	
+
 		// Check Student Name
 		if err := spr.db.WithContext(ctx).Where("name = ? AND deleted_at IS NULL", record.Student.Name).First(&studentExists).Error; err == nil {
-			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student with name %s already exists", index+1, record.Student.Name))
+			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student with name %s already exists", index+2, record.Student.Name))
 			isDuplicate = true
 		}
-	
+
 		// Skip the record if any duplication was found
 		if isDuplicate {
 			continue
@@ -179,6 +177,7 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 
 	// If there are duplicate messages, return them
 	if len(duplicateMessages) > 0 {
+		fmt.Println(duplicateMessages)
 		return &duplicateMessages, nil
 	}
 

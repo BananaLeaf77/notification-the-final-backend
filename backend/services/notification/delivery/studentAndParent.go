@@ -116,8 +116,13 @@ func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
 		})
 	}
 
-	if req.Parent.Email != nil && *req.Parent.Email == "" {
-		req.Parent.Email = nil
+	if req.Parent.Email != nil {
+		trimmedEmail := strings.TrimSpace(*req.Parent.Email)
+		if trimmedEmail == "" {
+			req.Parent.Email = nil
+		} else {
+			req.Parent.Email = &trimmedEmail
+		}
 	}
 
 	if err := sph.uc.CreateStudentAndParentUC(c.Context(), &req); err != nil {
@@ -381,7 +386,7 @@ func (sph *studentParentHandler) UpdateStudentAndParent(c *fiber.Ctx) error {
 		})
 	}
 
-	config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "UpdateStudentAndParent")
+	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "UpdateStudentAndParent")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
 		"message": "Student and Parent updated successfully",

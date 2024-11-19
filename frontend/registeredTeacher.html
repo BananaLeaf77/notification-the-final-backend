@@ -846,6 +846,71 @@
         $('#deleteConfirmationModal').modal('hide');
       });
 
+      function deleteUser(userId) {
+        const token = localStorage.getItem("authToken");
+    
+        // If the token is missing, redirect to the login page
+        if (!token) {
+            const messageElement = document.getElementById("msgs");
+            messageElement.innerHTML = "You are not authorized. Please log in first."; 
+            messageElement.classList.remove("text-success");
+            messageElement.classList.add("text-danger");
+    
+            const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+            apiResponseModal.show();
+            setTimeout(() => {
+                window.location.href = "login.html";
+            }, 2000);
+            return;
+        }
+    
+        // Call the DELETE endpoint
+        fetch(`http://127.0.0.1:8000/user/rm/${userId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `${token}`,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json()) // Parse the response JSON
+        .then(data => {
+            const messageElement = document.getElementById("msgs");
+    
+            if (data.success) {
+                // Success case
+                messageElement.innerHTML = data.message || "User deleted successfully.";
+                messageElement.classList.remove("text-danger");
+                messageElement.classList.add("text-success");
+    
+                const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+                apiResponseModal.show();
+    
+                // Refresh the user list or handle further actions
+                fetchUsers(token);
+                fetchUserCount(token);
+            } else {
+                // Failure case
+                messageElement.innerHTML = data.error || "Failed to delete user.";
+                messageElement.classList.remove("text-success");
+                messageElement.classList.add("text-danger");
+    
+                const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+                apiResponseModal.show();
+            }
+        })
+        .catch(error => {
+            // Handle network or other errors
+            console.error('Error:', error);
+            const messageElement = document.getElementById("msgs");
+            messageElement.innerHTML = "An error occurred. Please try again.";
+            messageElement.classList.remove("text-success");
+            messageElement.classList.add("text-danger");
+    
+            const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+            apiResponseModal.show();
+        });
+      }
+
       $(document).ready(function() {
         // Ensure both buttons trigger modal hiding
         $('.close, .btn-secondary').on('click', function() {

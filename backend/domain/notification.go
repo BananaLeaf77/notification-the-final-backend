@@ -7,6 +7,8 @@ import (
 
 type AttendanceNotificationHistory struct {
 	NotificationHistoryID int       `gorm:"primaryKey;autoIncrement" json:"notification_history_id"`
+	SubjectID             int       `json:"subject_id"`
+	Subject               Subject   `gorm:"references:SubjectID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"subject"`
 	StudentID             int       `gorm:"not null" json:"student_id"`
 	Student               Student   `gorm:"foreignKey:StudentID;references:StudentID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL" json:"student"`
 	ParentID              int       `gorm:"not null" json:"parent_id"`
