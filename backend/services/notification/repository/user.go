@@ -294,8 +294,13 @@ func (ur *userRepository) UpdateStaff(ctx context.Context, id int, payload *doma
 		}
 
 		var subjects []domain.Subject
+
 		if err := ur.db.WithContext(ctx).Where("subject_id IN ?", subjectIDs).Find(&subjects).Error; err != nil {
 			return fmt.Errorf("could not find new subjects: %v", err)
+		}
+
+		if len(subjects) == 0 {
+			return fmt.Errorf("no subjects found for the given IDs")
 		}
 
 		subjectPointers := make([]*domain.Subject, len(subjects))
@@ -325,10 +330,17 @@ func (ur *userRepository) GetStaffDetail(ctx context.Context, id int) (*domain.S
 		return nil, fmt.Errorf("staff not found")
 	}
 
+	var subjects []domain.Subject
+	if err := ur.db.WithContext(ctx).Model(&user).
+		Association("Teaching").Find(&subjects); err != nil {
+		return nil, fmt.Errorf("could not get subjects for user %d: %v", user.UserID, err)
+	}
+
 	safeData := domain.SafeStaffData{
 		UserID:    user.UserID,
 		Username:  user.Username,
 		Role:      user.Role,
+		Teaching:  subjects,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 		DeletedAt: &user.DeletedAt.Time,
