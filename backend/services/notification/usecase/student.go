@@ -18,11 +18,11 @@ func NewStudentUseCase(repo domain.StudentRepo, timeOut time.Duration) domain.St
 	}
 }
 
-func (sUC *studentUC) GetAllStudentUC(ctx context.Context) (*[]domain.Student, error) {
+func (sUC *studentUC) GetAllStudent(ctx context.Context, userID int) (*[]domain.Student, error) {
 	ctx, cancel := context.WithTimeout(ctx, sUC.TimeOut)
 	defer cancel()
 
-	students, err := sUC.studentRepo.GetAllStudent(ctx)
+	students, err := sUC.studentRepo.GetAllStudent(ctx, userID)
 	if err != nil {
 		return nil, err
 	}

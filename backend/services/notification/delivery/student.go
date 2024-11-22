@@ -37,7 +37,7 @@ func NewStudentDeliveryDeploy(app *fiber.App, uc domain.StudentUseCase) {
 func (sh *studentHandler) deliveryGetAllStudent(c *fiber.Ctx) error {
 	userToken, _ := c.Locals("user").(*domain.Claims)
 
-	students, err := sh.suc.GetAllStudentUC(c.Context())
+	students, err := sh.suc.GetAllStudent(c.Context(), userToken.UserID)
 	if err != nil {
 		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "deliveryGetAllStudent")
 		log.Error(fmt.Sprintf("User: %s => Failed to get all students: %v", userToken.Username, err))

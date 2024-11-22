@@ -4,6 +4,6 @@
 
 pas create staff onden ngidang ngijin mapel to
 
-bedain getall admin dan staff
+bedain getall admin dan staff (subject done, student blom)
 
 ubah attendance history masukin subject
