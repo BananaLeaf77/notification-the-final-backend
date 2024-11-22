@@ -97,6 +97,7 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 	req.Student.UpdatedAt = req.Student.CreatedAt
 
 	// Insert Student
+	req.Student.GradeLabel = strings.ToUpper(req.Student.GradeLabel)
 	if err := tx.WithContext(ctx).Create(&req.Student).Error; err != nil {
 		tx.Rollback()
 		return &[]string{fmt.Sprintf("Could not insert student: %v", err)}
@@ -212,6 +213,13 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 	var duplicatedDataParent domain.Parent
 
 	var errList []string
+
+	match, _ := regexp.MatchString("^[A-Za-z]+$", req.Student.GradeLabel)
+	if !match {
+		errList = append(errList, fmt.Sprintf("Invalid Grade Label: %s. Only letters (A-Z, a-z) are allowed.", req.Student.GradeLabel))
+	}
+
+	req.Student.GradeLabel = strings.ToUpper(req.Student.GradeLabel)
 
 	tx := spr.db.Begin()
 	if err := tx.Error; err != nil {

@@ -32,7 +32,8 @@ func NewSenderDeliveryDeploy(app *fiber.App, uc domain.SenderUseCase) {
 
 func (h *senderHandler) sendMassHandler(c *fiber.Ctx) error {
 	var payload struct {
-		IDs []int `json:"ids"`
+		IDs       []int `json:"ids"`
+		SubjectID int   `json:"subject_id"`
 	}
 
 	userToken := c.Locals("user").(*domain.Claims)
@@ -45,7 +46,7 @@ func (h *senderHandler) sendMassHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	if err := h.suc.SendMass(c.Context(), &payload.IDs, &userID); err != nil {
+	if err := h.suc.SendMass(c.Context(), &payload.IDs, &userID, payload.SubjectID); err != nil {
 		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "sendMassHandler")
 
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

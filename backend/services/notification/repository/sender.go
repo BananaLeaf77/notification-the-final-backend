@@ -6,6 +6,7 @@ import (
 	"net/smtp"
 	"notification/domain"
 	"strconv"
+	"strings"
 	"time"
 
 	"go.mau.fi/whatsmeow"
@@ -43,45 +44,51 @@ func NewSenderRepository(db *gorm.DB, client smtp.Auth, smtpAddress, schoolPhone
 	}
 }
 
-func (m *senderRepository) SendMass(ctx context.Context, idList *[]int, userID *int) error {
-	tNow = time.Now()
+func (m *senderRepository) SendMass(ctx context.Context, idList *[]int, userID *int, subjectID int) error {
+	// Fetch the subject details
+	var subject domain.Subject
+	err := m.db.WithContext(ctx).Where("subject_id = ?", subjectID).First(&subject).Error
+	if err != nil {
+		return fmt.Errorf("failed to fetch subject details: %v", err)
+	}
 
 	for _, id := range *idList {
-		var waStatus bool
-		var emailStatus bool
+		var waStatus, emailStatus bool
+		waStatus, emailStatus = false, false
 
-		waStatus = false
-		emailStatus = false
-
+		// Fetch student and parent details
 		student, err := m.fetchStudentDetails(ctx, id)
 		if err != nil {
-			continue
+			continue // Skip the current student if details cannot be fetched
 		}
 
-		err = m.initText(student)
+		// Initialize notification text with subject name
+		err = m.initTextWithSubject(student, subject.Name)
 		if err != nil {
 			return err
 		}
 
+		// Attempt to send an email notification
 		if student.Parent.Email != nil && *student.Parent.Email != "" {
 			if err := m.sendEmail(student); err != nil {
-				fmt.Printf("failed email : %s", *student.Parent.Email)
+				fmt.Printf("Failed to send email to: %s\n", *student.Parent.Email)
 				continue
 			}
 			emailStatus = true
 		}
 
+		// Attempt to send a WhatsApp notification
 		err = m.sendWA(ctx, student)
 		if err != nil {
-			fmt.Printf("Fail Telephone : %s", student.Parent.Telephone)
+			fmt.Printf("Failed to send WhatsApp message to: %s\n", student.Parent.Telephone)
 			continue
 		}
-
 		waStatus = true
 
-		err = m.logNotificationHistory(student.Student.StudentID, student.Student.ParentID, *userID, waStatus, emailStatus)
+		// Log the notification history
+		err = m.logNotificationHistory(student.Student.StudentID, student.Student.ParentID, *userID, subjectID, waStatus, emailStatus)
 		if err != nil {
-			return fmt.Errorf("failed saving the data to notification history, error : %v", err)
+			return fmt.Errorf("failed saving the data to notification history, error: %v", err)
 		}
 	}
 
@@ -160,7 +167,10 @@ func (m *senderRepository) sendWA(ctx context.Context, payload *domain.StudentAn
 	return nil
 }
 
-func (m *senderRepository) initText(payload *domain.StudentAndParent) error {
+func (m *senderRepository) initTextWithSubject(payload *domain.StudentAndParent, subjectName string) error {
+	tNow := time.Now()
+
+	// Format the date and time
 	formattedDate := tNow.Format("02/01/2006")
 	hourOnly := tNow.Format("15")
 	hourAndMinute := tNow.Format("15:04")
@@ -179,32 +189,33 @@ func (m *senderRepository) initText(payload *domain.StudentAndParent) error {
 
 	bodyMale = fmt.Sprintf(`Kepada Yth. Bapak %s,
 
-Kami ingin memberitahukan bahwa anak Bapak, %s, tidak hadir di sekolah pada tanggal %s pukul %s %s.
+Kami ingin memberitahukan bahwa anak Bapak, %s, tidak hadir di pelajaran "%s" pada tanggal %s pukul %s %s.
 
 Alasan ketidakhadiran belum kami terima hingga saat ini. Kami berharap Bapak dapat memberikan konfirmasi atau informasi lebih lanjut mengenai kondisi anak Bapak.
 
 Jika terdapat pertanyaan atau memerlukan bantuan lebih lanjut, Bapak dapat menghubungi kami di %s.
 
-Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Student.Name, formattedDate, hourAndMinute, isAM, m.schoolPhone)
+Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Student.Name, strings.ToUpper(subjectName), formattedDate, hourAndMinute, isAM, m.schoolPhone)
 
 	bodyFemale = fmt.Sprintf(`Kepada Yth. Ibu %s,
 
-Kami ingin memberitahukan bahwa anak Ibu, %s, tidak hadir di sekolah pada tanggal %s pukul %s %s.
+Kami ingin memberitahukan bahwa anak Ibu, %s, tidak hadir di pelajaran "%s" pada tanggal %s pukul %s %s.
 
 Alasan ketidakhadiran belum kami terima hingga saat ini. Kami berharap Ibu dapat memberikan konfirmasi atau informasi lebih lanjut mengenai kondisi anak Ibu.
 
 Jika terdapat pertanyaan atau memerlukan bantuan lebih lanjut, Ibu dapat menghubungi kami di %s.
 
-Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Student.Name, formattedDate, hourAndMinute, isAM, m.schoolPhone)
+Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Student.Name, strings.ToUpper(subjectName), formattedDate, hourAndMinute, isAM, m.schoolPhone)
 
 	return nil
 }
 
-func (m *senderRepository) logNotificationHistory(studentID, parentID, userID int, whatsappSuccess, emailSuccess bool) error {
+func (m *senderRepository) logNotificationHistory(studentID, parentID, userID, subjectID int, whatsappSuccess, emailSuccess bool) error {
 	history := &domain.AttendanceNotificationHistory{
 		StudentID:      studentID,
 		ParentID:       parentID,
 		UserID:         userID,
+		SubjectID:      subjectID,
 		WhatsappStatus: whatsappSuccess,
 		EmailStatus:    emailSuccess,
 	}
