@@ -27,6 +27,7 @@ func (np *notificationRepo) GetAllAttendanceNotificationHistory(ctx context.Cont
 		Preload("Student").
 		Preload("Parent").
 		Preload("User").
+		Preload("Subject").
 		Find(&dataHolder).Error; err != nil {
 		return nil, fmt.Errorf("could not get all attendance notification history, error: %v", err)
 	}
@@ -44,11 +45,12 @@ func (np *notificationRepo) GetAllAttendanceNotificationHistory(ctx context.Cont
 
 		// Append to final response slice
 		finalDatas = append(finalDatas, domain.AttendanceNotificationHistoryResponse{
-			Student: record.Student,
-			Parent:  record.Parent,
-			User:    userResponse,
+			Student:        record.Student,
+			Parent:         record.Parent,
+			User:           userResponse,
+			Subject:        record.Subject,
 			WhatsappStatus: record.WhatsappStatus,
-			EmailStatus: record.EmailStatus,
+			EmailStatus:    record.EmailStatus,
 		})
 	}
 

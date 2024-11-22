@@ -17,11 +17,13 @@ import (
 
 // init var
 var (
-	bodyMale   string
-	bodyFemale string
-	tNow       time.Time
-	subject    string
-	JID        types.JID
+	bodyMale        string
+	bodyFemale      string
+	tNow            time.Time
+	subject         string
+	JID             types.JID
+	bodyMaleEmail   string
+	bodyFemaleEmail string
 )
 
 type senderRepository struct {
@@ -128,12 +130,12 @@ func (m *senderRepository) sendEmail(payload *domain.StudentAndParent) error {
 		msg = "From: " + m.emailSender + "\n" +
 			"To: " + *payload.Parent.Email + "\n" +
 			"Subject: " + subject + "\n\n" +
-			bodyFemale
+			bodyFemaleEmail
 	} else if payload.Parent.Gender == "male" {
 		msg = "From: " + m.emailSender + "\n" +
 			"To: " + *payload.Parent.Email + "\n" +
 			"Subject: " + subject + "\n\n" +
-			bodyMale
+			bodyMaleEmail
 	}
 
 	err := smtp.SendMail(m.smtpAdress, m.client, m.emailSender, []string{*payload.Parent.Email}, []byte(msg))
@@ -187,7 +189,12 @@ func (m *senderRepository) initTextWithSubject(payload *domain.StudentAndParent,
 
 	subject = fmt.Sprintf("Pemberitahuan Ketidakhadiran %s pada %s %s, tanggal %s", payload.Student.Name, hourAndMinute, isAM, formattedDate)
 
-	bodyMale = fmt.Sprintf(`Kepada Yth. Bapak %s,
+	bodyMale = fmt.Sprintf(`
+															SINOAN Service 🔔
+
+					
+
+Kepada Yth. Bapak %s,
 
 Kami ingin memberitahukan bahwa anak Bapak, %s, tidak hadir di pelajaran "%s" pada tanggal %s pukul %s %s.
 
@@ -197,7 +204,44 @@ Jika terdapat pertanyaan atau memerlukan bantuan lebih lanjut, Bapak dapat mengh
 
 Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Student.Name, strings.ToUpper(subjectName), formattedDate, hourAndMinute, isAM, m.schoolPhone)
 
-	bodyFemale = fmt.Sprintf(`Kepada Yth. Ibu %s,
+	bodyFemale = fmt.Sprintf(`
+															SINOAN Service 🔔
+
+					
+
+Kepada Yth. Ibu %s,
+
+Kami ingin memberitahukan bahwa anak Ibu, %s, tidak hadir di pelajaran "%s" pada tanggal %s pukul %s %s.
+
+Alasan ketidakhadiran belum kami terima hingga saat ini. Kami berharap Ibu dapat memberikan konfirmasi atau informasi lebih lanjut mengenai kondisi anak Ibu.
+
+Jika terdapat pertanyaan atau memerlukan bantuan lebih lanjut, Ibu dapat menghubungi kami di %s.
+
+Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Student.Name, strings.ToUpper(subjectName), formattedDate, hourAndMinute, isAM, m.schoolPhone)
+
+	// email
+
+	bodyMaleEmail = fmt.Sprintf(`
+									SINOAN Service 🔔
+
+					
+
+Kepada Yth. Bapak %s,
+
+Kami ingin memberitahukan bahwa anak Bapak, %s, tidak hadir di pelajaran "%s" pada tanggal %s pukul %s %s.
+
+Alasan ketidakhadiran belum kami terima hingga saat ini. Kami berharap Bapak dapat memberikan konfirmasi atau informasi lebih lanjut mengenai kondisi anak Bapak.
+
+Jika terdapat pertanyaan atau memerlukan bantuan lebih lanjut, Bapak dapat menghubungi kami di %s.
+
+Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Student.Name, strings.ToUpper(subjectName), formattedDate, hourAndMinute, isAM, m.schoolPhone)
+
+	bodyFemaleEmail = fmt.Sprintf(`
+									SINOAN Service 🔔
+
+					
+
+Kepada Yth. Ibu %s,
 
 Kami ingin memberitahukan bahwa anak Ibu, %s, tidak hadir di pelajaran "%s" pada tanggal %s pukul %s %s.
 

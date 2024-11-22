@@ -108,6 +108,7 @@ type AttendanceNotificationHistoryResponse struct {
 	Student        Student      `json:"student"`
 	Parent         Parent       `json:"parent"`
 	User           UserResponse `json:"user"`
+	Subject        Subject      `json:"subject"`
 	WhatsappStatus bool         `json:"whatsapp_status"`
 	EmailStatus    bool         `json:"email_status"`
 }
