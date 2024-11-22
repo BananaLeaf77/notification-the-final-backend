@@ -394,12 +394,32 @@ func (ur *userRepository) CreateSubjectBulk(ctx context.Context, subjects *[]dom
 	return nil, nil
 }
 
-func (ur *userRepository) GetAllSubject(ctx context.Context) (*[]domain.Subject, error) {
-	var subjects []domain.Subject
-	err := ur.db.WithContext(ctx).Where("deleted_at IS NULL").Find(&subjects).Error
+func (ur *userRepository) GetAllSubject(ctx context.Context, userID int) (*[]domain.Subject, error) {
+	var existingUser domain.User
+	err := ur.db.WithContext(ctx).Where("user_id = ? AND deleted_at IS NULL", userID).First(&existingUser).Error
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid user: %w", err)
 	}
+
+	var subjects []domain.Subject
+
+	if existingUser.Role == "admin" {
+		// Admin can see all subjects
+		err = ur.db.WithContext(ctx).Where("deleted_at IS NULL").Find(&subjects).Error
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve all subjects: %w", err)
+		}
+	} else {
+		// Non-admin users see only their assigned subjects
+		err = ur.db.WithContext(ctx).
+			Model(&existingUser).
+			Association("Teaching").
+			Find(&subjects)
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve assigned subjects: %w", err)
+		}
+	}
+
 	return &subjects, nil
 }
 

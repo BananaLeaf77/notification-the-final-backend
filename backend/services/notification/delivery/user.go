@@ -46,7 +46,7 @@ func NewUserHandlerDeploy(app *fiber.App, useCase domain.UserUseCase) {
 	group.Put("/modify/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.ModifyStaff)
 	group.Post("/add-subject", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.CreateSubject)
 	group.Post("/add-subject-bulk", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.CreateSubjectBulk)
-	group.Get("/subject/all", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.GetAllSubject)
+	group.Get("/subject/all", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetAllSubject)
 	group.Put("/subject/modify/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.UpdateSubject)
 	group.Delete("/subject/rm/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteSubject)
 	group.Get("/show-students-subjects", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetSubjectsForTeacher)
@@ -223,7 +223,7 @@ func (uh *uHandler) CreateSubjectBulk(c *fiber.Ctx) error {
 func (uh *uHandler) GetAllSubject(c *fiber.Ctx) error {
 	userClaims := c.Locals("user").(*domain.Claims)
 
-	datas, err := uh.uc.GetAllSubject(c.Context())
+	datas, err := uh.uc.GetAllSubject(c.Context(), userClaims.UserID)
 	if err != nil {
 		config.PrintLogInfo(&userClaims.Username, fiber.StatusInternalServerError, "GetAllSubject")
 

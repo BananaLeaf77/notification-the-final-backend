@@ -36,7 +36,7 @@ type UserRepo interface {
 
 	CreateSubject(ctx context.Context, subject *Subject) error
 	CreateSubjectBulk(ctx context.Context, subjects *[]Subject) (*[]string, error)
-	GetAllSubject(ctx context.Context) (*[]Subject, error)
+	GetAllSubject(ctx context.Context, userID int) (*[]Subject, error)
 	UpdateSubject(ctx context.Context, id int, newSubjectData *Subject) error
 	DeleteSubject(ctx context.Context, id int) error
 
@@ -61,7 +61,7 @@ type UserUseCase interface {
 
 	CreateSubject(ctx context.Context, subject *Subject) error
 	CreateSubjectBulk(ctx context.Context, subjects *[]Subject) (*[]string, error)
-	GetAllSubject(ctx context.Context) (*[]Subject, error)
+	GetAllSubject(ctx context.Context, userID int) (*[]Subject, error)
 	UpdateSubject(ctx context.Context, id int, newSubjectData *Subject) error
 	DeleteSubject(ctx context.Context, id int) error
 

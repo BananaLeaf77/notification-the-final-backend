@@ -96,8 +96,8 @@ func (u *userUC) CreateSubjectBulk(ctx context.Context, subjects *[]domain.Subje
 	return nil, nil
 }
 
-func (u *userUC) GetAllSubject(ctx context.Context) (*[]domain.Subject, error) {
-	v, err := u.userRepo.GetAllSubject(ctx)
+func (u *userUC) GetAllSubject(ctx context.Context, userID int) (*[]domain.Subject, error) {
+	v, err := u.userRepo.GetAllSubject(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +141,7 @@ func (u *userUC) InputTestScores(ctx context.Context, teacherID int, testScores 
 	return nil
 }
 
-func (u *userUC) DeleteStaffMass(ctx context.Context, ids *[]int) error{
+func (u *userUC) DeleteStaffMass(ctx context.Context, ids *[]int) error {
 	err := u.userRepo.DeleteStaffMass(ctx, ids)
 	if err != nil {
 		return err
@@ -149,7 +149,6 @@ func (u *userUC) DeleteStaffMass(ctx context.Context, ids *[]int) error{
 
 	return nil
 }
-
 
 // func (u *userUC) GetAllAssignedSubject(ctx context.Context, userID int) (*[]domain.Subject, error) {
 // 	v, err := u.userRepo.GetAllAssignedSubject(ctx, userID)

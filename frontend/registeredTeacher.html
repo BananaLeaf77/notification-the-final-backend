@@ -136,7 +136,7 @@
                   </button>
               </div>
               <div class="modal-body">
-                  Are you sure you want to delete <span id="userLength"></span> User?
+                  Are you sure you want to delete <span id="userLength"></span> Users?
               </div>
               <div class="modal-footer">
                   <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
@@ -192,25 +192,25 @@
                 <h4 class="text-section">Components</h4>
               </li>
               <li class="nav-item">
-                <a href="#">
+                <a href="testScoreInput.html">
                   <i class="fas fa-pen"></i>
                   <p>Test Score Input</p>
                 </a>               
               </li>
               <li class="nav-item active">
-                <a href="#">
+                <a href="registeredTeacher.html">
                   <i class="fas fa-users"></i>
                   <p>Registered Teacher</p>
                 </a>               
               </li>  
               <li class="nav-item">
-                <a href="#">
+                <a href="registeredSubject.html">
                   <i class="fas fa-book"></i>
                   <p>Registered Subject</p>
                 </a>               
               </li>  
               <li class="nav-item">
-                <a href="#">
+                <a href="attendanceHistory.html">
                   <i class="fas fa-user-clock"></i>
                   <p>Attendance History</p>
                 </a>               
@@ -419,8 +419,8 @@
                             <i class="fas fa-user-plus"></i> Add
                           </a>
                         </div>
-                        <div onclick="showMassDeleteModals()">
-                          <a href="#" class="btn btn-danger btn-round" onclick="deleteMass()">
+                        <div>
+                          <a href="#" class="btn btn-danger btn-round" onclick="showMassDeleteModal()">
                               <i class="fas fa-trash"></i> Delete
                           </a>
                         </div>
@@ -556,43 +556,28 @@
       }
       
       function showMassDeleteModal() {
-        // Get selected checkboxes
-        const selectedCheckboxes = document.querySelectorAll('.user-checkbox:checked');
         if (selectedUserIds.length === 0) {
-            // Show error message if no users are selected
-            const messageElement = document.getElementById("msgs");
-            messageElement.innerHTML = "Please select at least one user to delete.";
-            messageElement.classList.remove("text-success");
-            messageElement.classList.add("text-danger");
-    
-            const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
-            apiResponseModal.show();
-            return;
+          // Show error message if no users are selected
+          const messageElement = document.getElementById("msgs");
+          messageElement.innerHTML = "Please select at least one user to delete.";
+          messageElement.classList.remove("text-success");
+          messageElement.classList.add("text-danger");
+  
+          const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+          apiResponseModal.show();
+          return;
         }
         // Update modal with user count
         document.getElementById("userLength").textContent = selectedUserIds.length;
     
         // Show the confirmation modal
-        $('#deleteMassConfirmationModal').modal('show');
+        $('#massDeleteConfirmationModal').modal('show');
       }
 
       let selectedUserIds = []
 
       function deleteMass() {
         const token = localStorage.getItem("authToken");
-    
-        if (selectedUserIds.length === 0) {
-            // Handle empty selection (shouldn't reach here due to earlier validation)
-            const messageElement = document.getElementById("msgs");
-            messageElement.innerHTML = "Please select at least one user to delete.";
-            messageElement.classList.remove("text-success");
-            messageElement.classList.add("text-danger");
-    
-            const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
-            apiResponseModal.show();
-            return;
-        }
-    
         // Make the API request
         fetch("http://127.0.0.1:8000/user/rm/users", {
             method: "POST",
@@ -605,7 +590,6 @@
             .then(response => response.json())
             .then(data => {
                 const messageElement = document.getElementById("msgs");
-    
                 if (data.success) {
                     // Show success message
                     messageElement.innerHTML = data.message || "Users deleted successfully.";
@@ -637,6 +621,13 @@
                 apiResponseModal.show();
             });
       }
+
+      // Event listener for confirming logout
+      document.getElementById("confirmMassDeleteButton").addEventListener("click", function () {
+        $('#massDeleteConfirmationModal').modal('hide');
+        deleteMass()
+      });
+
       // Event listener for confirming logout
       document.getElementById("confirmLogoutButton").addEventListener("click", function () {
           // Remove the token from local storage
@@ -659,15 +650,6 @@
         
         // Hide the modal
         $('#logoutConfirmationModal').modal('hide');
-      });
-
-      // Event listener for the confirm delete button
-      document.getElementById("confirmMassDeleteButton").addEventListener("click", function () {
-        // Perform mass deletion only when confirmed
-        deleteMass();
-
-        // Hide the modal after confirmation
-        $('#deleteMassConfirmationModal').modal('hide');
       });
 
       userRole = ""

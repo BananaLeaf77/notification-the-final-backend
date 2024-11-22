@@ -3,3 +3,7 @@
 (fitur find by no telphone / email) untuk 
 
 pas create staff onden ngidang ngijin mapel to
+
+bedain getall admin dan staff
+
+ubah attendance history masukin subject
