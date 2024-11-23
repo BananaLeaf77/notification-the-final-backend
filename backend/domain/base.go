@@ -111,4 +111,5 @@ type AttendanceNotificationHistoryResponse struct {
 	Subject        Subject      `json:"subject"`
 	WhatsappStatus bool         `json:"whatsapp_status"`
 	EmailStatus    bool         `json:"email_status"`
+	CreatedAt      time.Time    `json:"created_at"`
 }

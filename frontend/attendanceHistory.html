@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>SINOAN Detail User</title>
+    <title>SINOAN Attendance History</title>
     <meta
       content="width=device-width, initial-scale=1.0, shrink-to-fit=no"
       name="viewport"
@@ -35,8 +35,8 @@
 
     <!-- CSS Files -->
     <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="assets/css/plugins.min.css" />
     <link rel="stylesheet" href="assets/css/kaiadmin.min.css" />
+    <link rel="stylesheet" href="assets/css/plugins.min.css" />
 
     <!-- CSS Just for demo purpose, don't include it in your project -->
     <link rel="stylesheet" href="assets/css/demo.css" />
@@ -63,6 +63,7 @@
           </div>
       </div>
     </div>
+
     <!-- Unauthorized -->
     <div class="modal fade" id="unauthorizedModal" tabindex="-1" aria-labelledby="unauthorizedModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
@@ -134,12 +135,9 @@
         <div class="sidebar-wrapper scrollbar scrollbar-inner">
           <div class="sidebar-content">
             <ul class="nav nav-secondary">
-              <li class="nav-item active">
+              <li class="nav-item">
                 <a
-                  data-bs-toggle="collapse"
                   href="index.html"
-                  class="collapsed"
-                  aria-expanded="false"
                 >
                   <i class="fas fa-home"></i>
                   <p>Dashboard</p>
@@ -169,7 +167,7 @@
                   <p>Registered Subject</p>
                 </a>               
               </li>  
-              <li class="nav-item">
+              <li class="nav-item active">
                 <a href="attendanceHistory.html">
                   <i class="fas fa-user-clock"></i>
                   <p>Attendance History</p>
@@ -180,7 +178,7 @@
         </div>
       </div>
       <!-- End Sidebar -->
-      
+
       <div class="main-panel">
         <div class="main-header">
           <div class="main-header-logo">
@@ -336,45 +334,44 @@
 
         <div class="container">
           <div class="page-inner">
-            <div class="page-header">
-              <h3 class="fw-bold mb-3">Detail User Profile</h3>     
+            <div
+              class="d-flex align-items-left align-items-md-center flex-column flex-md-row pt-2 pb-4"
+            >
+              <div>
+                <h3 class="fw-bold mb-3">Attendance History</h3>
+              </div>
+              
             </div>
             <div class="row">
-              <div class="card-body">
-                <div class="card card-profile">
-                  <div
-                    class="card-header"
-                    style="background-image: url('assets/img/blogpost.jpg')"
-                  >
-                    <div class="profile-picture">
-                      <div class="avatar avatar-xl">
-                        <img
-                          src="assets/img/profile-img.jpg"
-                          alt="..."
-                          class="avatar-img rounded-circle"
-                        />
-                      </div>
-                    </div>
+              <div class="col-md-12">
+                <div class="card card-round">
+                  <div class="card-header">
+                    <p class="card-category">
+                      History of students that who doesnt attend the class.
+                    </p>
                   </div>
                   <div class="card-body">
-                    <div class="user-profile text-center">
-                      <div class="profile-name" id="detailUsername">Loading...</div>
-                    </div>
-                  </div>
-                  <div class="card-footer">
-                    <div class="row user-stats text-center">
-                      <div class="col">
-                        <div class="assigned-subject-count"><span id="detailRole"> Role Loading...</span></div>
-                        <div class="assigned-subject-count"><span id="detailUserSubjectCount"> Subject Count Loading...</span></div>
-                        <table class="table table-striped">
-                          <thead>
-                              <tr>
-                              </tr>
-                          </thead>
-                          <tbody id="subjectTable">
-                              <!-- Dynamic rows will be populated here -->
-                          </tbody>
-                        </table>
+                    <div class="row">
+                      <div class="col-md-13">
+                        <div class="table-responsive table-hover table-sales">
+                          <table class="table table-striped">
+                              <thead>
+                                  <tr>
+                                      <th>Date</th>
+                                      <th>Class</th>
+                                      <th>Student Name</th>
+                                      <th>Parent Name</th>
+                                      <th>Sender</th>
+                                      <th>On Subject</th>
+                                      <th>Whatsapp Sent</th>
+                                      <th>Email Sent</th>
+                                  </tr>
+                              </thead>
+                              <tbody id="attendanceHistoryTable">
+                                  <!-- Dynamic rows will be populated here -->
+                              </tbody>
+                          </table>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -405,7 +402,6 @@
           </div>
         </footer>
       </div>
-
     </div>
     <!--   Core JS Files   -->
     <script src="assets/js/core/jquery-3.7.1.min.js"></script>
@@ -472,13 +468,16 @@
       });
     </script>
     <!-- API HIT -->
-    <script>      
-
+    <script>
+      document.getElementById("confirmAPIResponse").addEventListener("click", function() {
+        $('#APIResponse').modal('hide');
+      });
+      
       function logout() {
         // Show the confirmation modal
         $('#logoutConfirmationModal').modal('show');
-      }      
-          
+      }
+      
       // Event listener for confirming logout
       document.getElementById("confirmLogoutButton").addEventListener("click", function () {
           // Remove the token from local storage
@@ -503,13 +502,7 @@
         $('#logoutConfirmationModal').modal('hide');
       });
 
-
-      function parseClass(classStr) {
-        // Assuming classStr is in the format "7A", "8B", etc.
-        const classNum = parseInt(classStr.slice(0, -1)); // Gets the number part, e.g., "7" from "7A"
-        const classLetter = classStr.slice(-1); // Gets the last character, e.g., "A" from "7A"
-        return [classNum, classLetter];
-      }
+      userRole = ""
 
       document.addEventListener("DOMContentLoaded", function () {
         const token = localStorage.getItem("authToken");
@@ -520,83 +513,63 @@
             $('#unauthorizedModal').modal('show');
             setTimeout(() => {
                 window.location.href = "login.html";
-            }, 3000); // Redirect after 3 seconds
+            }, 3000); // Redirect after 5 seconds
             return;
         }
     
         // If the token exists, run the functions without waiting for backend verification
         fetchProfileData(token);
         fetchDataChangeRequestCount(token);
-        fetchUserDetail(token);
+        fetchTruancyHistory(token);
       });
-
-      const queryString = window.location.search;
-      const urlParams = new URLSearchParams(queryString);
-      const userId = urlParams.get("user_id");
-
-      function fetchUserDetail(token) {
-        fetch(`http://127.0.0.1:8000/user/details/${userId}`, {
+      
+      function fetchTruancyHistory(token) {
+        fetch("http://127.0.0.1:8000/notification/truancy-history", {
             method: "GET",
             headers: {
                 "Authorization": `${token}`,
-                "Content-Type": "application/json"
-            }
+                "Content-Type": "application/json",
+            },
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const userData = data.data;
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const truancyData = data.data;
+                    const tableBody = document.getElementById("attendanceHistoryTable");
     
-                // Update user details
-                document.getElementById("detailUsername").textContent = userData.username;
-                document.getElementById("detailRole").textContent = `Role: ${userData.role}`;
-                document.getElementById("detailUserSubjectCount").textContent = `Assigned Subjects: ${userData.teaching.length}`;
+                    // Clear existing rows
+                    tableBody.innerHTML = "";
     
-                // Update the subjects display
-                const subjectContainer = document.getElementById("subjectTable");
-                subjectContainer.innerHTML = ""; // Clear any existing rows
+                    // Populate rows dynamically
+                    truancyData.forEach(record => {
+                        const row = document.createElement("tr");
     
-                let row = null;
+                        row.innerHTML = `
+                            <td>${new Date(record.created_at).toLocaleDateString()}</td>
+                            <td>Grade ${record.student.grade}${record.student.grade_label}</td>
+                            <td>${record.student.name}</td>
+                            <td>${record.parent.name}</td>
+                            <td>${record.user.username} (${record.user.role})</td>
+                            <td>${record.subject.name}</td>
+                            <td>${record.whatsapp_status ? "✅" : "❌"}</td>
+                            <td>${record.email_status ? "✅" : "❌"}</td>
+                        `;
     
-                userData.teaching.forEach((subject, index) => {
-                    // Create a new row every 3 subjects
-                    if (index % 3 === 0) {
-                        row = document.createElement("tr");
-                        subjectContainer.appendChild(row);
-                    }
-    
-                    // Create a cell for each subject card
-                    const cell = document.createElement("td");
-                    cell.innerHTML = `
-                        <div class="card card-stats card-round">
-                            <div class="card-body">
-                                <div class="row align-items-center">
-                                    <div class="col-icon">
-                                        <div class="icon-big text-center icon-info bubble-shadow-small">
-                                            <i class="fas fa-book"></i>
-                                        </div>
-                                    </div>
-                                    <div class="col col-stats ms-3 ms-sm-0">
-                                        <div class="numbers">
-                                            <h4 class="card-title">${subject.name}</h4>
-                                            <p class="card-category">Grade ${subject.grade}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-    
-                    // Append the cell to the current row
-                    row.appendChild(cell);
-                });
-            } else {
-                console.error("Failed to fetch data or no data available.");
-            }
-        })
-        .catch(error => console.error("Error:", error));
-      }
-    
+                        tableBody.appendChild(row);
+                    });
+                } else {
+                    console.error("Error fetching truancy history:", data.message);
+                    const tableBody = document.getElementById("attendanceHistoryTable");
+                    tableBody.innerHTML = `<tr><td colspan="8" class="text-center text-danger">No data available</td></tr>`;
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                const tableBody = document.getElementById("attendanceHistoryTable");
+                tableBody.innerHTML = `<tr><td colspan="8" class="text-center text-danger">Failed to load data</td></tr>`;
+            });
+      } 
+
       function fetchDataChangeRequestCount(token) {
         fetch("http://127.0.0.1:8000/student-and-parent/get-all-data-change-request", {
           method: "GET",
@@ -617,12 +590,6 @@
         .catch(error => console.error("Error:", error));
       }
 
-      // Helper function to parse class strings (e.g., "2A" to [2, "A"])
-      function parseClass(classStr) {
-          const match = classStr.match(/^(\d+)([A-Z])$/);
-          return match ? [parseInt(match[1], 10), match[2]] : [0, ''];
-      }
-
       // Show an error message with Bootstrap alert (or custom UI)
       function showError(message) {
           alert(message); // Replace with a Bootstrap modal or custom UI if desired
@@ -639,6 +606,7 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                userRole = data.data.role
                 const profileName = document.getElementById("profileName");
                 profileName.textContent = `${data.data.username} (${data.data.role})`;
 
@@ -668,13 +636,6 @@
         // Ensure both buttons trigger modal hiding
         $('.close, .btn-secondary').on('click', function() {
             $('#unauthorizedModal').modal('hide');
-        });
-      });
-
-      $(document).ready(function() {
-        // Ensure both buttons trigger modal hiding
-        $('.close, .btn-secondary').on('click', function() {
-            $('#APIResponse').modal('hide');
         });
       });
 

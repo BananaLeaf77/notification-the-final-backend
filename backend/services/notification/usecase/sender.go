@@ -28,3 +28,14 @@ func (mUC *senderUC) SendMass(ctx context.Context, idList *[]int, userID *int, s
 	}
 	return nil
 }
+
+func (mUC *senderUC) SendTestScores(ctx context.Context, examType string) error {
+	// ctx, cancel := context.WithTimeout(ctx, mUC.TimeOut)
+	// defer cancel()
+
+	err := mUC.emailSMTPRepo.SendTestScores(ctx, examType)
+	if err != nil {
+		return err
+	}
+	return nil
+}

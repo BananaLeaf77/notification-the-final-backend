@@ -51,6 +51,7 @@ func (np *notificationRepo) GetAllAttendanceNotificationHistory(ctx context.Cont
 			Subject:        record.Subject,
 			WhatsappStatus: record.WhatsappStatus,
 			EmailStatus:    record.EmailStatus,
+			CreatedAt:      record.CreatedAt,
 		})
 	}
 

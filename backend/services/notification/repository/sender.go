@@ -46,6 +46,10 @@ func NewSenderRepository(db *gorm.DB, client smtp.Auth, smtpAddress, schoolPhone
 	}
 }
 
+func (m *senderRepository) SendTestScores(ctx context.Context, examType string) error {
+	return nil
+}
+
 func (m *senderRepository) SendMass(ctx context.Context, idList *[]int, userID *int, subjectID int) error {
 	// Fetch the subject details
 	var subject domain.Subject
