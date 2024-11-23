@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>SINOAN Detail User</title>
+    <title>SINOAN Profile</title>
     <meta
       content="width=device-width, initial-scale=1.0, shrink-to-fit=no"
       name="viewport"
@@ -135,11 +135,7 @@
           <div class="sidebar-content">
             <ul class="nav nav-secondary">
               <li class="nav-item">
-                <a
-                  href="index.html"
-                  class="collapsed"
-                  aria-expanded="false"
-                >
+                <a href="index.html">
                   <i class="fas fa-home"></i>
                   <p>Dashboard</p>
                 </a>
@@ -184,7 +180,7 @@
         <div class="main-header">
           <div class="main-header-logo">
             <!-- Logo Header -->
-            <div class="logo-header" data-background-color="dark">
+            <div class="logo-header" data-background-color="light">
               <a href="index.html" class="logo">
                 <img
                   src="assets/img/kaiadmin/logo_light.svg"
@@ -336,7 +332,7 @@
         <div class="container">
           <div class="page-inner">
             <div class="page-header">
-              <h3 class="fw-bold mb-3">Detail User Profile</h3>     
+              <h3 class="fw-bold mb-3">Student and Parent Data</h3>     
             </div>
             <div class="row">
               <div class="card-body">
@@ -356,24 +352,28 @@
                     </div>
                   </div>
                   <div class="card-body">
-                    <div class="user-profile text-center">
-                      <div class="profile-name" id="detailUsername">Loading...</div>
-                    </div>
-                  </div>
-                  <div class="card-footer">
-                    <div class="row user-stats text-center">
-                      <div class="col">
-                        <div class="assigned-subject-count"><span id="detailRole"> Role Loading...</span></div>
-                        <div class="assigned-subject-count"><span id="detailUserSubjectCount"> Subject Count Loading...</span></div>
-                        <table class="table table-striped">
-                          <thead>
-                              <tr>
-                              </tr>
-                          </thead>
-                          <tbody id="subjectTable">
-                              <!-- Dynamic rows will be populated here -->
-                          </tbody>
-                        </table>
+                    <div class="row">
+                      <!-- Student Information -->
+                      <div class="col-md-6">
+                        <div class="user-profile text-center">
+                          <h4 class="fw-bold mb-3">Student Information</h4>
+                          <p><b>Name:</b> <span id="studentName">Loading...</span></p>
+                          <p><b>Grade:</b> <span id="studentGrade">Loading...</span></p>
+                          <p><b>Grade Label:</b> <span id="studentGradeLabel">Loading...</span></p>
+                          <p><b>Telephone:</b> <span id="studentTelephone">Loading...</span></p>
+                          <p><b>Gender:</b> <span id="studentGender">Loading...</span></p>
+                        </div>
+                      </div>
+                      
+                      <!-- Parent Information -->
+                      <div class="col-md-6">
+                        <div class="user-profile text-center">
+                          <h4 class="fw-bold mb-3">Parent Information</h4>
+                          <p><b>Name:</b> <span id="parentName">Loading...</span></p>
+                          <p><b>Telephone:</b> <span id="parentTelephone">Loading...</span></p>
+                          <p><b>Email:</b> <span id="parentEmail">Loading...</span></p>
+                          <p><b>Gender:</b> <span id="parentGender">Loading...</span></p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -489,6 +489,11 @@
           // Hide the modal
           $('#logoutConfirmationModal').modal('hide');
       });
+
+      // Event listener for confirming logout
+      document.getElementById("confirmAPIResponse").addEventListener("click", function () {
+        $('#APIResponse').modal('hide');
+      });
       
       // Event listener for confirming logout
       document.getElementById("unauthorizedModal").addEventListener("click", function () {
@@ -502,17 +507,13 @@
         $('#logoutConfirmationModal').modal('hide');
       });
 
-
-      function parseClass(classStr) {
-        // Assuming classStr is in the format "7A", "8B", etc.
-        const classNum = parseInt(classStr.slice(0, -1)); // Gets the number part, e.g., "7" from "7A"
-        const classLetter = classStr.slice(-1); // Gets the last character, e.g., "A" from "7A"
-        return [classNum, classLetter];
-      }
+      const queryString = window.location.search;
+      const urlParams = new URLSearchParams(queryString);
+      const studentId = urlParams.get("student_id");
 
       document.addEventListener("DOMContentLoaded", function () {
         const token = localStorage.getItem("authToken");
-    
+
         // Check if the token exists
         if (!token) {
             // Show unauthorized modal and redirect to login
@@ -526,76 +527,50 @@
         // If the token exists, run the functions without waiting for backend verification
         fetchProfileData(token);
         fetchDataChangeRequestCount(token);
-        fetchUserDetail(token);
+        fetchStudentDetail(token, studentId)
       });
 
-      const queryString = window.location.search;
-      const urlParams = new URLSearchParams(queryString);
-      const userId = urlParams.get("user_id");
-
-      function fetchUserDetail(token) {
-        fetch(`http://127.0.0.1:8000/user/details/${userId}`, {
-            method: "GET",
-            headers: {
-                "Authorization": `${token}`,
-                "Content-Type": "application/json"
-            }
+      function fetchStudentDetail(token, studentId) {
+        const url = `http://127.0.0.1:8000/student-and-parent/student/${studentId}`;
+      
+        fetch(url, {
+          method: "GET",
+          headers: {
+            "Authorization": `${token}`,
+            "Content-Type": "application/json",
+          },
         })
-        .then(response => response.json())
-        .then(data => {
+          .then(response => response.json())
+          .then(data => {
             if (data.success) {
-                const userData = data.data;
-    
-                // Update user details
-                document.getElementById("detailUsername").textContent = userData.username;
-                document.getElementById("detailRole").textContent = `Role: ${userData.role}`;
-                document.getElementById("detailUserSubjectCount").textContent = `Assigned Subjects: ${userData.teaching.length}`;
-    
-                // Update the subjects display
-                const subjectContainer = document.getElementById("subjectTable");
-                subjectContainer.innerHTML = ""; // Clear any existing rows
-    
-                let row = null;
-    
-                userData.teaching.forEach((subject, index) => {
-                    // Create a new row every 3 subjects
-                    if (index % 3 === 0) {
-                        row = document.createElement("tr");
-                        subjectContainer.appendChild(row);
-                    }
-    
-                    // Create a cell for each subject card
-                    const cell = document.createElement("td");
-                    cell.innerHTML = `
-                        <div class="card card-stats card-round">
-                            <div class="card-body">
-                                <div class="row align-items-center">
-                                    <div class="col-icon">
-                                        <div class="icon-big text-center icon-info bubble-shadow-small">
-                                            <i class="fas fa-book"></i>
-                                        </div>
-                                    </div>
-                                    <div class="col col-stats ms-3 ms-sm-0">
-                                        <div class="numbers">
-                                            <h4 class="card-title">${subject.name}</h4>
-                                            <p class="card-category">Grade ${subject.grade}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-    
-                    // Append the cell to the current row
-                    row.appendChild(cell);
-                });
+              const student = data.data;
+              // Display Student Data
+              document.getElementById("studentName").textContent = student.name;
+              document.getElementById("studentGrade").textContent = student.grade;
+              document.getElementById("studentGradeLabel").textContent = student.grade_label;
+              document.getElementById("studentTelephone").textContent = student.telephone;
+              document.getElementById("studentGender").textContent = student.gender.charAt(0).toUpperCase() + student.gender.slice(1);
+      
+              // Display Parent Data
+              const parent = student.parent;
+              document.getElementById("parentName").textContent = parent.name;
+              document.getElementById("parentTelephone").textContent = parent.telephone;
+              document.getElementById("parentEmail").textContent = parent.email || "N/A";
+              document.getElementById("parentGender").textContent = parent.gender.charAt(0).toUpperCase() + parent.gender.slice(1);
             } else {
-                console.error("Failed to fetch data or no data available.");
+              // Display error message
+              document.getElementById("msgs").textContent = data.message;
+              document.getElementById("msgs").classList.remove("text-success");
+              document.getElementById("msgs").classList.add("text-danger");
+              $('#APIResponse').modal('show');
+              console.error("Failed to fetch student details.");
             }
-        })
-        .catch(error => console.error("Error:", error));
+          })
+          .catch(error => {
+            console.error("Error fetching student details:", error);
+          });
       }
-    
+
       function fetchDataChangeRequestCount(token) {
         fetch("http://127.0.0.1:8000/student-and-parent/get-all-data-change-request", {
           method: "GET",
@@ -638,6 +613,7 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                userRole = data.data.role
                 const profileName = document.getElementById("profileName");
                 profileName.textContent = `${data.data.username} (${data.data.role})`;
 

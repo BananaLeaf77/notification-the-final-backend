@@ -19,7 +19,6 @@ import (
 var (
 	bodyMale        string
 	bodyFemale      string
-	tNow            time.Time
 	subject         string
 	JID             types.JID
 	bodyMaleEmail   string

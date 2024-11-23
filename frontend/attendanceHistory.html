@@ -555,6 +555,14 @@
                             <td>${record.email_status ? "✅" : "❌"}</td>
                         `;
     
+                        // Add click event to navigate to detailStudent.html with the student ID
+                        row.addEventListener("click", () => {
+                            window.location.href = `detailStudent.html?student_id=${record.student.student_id}`;
+                        });
+    
+                        // Add cursor pointer for better UX
+                        row.style.cursor = "pointer";
+    
                         tableBody.appendChild(row);
                     });
                 } else {
