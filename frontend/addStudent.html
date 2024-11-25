@@ -134,11 +134,9 @@
         <div class="sidebar-wrapper scrollbar scrollbar-inner">
           <div class="sidebar-content">
             <ul class="nav nav-secondary">
-              <li class="nav-item active">
+              <li class="nav-item">
                 <a
-                  data-bs-toggle="collapse"
                   href="index.html"
-                  class="collapsed"
                   aria-expanded="false"
                 >
                   <i class="fas fa-home"></i>
@@ -357,11 +355,11 @@
                           </div>
                           <div class="form-group">
                             <label for="studentGrade">Grade</label>
-                            <input type="text" class="form-control" id="studentGrade" placeholder="1,2,3,4,5,6,7,8,9, ..." maxlength="2" required />
+                            <input type="number" class="form-control" id="studentGrade" min="1" max="99" oninput="validateInput(this)" placeholder="1,2,3,4,5,6,7,8,9, ..." required>
                           </div>
                           <div class="form-group">
                             <label for="studentGradeLabel">Grade Label</label>
-                            <input type="text" class="form-control" id="studentGradeLabel" placeholder="A,B,C ..." maxlength="3" required />
+                            <input type="text" class="form-control" id="studentGradeLabel"  maxlength="3" required />
                           </div>
                           <div class="form-group">
                             <label for="studentTelephone">Telephone</label>
@@ -516,9 +514,23 @@
         fillColor: "rgba(255, 165, 52, .14)",
       });
     </script>
+    
 
     <!-- API HIT -->
     <script>
+
+      function validateInput(input) {
+        // Remove any invalid characters (non-numeric and spaces)
+        input.value = input.value.replace(/[^0-9]/g, '');
+    
+        // Ensure the value stays within the range of 1-99
+        if (input.value !== '') {
+            const num = parseInt(input.value, 10);
+            if (num < 1) input.value = '1';
+            if (num > 99) input.value = '99';
+        }
+      }
+
       document.getElementById("confirmAPIResponse").addEventListener("click", function() {
         $('#APIResponse').modal('hide');
       });

@@ -43,7 +43,37 @@
     <link rel="stylesheet" href="assets/css/demo.css" />
   </head>
   <body>
-    <!-- The Modal -->
+    <!-- The Modal Up-->
+    <!-- Update MODAL -->
+    <div class="modal fade" id="updateSubjectModal" tabindex="-1" aria-labelledby="updateSubjectModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+          <div class="modal-content">
+              <div class="modal-header">
+                  <h5 class="modal-title" id="updateSubjectModalLabel">Update Subject</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                  </button>
+              </div>
+              <div class="modal-body">
+                  <!-- Username Field -->
+                  <div class="form-group">
+                      <label for="modalSubjectName">Subject Name</label>
+                      <input type="text" class="form-control" id="modalSubjectName" placeholder="Biology 7">
+                  </div>
+                  
+                  <!-- Password Field -->
+                  <div class="form-group">
+                      <label for="modalSubjectGrade">Subject Grade</label>
+                      <input type="text" class="form-control" id="modalSubjectGrade" placeholder="1,2,3,4,5,6,7,8,9, ..." maxlength="2" required />
+                  </div>
+              </div>
+              <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                  <button type="button" class="btn btn-success" id="saveChanges">Save</button>
+              </div>
+          </div>
+      </div>
+    </div>
     <!-- API Response Modal -->
     <div class="modal fade" id="APIResponse" tabindex="-1" aria-labelledby="APIResponseLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
@@ -553,7 +583,7 @@
         if (selectedUserIds.length === 0) {
           // Show error message if no users are selected
           const messageElement = document.getElementById("msgs");
-          messageElement.innerHTML = "Please select at least one user to delete.";
+          messageElement.innerHTML = "Please select at least one Subject to delete.";
           messageElement.classList.remove("text-success");
           messageElement.classList.add("text-danger");
   
@@ -704,7 +734,11 @@
         .then(response => response.json())
         .then(data => {
             if (data.success && data.data) {
-                const subjects = data.data;
+                let subjects = data.data;
+    
+                // Sort subjects by grade in ascending order
+                subjects.sort((a, b) => a.grade - b.grade);
+    
                 const subjectTable = document.getElementById("subjectTable");
     
                 // Clear any existing rows in the table
@@ -720,12 +754,12 @@
     
                     row.innerHTML = `
                         <td>
-                            <input type="checkbox" name="selectSubject" value="${subject.subject_id}" />
+                            <input class="custom-checkbox" type="checkbox" name="selectSubject" value="${subject.subject_id}" />
                         </td>
                         <td>${subject.grade}</td>
                         <td>${subject.name}</td>
                         <td>
-                          <button class="btn btn-warning btn-sm update-btn" onclick="event.stopPropagation(); fetchSubjectDetailUpdate(${subject.subject_id})">Update</button>
+                          <button class="btn btn-warning btn-sm update-btn" onclick="event.stopPropagation(); runSubjectUpdateModal(${subject.subject_id})">Update</button>
                           <button class="btn btn-danger btn-sm delete-btn" onclick="event.stopPropagation(); showDeleteModal(${subject.subject_id}, '${subject.name}')">Delete</button>
                         </td>
                     `;
@@ -738,7 +772,83 @@
         })
         .catch(error => console.error("Error:", error));
       }
+
+      document.getElementById("saveChanges").addEventListener("click", function () {
+        const token = localStorage.getItem("authToken");
+        // Collect updated data
+        const subjectId = document.getElementById("modalSubjectName").dataset.subject_id; // Assume userId is stored in a data attribute
+        const subjectName = document.getElementById("modalSubjectName").value;
+        const grade = document.getElementById("modalSubjectGrade").value;
     
+        const payload = {
+          name: subjectName,
+          grade: grade
+        };
+        
+        fetch(`http://127.0.0.1:8000/user/subject/modify/${subjectId}`, {
+          method: "GET",
+            headers: {
+            "Authorization": `${token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ payload }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const subjectData = data.data;
+                modalSubjectName.value = subjectData.name;
+                modalSubjectGrade.value = subjectData.grade; // Clear password field
+                modalSubjectName.setAttribute("data-subject-id", subjectData.subject_id); // Set userId for later use
+
+            } else {
+                // Show error message if user details couldn't be fetched
+                messageElement.innerHTML = data.error || "Failed to fetch user details.";
+                messageElement.classList.remove("text-success");
+                messageElement.classList.add("text-danger");
+            }
+        })
+        .catch(error => console.error("Error fetching user details:", error));
+    
+        // Show the modal
+        $('#updateSubjectModal').modal('show');
+      });
+    
+      function runSubjectUpdateModal(subjectId) {
+        const token = localStorage.getItem("authToken");
+        const messageElement = document.getElementById("msgs");
+        const modalUsername = document.getElementById("modalUsername");
+        const modalPassword = document.getElementById("modalPassword");
+        const subjectTable = document.getElementById("subjectTable");
+    
+        // Fetch user details
+        fetch(`http://127.0.0.1:8000/user/subject/${subjectId}`, {
+            method: "GET",
+            headers: {
+                "Authorization": `${token}`,
+                "Content-Type": "application/json"
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const subjectData = data.data;
+                modalSubjectName.value = subjectData.name;
+                modalSubjectGrade.value = subjectData.grade; // Clear password field
+                modalSubjectName.setAttribute("data-subject-id", subjectData.subject_id); // Set userId for later use
+
+            } else {
+                // Show error message if user details couldn't be fetched
+                messageElement.innerHTML = data.error || "Failed to fetch user details.";
+                messageElement.classList.remove("text-success");
+                messageElement.classList.add("text-danger");
+            }
+        })
+        .catch(error => console.error("Error fetching user details:", error));
+    
+        // Show the modal
+        $('#updateSubjectModal').modal('show');
+      }
 
       function toggleUserSelection(event, userId) {
         event.stopPropagation(); // Prevents row click event
@@ -893,6 +1003,13 @@
         // Ensure both buttons trigger modal hiding
         $('.close, .btn-secondary').on('click', function() {
             $('#unauthorizedModal').modal('hide');
+        });
+      });
+
+      $(document).ready(function() {
+        // Ensure both buttons trigger modal hiding
+        $('.close, .btn-secondary').on('click', function() {
+            $('#updateSubjectModal').modal('hide');
         });
       });
 

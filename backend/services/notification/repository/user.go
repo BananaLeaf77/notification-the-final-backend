@@ -367,6 +367,19 @@ func (ur *userRepository) CreateSubject(ctx context.Context, subject *domain.Sub
 	return nil
 }
 
+func (ur *userRepository) GetSubjectDetail(ctx context.Context, id int) (*domain.Subject, error) {
+	var subject domain.Subject
+	err := ur.db.WithContext(ctx).Where("subject_id = ? AND deleted_at IS NULL", id).First(&subject).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("subject not found")
+		}
+		return nil, fmt.Errorf("could not get subject details: %v", err)
+	}
+
+	return &subject, nil
+}
+
 func (ur *userRepository) CreateSubjectBulk(ctx context.Context, subjects *[]domain.Subject) (*[]string, error) {
 	var errList []string
 
@@ -463,6 +476,31 @@ func (ur *userRepository) DeleteSubject(ctx context.Context, id int) error {
 	err = ur.db.WithContext(ctx).Save(&subject).Error
 	if err != nil {
 		return fmt.Errorf("could not delete subject: %v", err)
+	}
+
+	return nil
+}
+
+func (ur *userRepository) DeleteSubjectMass(ctx context.Context, ids *[]int) error {
+	var subjects []domain.Subject
+	err := ur.db.WithContext(ctx).
+		Where("subject_id IN (?) AND deleted_at IS NULL", *ids).
+		Find(&subjects).Error
+	if err != nil {
+		return fmt.Errorf("could not retrieve subject details: %v", err)
+	}
+
+	if len(subjects) == 0 {
+		return fmt.Errorf("no subject eligible for deletion")
+	}
+
+	now := time.Now()
+	err = ur.db.WithContext(ctx).
+		Model(&domain.Subject{}).
+		Where("subject_id IN (?)", *ids).
+		Update("deleted_at", now).Error
+	if err != nil {
+		return fmt.Errorf("could not delete subjects: %v", err)
 	}
 
 	return nil

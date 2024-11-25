@@ -859,12 +859,12 @@
     
         // Get all selected subject IDs
         const selectedSubjects = Array.from(subjectTable.querySelectorAll("input[type='checkbox']:checked"))
-            .map(input => parseInt(input.value));
+          .map(input => parseInt(input.value));
     
         // Construct payload
         const payload = {
-            user: {},
-            subject_ids: selectedSubjects
+          user: {},
+          subject_ids: selectedSubjects
         };
     
         // Add username and password to the payload only if they're updated
@@ -1145,7 +1145,21 @@
       $(document).ready(function() {
         // Ensure both buttons trigger modal hiding
         $('.close, .btn-secondary').on('click', function() {
+            $('#updateUserModal').modal('hide');
+        });
+      });
+
+      $(document).ready(function() {
+        // Ensure both buttons trigger modal hiding
+        $('.close, .btn-secondary').on('click', function() {
             $('#logoutConfirmationModal').modal('hide');
+        });
+      });
+
+      $(document).ready(function() {
+        // Ensure both buttons trigger modal hiding
+        $('.close, .btn-secondary').on('click', function() {
+            $('#unauthorizedModal').modal('hide');
         });
       });
 

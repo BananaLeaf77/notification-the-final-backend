@@ -358,6 +358,7 @@
                               <thead>
                                   <tr>
                                       <th>Date</th>
+                                      <th>Time</th>
                                       <th>Class</th>
                                       <th>Student Name</th>
                                       <th>Parent Name</th>
@@ -534,7 +535,11 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    const truancyData = data.data;
+                    let truancyData = data.data;
+    
+                    // Sort truancy data by created_at in descending order (most recent first)
+                    truancyData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    
                     const tableBody = document.getElementById("attendanceHistoryTable");
     
                     // Clear existing rows
@@ -542,10 +547,15 @@
     
                     // Populate rows dynamically
                     truancyData.forEach(record => {
+                        const createdAt = new Date(record.created_at);
+                        const date = createdAt.toLocaleDateString(); // Extract the date
+                        const time = createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); // Extract hour and minute
+    
                         const row = document.createElement("tr");
     
                         row.innerHTML = `
-                            <td>${new Date(record.created_at).toLocaleDateString()}</td>
+                            <td>${date}</td>
+                            <td>${time}</td>
                             <td>Grade ${record.student.grade}${record.student.grade_label}</td>
                             <td>${record.student.name}</td>
                             <td>${record.parent.name}</td>
@@ -568,15 +578,17 @@
                 } else {
                     console.error("Error fetching truancy history:", data.message);
                     const tableBody = document.getElementById("attendanceHistoryTable");
-                    tableBody.innerHTML = `<tr><td colspan="8" class="text-center text-danger">No data available</td></tr>`;
+                    tableBody.innerHTML = `<tr><td colspan="9" class="text-center text-danger">No data available</td></tr>`;
                 }
             })
             .catch(error => {
                 console.error("Error:", error);
                 const tableBody = document.getElementById("attendanceHistoryTable");
-                tableBody.innerHTML = `<tr><td colspan="8" class="text-center text-danger">Failed to load data</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="9" class="text-center text-danger">Failed to load data</td></tr>`;
             });
-      } 
+      }
+    
+    
 
       function fetchDataChangeRequestCount(token) {
         fetch("http://127.0.0.1:8000/student-and-parent/get-all-data-change-request", {

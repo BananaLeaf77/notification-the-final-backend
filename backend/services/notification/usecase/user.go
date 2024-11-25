@@ -150,6 +150,24 @@ func (u *userUC) DeleteStaffMass(ctx context.Context, ids *[]int) error {
 	return nil
 }
 
+func (u *userUC) GetSubjectDetail(ctx context.Context, subjectID int) (*domain.Subject, error) {
+	v, err := u.userRepo.GetSubjectDetail(ctx, subjectID)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
+func (u *userUC) DeleteSubjectMass(ctx context.Context, ids *[]int) error {
+	err := u.userRepo.DeleteSubjectMass(ctx, ids)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // func (u *userUC) GetAllAssignedSubject(ctx context.Context, userID int) (*[]domain.Subject, error) {
 // 	v, err := u.userRepo.GetAllAssignedSubject(ctx, userID)
 // 	if err != nil {

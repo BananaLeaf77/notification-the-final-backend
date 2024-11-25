@@ -1,6 +1,7 @@
 package delivery
 
 import (
+	"fmt"
 	"notification/config"
 	"notification/domain"
 	"notification/middleware"
@@ -53,6 +54,77 @@ func NewUserHandlerDeploy(app *fiber.App, useCase domain.UserUseCase) {
 	group.Post("/input-test-scores", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.InputTestScores)
 	group.Get("/profile-dashboard", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.ShowProfile)
 	group.Post("/rm/users", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteStaffMass)
+	group.Get("/subject/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.GetSubjectDetail)
+	group.Post("/rm/subjects", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteSubjectMass)
+}
+
+func (h *uHandler) DeleteSubjectMass(c *fiber.Ctx) error {
+	userToken := c.Locals("user").(*domain.Claims)
+	var payload struct {
+		IDS []int `json:"subject_ids"`
+	}
+
+	err := c.BodyParser(&payload)
+	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "DeleteSubjectMass")
+
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   "parsing failure",
+			"success": false,
+		})
+	}
+
+	fmt.Println(payload.IDS)
+
+	err = h.uc.DeleteSubjectMass(c.Context(), &payload.IDS)
+	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "DeleteSubjectMass")
+
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   err.Error(),
+			"success": false,
+			"message": "Failed to mass delete subject",
+		})
+	}
+
+	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "DeleteSubjectMass")
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Subjects deleted successfully",
+	})
+
+}
+
+func (h *uHandler) GetSubjectDetail(c *fiber.Ctx) error {
+	userToken := c.Locals("user").(*domain.Claims)
+	subjectID, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "GetSubjectDetail")
+
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   "converter failure",
+			"success": false,
+		})
+	}
+
+	v, err := h.uc.GetSubjectDetail(c.Context(), subjectID)
+	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "GetSubjectDetail")
+
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Failed to get subject detail",
+			"error":   err.Error(),
+		})
+	}
+
+	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "GetSubjectDetail")
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Subject detail retrieved successfully",
+		"data":    v,
+	})
 }
 
 func (h *uHandler) DeleteStaffMass(c *fiber.Ctx) error {

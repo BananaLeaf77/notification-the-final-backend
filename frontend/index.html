@@ -37,6 +37,8 @@
     <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
     <link rel="stylesheet" href="assets/css/plugins.min.css" />
     <link rel="stylesheet" href="assets/css/kaiadmin.min.css" />
+    <link rel="stylesheet" href="assets/css/xheckbox.css" />
+
 
     <!-- CSS Just for demo purpose, don't include it in your project -->
     <link rel="stylesheet" href="assets/css/demo.css" />
@@ -752,32 +754,7 @@
           return
         });
       }
-    
-      // Create and return a student row with a checkbox and onclick handler for navigation
-      function createStudentRow(student) {
-          const row = document.createElement('tr');
-          row.classList.add('student-row');
-      
-          // Navigate to detail page when row is clicked (except for the checkbox click)
-          row.addEventListener("click", () => {
-              window.location.href = `detailStudent.html?student_id=${student.student_id}`;
-          });
-      
-          row.innerHTML = `
-              <td>
-                  <input type="checkbox" class="student-checkbox" data-id="${student.student_id}" onclick="toggleStudentSelection(event, ${student.student_id})">
-              </td>
-              <td>${student.class}</td>
-              <td>${student.name}</td>
-              <td>${student.gender}</td>
-              <td>
-                  <button class="btn btn-warning btn-sm update-btn" onclick="event.stopPropagation(); fetchStudentDetails(${student.student_id})">Update</button>
-                  <button class="btn btn-danger btn-sm delete-btn" onclick="event.stopPropagation(); showDeleteModal(${student.student_id}, '${student.name}')">Delete</button>
-              </td>
-          `;
-        return row;
-      }
-
+  
       // Sort helper function for class format
       function sortStudentsByClass(classA, classB) {
         const [aClassNum, aClassLetter] = parseClass(classA);
@@ -815,23 +792,6 @@
           alert(message); // Replace with a Bootstrap modal or custom UI if desired
       }
 
-
-      // Create and return a student row with update and delete actions
-      function createStudentRow(student) {
-        const row = document.createElement('tr');
-        row.classList.add('student-row');
-        row.innerHTML = `
-            <td>${student.class}</td>
-            <td>${student.name}</td>
-            <td>${student.gender}</td>
-            <td>
-                <button class="btn btn-warning btn-sm update-btn" onclick="fetchStudentDetails(${student.student_id})">Update</button>
-                <button class="btn btn-danger btn-sm delete-btn" onclick="showDeleteModal(${student.student_id}, '${student.name}')">Delete</button>
-            </td>
-        `;
-        return row;
-      }
-
       function createStudentRow(student) {
         const row = document.createElement('tr');
         row.classList.add('student-row');
@@ -843,7 +803,7 @@
     
         row.innerHTML = `
             <td>
-                <input type="checkbox" class="student-checkbox" data-id="${student.student_id}" onclick="toggleStudentSelection(event, ${student.student_id})">
+                <input type="checkbox" class="custom-checkbox" data-id="${student.student_id}" onclick="toggleStudentSelection(event, ${student.student_id})">
             </td>
             <td>${student.class}</td>
             <td>${student.name}</td>
