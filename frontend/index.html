@@ -47,7 +47,7 @@
     <!-- API Response Modal -->
     <div class="modal fade" id="APIResponse" tabindex="-1" aria-labelledby="APIResponseLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content">
+          <div class="modal-content" style="border: 2px solid #ccc !important; border-radius: 5px;">
               <div class="modal-header">
                   <h5 class="modal-title" id="APIResponseLabel">Message</h5>
                   <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -55,8 +55,7 @@
                   </button>
               </div>
               <div class="modal-body">
-                <!-- messages -->
-                <span id="msgs"></span>
+                  <span id="msgs"></span>
               </div>
               <div class="modal-footer">
                   <button type="button" class="btn btn-danger" id="confirmAPIResponse">Ok</button>
@@ -688,6 +687,11 @@
           // Hide the modal
           $('#logoutConfirmationModal').modal('hide');
       });
+
+      document.getElementById("confirmAPIResponse").addEventListener("click", function () {
+        // Hide the modal
+        $('#APIResponse').modal('hide');
+    });
       
       // Event listener for confirming logout
       document.getElementById("unauthorizedModal").addEventListener("click", function () {
@@ -938,6 +942,7 @@
       // Get student data
       const modalStudentName = document.getElementById("modalStudentName");
       const modalStudentGrade = document.getElementById("modalStudentGrade");
+      const modalStudentGradeLabel = document.getElementById("modalStudentGradeLabel");
       const modalStudentGenderMale = document.getElementById("modalStudentGenderMale");
       const modalStudentGenderFemale = document.getElementById("modalStudentGenderFemale");
       const modalStudentTelephone = document.getElementById("modalStudentTelephone");
@@ -955,6 +960,7 @@
       // Collect student data
       const studentName = modalStudentName.value;
       const studentGrade = modalStudentGrade.value;
+      const studentGradeLabel = modalStudentGradeLabel.value;
       const studentGender = modalStudentGenderMale.checked ? "male" : "female"; // Radio button check
       const studentTelephone = modalStudentTelephone.value;
   
@@ -969,6 +975,7 @@
           student: {
               name: studentName,
               grade: parseInt(studentGrade, 10),
+              grade_label: studentGradeLabel,
               gender: studentGender,
               telephone: studentTelephone
           },
@@ -998,27 +1005,24 @@
                   messageElement.innerHTML = data.message;
                   messageElement.classList.remove("text-danger");
                   messageElement.classList.add("text-success");
-                  $('#updateSubjectModal').modal('hide');
+                  $('#updateSPModal').modal('hide');
                   $('#APIResponse').modal('show');
                   fetchStudents(token)
                   // You can call fetchSubjects or similar to refresh the data
                   // fetchSubjects(token); // Uncomment if needed
-              } else {
+                } else {
                   // Error message
                   messageElement.innerHTML = data.error;
                   messageElement.classList.remove("text-success");
                   messageElement.classList.add("text-danger");
-                  $('#updateSubjectModal').modal('show');
                   $('#APIResponse').modal('show');
               }
           })
           .catch((error) => {
-              console.error("Error fetching student details:", error);
-              messageElement.innerHTML = "An error occurred. Please try again.";
-              messageElement.classList.remove("text-success");
-              messageElement.classList.add("text-danger");
-              $('#updateSubjectModal').modal('hide');
-              $('#APIResponse').modal('show');
+            messageElement.innerHTML = data.error;
+            messageElement.classList.remove("text-success");
+            messageElement.classList.add("text-danger");
+            $('#APIResponse').modal('show');
           });
     });
   
@@ -1210,6 +1214,13 @@
         // Ensure both buttons trigger modal hiding
         $('.close, .btn-secondary').on('click', function() {
             $('#updateSPModal').modal('hide');
+        });
+      });
+
+      $(document).ready(function() {
+        // Ensure both buttons trigger modal hiding
+        $('.close, .btn-secondary').on('click', function() {
+            $('#APIResponse').modal('hide');
         });
       });
 

@@ -39,3 +39,9 @@
     left: 4px;
     font-size: 14px;
 }
+
+/* Ensure the .modal-content is targeted properly */
+#APIResponse .modal-content {
+    border: 2px solid #ccc; /* Grey border */
+}
+
