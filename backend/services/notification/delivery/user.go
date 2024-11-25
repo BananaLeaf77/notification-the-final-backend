@@ -157,7 +157,7 @@ func (h *uHandler) DeleteStaffMass(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
-		"message": "Deletion Success",
+		"message": "Users deleted successfully",
 	})
 }
 
@@ -324,7 +324,7 @@ func (uh *uHandler) UpdateSubject(c *fiber.Ctx) error {
 	if err != nil {
 		config.PrintLogInfo(&userClaims.Username, fiber.StatusBadRequest, "UpdateSubject")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   "String to Int Converter failure",
+			"error":   "String to Int Converter failure on Subject ID",
 			"success": false,
 			"message": "Failed to update subject",
 		})

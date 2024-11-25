@@ -446,6 +446,7 @@ func (ur *userRepository) UpdateSubject(ctx context.Context, id int, newSubjectD
 	}
 
 	newSubjectData.Name = nameLowered
+	newSubjectData.UpdatedAt = time.Now()
 
 	err = ur.db.WithContext(ctx).Model(&domain.Subject{}).
 		Where("subject_id = ? AND deleted_at IS NULL", id).

@@ -44,7 +44,110 @@
     <link rel="stylesheet" href="assets/css/demo.css" />
   </head>
   <body>
+    <!-- API Response Modal -->
+    <div class="modal fade" id="APIResponse" tabindex="-1" aria-labelledby="APIResponseLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+              <div class="modal-header">
+                  <h5 class="modal-title" id="APIResponseLabel">Message</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                  </button>
+              </div>
+              <div class="modal-body">
+                <!-- messages -->
+                <span id="msgs"></span>
+              </div>
+              <div class="modal-footer">
+                  <button type="button" class="btn btn-danger" id="confirmAPIResponse">Ok</button>
+              </div>
+          </div>
+      </div>
+    </div>
+    
     <!-- The Modal -->
+    <div class="modal fade" id="updateSPModal" tabindex="-1" aria-labelledby="updateSPModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="updateSPModalLabel">Update Student and Parent</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <!-- Student Info - Left Side -->
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="modalStudentName">Student Name</label>
+                  <input type="text" class="form-control" id="modalStudentName" placeholder="Enter Student Name">
+                </div>
+                <div class="form-group">
+                  <label for="modalStudentGrade">Grade</label>
+                  <input type="text" class="form-control" id="modalStudentGrade" placeholder="1,2,3,4,5,6,7,8,9, ...">
+                </div>
+                <div class="form-group">
+                  <label for="modalStudentGradeLabel">Grade Label</label>
+                  <input type="text" class="form-control" id="modalStudentGradeLabel" placeholder="A,B,C,D...">
+                </div>
+                <div class="form-group">
+                  <label for="modalStudentGender">Gender</label><br>
+                  
+                  <div class="custom-control custom-radio custom-control-inline">
+                      <input type="radio" id="modalStudentGenderMale" name="studentGender" value="male" class="custom-control-input">
+                      <label class="custom-control-label" for="modalStudentGenderMale">male</label>
+                  </div>
+                  
+                  <div class="custom-control custom-radio custom-control-inline">
+                      <input type="radio" id="modalStudentGenderFemale" name="studentGender" value="female" class="custom-control-input">
+                      <label class="custom-control-label" for="modalStudentGenderFemale">female</label>
+                  </div>
+              </div>
+                <div class="form-group">
+                  <label for="modalStudentTelephone">Telephone</label>
+                  <input type="text" class="form-control" id="modalStudentTelephone" placeholder="Telephone">
+                </div>
+              </div>
+              
+              <!-- Parent Info - Right Side -->
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="modalParentName">Parent Name</label>
+                  <input type="text" class="form-control" id="modalParentName" placeholder="Parent Name">
+                </div>
+                <div class="form-group">
+                  <label for="modalParentGender">Gender</label><br>
+                  
+                  <div class="custom-control custom-radio custom-control-inline">
+                      <input type="radio" id="modalParentGenderMale" name="ParentGender" value="male" class="custom-control-input">
+                      <label class="custom-control-label" for="modalParentGenderMale">male</label>
+                  </div>
+                  
+                  <div class="custom-control custom-radio custom-control-inline">
+                      <input type="radio" id="modalParentGenderFemale" name="ParentGender" value="female" class="custom-control-input">
+                      <label class="custom-control-label" for="modalParentGenderFemale">female</label>
+                  </div>
+              </div>
+                <div class="form-group">
+                  <label for="modalParentTelephone">Parent Telephone</label>
+                  <input type="text" class="form-control" id="modalParentTelephone" placeholder="Parent Telephone">
+                </div>
+                <div class="form-group">
+                  <label for="modalParentEmail">Parent Email</label>
+                  <input type="email" class="form-control" id="modalParentEmail" placeholder="Parent Email">
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-success" id="saveChanges">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+        
     <!-- Unauthorized -->
     <div class="modal fade" id="unauthorizedModal" tabindex="-1" aria-labelledby="unauthorizedModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
@@ -556,6 +659,19 @@
     </script>
     <!-- API HIT -->
     <script>
+
+      function validateInput(input) {
+        // Remove any invalid characters (non-numeric and spaces)
+        input.value = input.value.replace(/[^0-9]/g, '');
+    
+        // Ensure the value stays within the range of 1-99
+        if (input.value !== '') {
+            const num = parseInt(input.value, 10);
+            if (num < 1) input.value = '1';
+            if (num > 99) input.value = '99';
+        }
+      }
+
       function logout() {
         // Show the confirmation modal
         $('#logoutConfirmationModal').modal('show');
@@ -815,8 +931,155 @@
         `;
         return row;
     }
-    
 
+    document.getElementById("saveChanges").addEventListener("click", function () {
+      const token = localStorage.getItem("authToken");
+  
+      // Get student data
+      const modalStudentName = document.getElementById("modalStudentName");
+      const modalStudentGrade = document.getElementById("modalStudentGrade");
+      const modalStudentGenderMale = document.getElementById("modalStudentGenderMale");
+      const modalStudentGenderFemale = document.getElementById("modalStudentGenderFemale");
+      const modalStudentTelephone = document.getElementById("modalStudentTelephone");
+  
+      // Get parent data
+      const modalParentName = document.getElementById("modalParentName");
+      const modalParentGenderMale = document.getElementById("modalParentGenderMale");
+      const modalParentGenderFemale = document.getElementById("modalParentGenderFemale");
+      const modalParentTelephone = document.getElementById("modalParentTelephone");
+      const modalParentEmail = document.getElementById("modalParentEmail");
+  
+      // Get the student ID from the modal (use a custom data attribute to store it)
+      const studentId = modalStudentName.getAttribute("data-student-id");
+  
+      // Collect student data
+      const studentName = modalStudentName.value;
+      const studentGrade = modalStudentGrade.value;
+      const studentGender = modalStudentGenderMale.checked ? "male" : "female"; // Radio button check
+      const studentTelephone = modalStudentTelephone.value;
+  
+      // Collect parent data
+      const parentName = modalParentName.value;
+      const parentGender = modalParentGenderMale.checked ? "male" : "female"; // Radio button check
+      const parentTelephone = modalParentTelephone.value;
+      const parentEmail = modalParentEmail.value;
+  
+      // Prepare the payload to send
+      const payload = {
+          student: {
+              name: studentName,
+              grade: parseInt(studentGrade, 10),
+              gender: studentGender,
+              telephone: studentTelephone
+          },
+          parent: {
+              name: parentName,
+              gender: parentGender,
+              telephone: parentTelephone,
+              email: parentEmail
+          }
+      };
+  
+      const messageElement = document.getElementById("msgs");
+  
+      // Make the PUT request to update student and parent data
+      fetch(`http://127.0.0.1:8000/student-and-parent/modify/${studentId}`, {
+          method: "PUT",
+          headers: {
+              "Authorization": `${token}`,
+              "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+      })
+          .then((response) => response.json())
+          .then((data) => {
+              if (data.success) {
+                  // Success message
+                  messageElement.innerHTML = data.message;
+                  messageElement.classList.remove("text-danger");
+                  messageElement.classList.add("text-success");
+                  $('#updateSubjectModal').modal('hide');
+                  $('#APIResponse').modal('show');
+                  fetchStudents(token)
+                  // You can call fetchSubjects or similar to refresh the data
+                  // fetchSubjects(token); // Uncomment if needed
+              } else {
+                  // Error message
+                  messageElement.innerHTML = data.error;
+                  messageElement.classList.remove("text-success");
+                  messageElement.classList.add("text-danger");
+                  $('#updateSubjectModal').modal('show');
+                  $('#APIResponse').modal('show');
+              }
+          })
+          .catch((error) => {
+              console.error("Error fetching student details:", error);
+              messageElement.innerHTML = "An error occurred. Please try again.";
+              messageElement.classList.remove("text-success");
+              messageElement.classList.add("text-danger");
+              $('#updateSubjectModal').modal('hide');
+              $('#APIResponse').modal('show');
+          });
+    });
+  
+    
+    function fetchStudentDetails(studentId) {
+      const token = localStorage.getItem("authToken");
+      const url = `http://127.0.0.1:8000/student-and-parent/student/${studentId}`;
+  
+      fetch(url, {
+          method: "GET",
+          headers: {
+              "Authorization": token,
+              "Content-Type": "application/json"
+          }
+      })
+      .then(response => response.json())
+      .then(data => {
+          if (data.success) {
+              const student = data.data;
+              const parent = student.parent;
+  
+              // Set student_id in the student name input field
+              const studentNameInput = document.getElementById("modalStudentName");
+              studentNameInput.value = student.name;
+              studentNameInput.setAttribute("data-student-id", student.student_id); // Set student_id here
+  
+              // Populate other student data in the input fields
+              document.getElementById("modalStudentGrade").value = student.grade;
+              document.getElementById("modalStudentGradeLabel").value = student.grade_label;
+  
+              // Set gender radio buttons
+              if (student.gender === "male") {
+                  document.getElementById("modalStudentGenderMale").checked = true;
+              } else if (student.gender === "female") {
+                  document.getElementById("modalStudentGenderFemale").checked = true;
+              }
+  
+              document.getElementById("modalStudentTelephone").value = student.telephone;
+  
+              // Populate parent data in the input fields
+              document.getElementById("modalParentName").value = parent.name;
+              // Set parent gender radio buttons
+              if (parent.gender === "male") {
+                  document.getElementById("modalParentGenderMale").checked = true;
+              } else if (parent.gender === "female") {
+                  document.getElementById("modalParentGenderFemale").checked = true;
+              }
+              document.getElementById("modalParentTelephone").value = parent.telephone;
+              document.getElementById("modalParentEmail").value = parent.email;
+  
+              // Show the modal
+              $('#updateSPModal').modal('show');
+          } else {
+              console.error("Failed to fetch student details:", data.error);
+          }
+      })
+      .catch(error => {
+          console.error("Error fetching student details:", error);
+      });
+    }
+  
       function fetchProfileData(token) {
         fetch("http://127.0.0.1:8000/user/profile-dashboard", {
             method: "GET",
@@ -940,6 +1203,13 @@
         // Ensure both buttons trigger modal hiding
         $('.close, .btn-secondary').on('click', function() {
             $('#unauthorizedModal').modal('hide');
+        });
+      });
+
+      $(document).ready(function() {
+        // Ensure both buttons trigger modal hiding
+        $('.close, .btn-secondary').on('click', function() {
+            $('#updateSPModal').modal('hide');
         });
       });
 

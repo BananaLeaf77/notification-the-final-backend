@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>SINOAN Registered Subject</title>
+    <title>SINOAN Add User</title>
     <meta
       content="width=device-width, initial-scale=1.0, shrink-to-fit=no"
       name="viewport"
@@ -35,45 +35,14 @@
 
     <!-- CSS Files -->
     <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="assets/css/kaiadmin.min.css" />
     <link rel="stylesheet" href="assets/css/plugins.min.css" />
-    <link rel="stylesheet" href="assets/css/xheckbox.css" />
+    <link rel="stylesheet" href="assets/css/kaiadmin.min.css" />
 
     <!-- CSS Just for demo purpose, don't include it in your project -->
     <link rel="stylesheet" href="assets/css/demo.css" />
   </head>
   <body>
-    <!-- The Modal Up-->
-    <!-- Update MODAL -->
-    <div class="modal fade" id="updateSubjectModal" tabindex="-1" aria-labelledby="updateSubjectModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered modal-lg">
-          <div class="modal-content">
-              <div class="modal-header">
-                  <h5 class="modal-title" id="updateSubjectModalLabel">Update Subject</h5>
-                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                      <span aria-hidden="true">&times;</span>
-                  </button>
-              </div>
-              <div class="modal-body">
-                  <!-- Username Field -->
-                  <div class="form-group">
-                      <label for="modalSubjectName">Subject Name</label>
-                      <input type="text" class="form-control" id="modalSubjectName" placeholder="Biology 7">
-                  </div>
-                  
-                  <!-- Password Field -->
-                  <div class="form-group">
-                      <label for="modalSubjectGrade">Subject Grade</label>
-                      <input type="number" class="form-control" id="modalSubjectGrade" min="1" max="99" oninput="validateInput(this)" placeholder="1,2,3,4,5,6,7,8,9, ..." required>
-                  </div>
-              </div>
-              <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                  <button type="button" class="btn btn-success" id="saveChanges">Save</button>
-              </div>
-          </div>
-      </div>
-    </div>
+    <!-- The Modal -->
     <!-- API Response Modal -->
     <div class="modal fade" id="APIResponse" tabindex="-1" aria-labelledby="APIResponseLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
@@ -134,48 +103,6 @@
       </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
-    <div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-labelledby="deleteConfirmationLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content">
-              <div class="modal-header">
-                  <h5 class="modal-title" id="deleteConfirmationLabel">Delete</h5>
-                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                      <span aria-hidden="true">&times;</span>
-                  </button>
-              </div>
-              <div class="modal-body">
-                  Are you sure you want to delete "<span id="subjectName"></span>" subject?
-              </div>
-              <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                  <button type="button" class="btn btn-danger" id="confirmDeleteButton">Delete</button>
-              </div>
-          </div>
-      </div>
-    </div>
-
-    <!-- Mass Delete Confirmation Modal -->
-    <div class="modal fade" id="massDeleteConfirmationModal" tabindex="-1" aria-labelledby="massDeleteConfirmationLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content">
-              <div class="modal-header">
-                  <h5 class="modal-title" id="massDeleteConfirmationLabel">Mass Delete</h5>
-                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                      <span aria-hidden="true">&times;</span>
-                  </button>
-              </div>
-              <div class="modal-body">
-                  Are you sure you want to delete <span id="userLength"></span> Subjects?
-              </div>
-              <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                  <button type="button" class="btn btn-danger" id="confirmMassDeleteButton">Delete</button>
-              </div>
-          </div>
-      </div>
-    </div>
-
     <div class="wrapper">
       <!-- Sidebar -->
       <div class="sidebar" data-background-color="light">
@@ -209,7 +136,10 @@
             <ul class="nav nav-secondary">
               <li class="nav-item">
                 <a
+                  data-bs-toggle="collapse"
                   href="index.html"
+                  class="collapsed"
+                  aria-expanded="false"
                 >
                   <i class="fas fa-home"></i>
                   <p>Dashboard</p>
@@ -233,7 +163,7 @@
                   <p>Registered Teacher</p>
                 </a>               
               </li>  
-              <li class="nav-item active">
+              <li class="nav-item">
                 <a href="registeredSubject.html">
                   <i class="fas fa-book"></i>
                   <p>Registered Subject</p>
@@ -250,7 +180,7 @@
         </div>
       </div>
       <!-- End Sidebar -->
-
+      
       <div class="main-panel">
         <div class="main-header">
           <div class="main-header-logo">
@@ -406,82 +336,39 @@
 
         <div class="container">
           <div class="page-inner">
-            <div
-              class="d-flex align-items-left align-items-md-center flex-column flex-md-row pt-2 pb-4"
-            >
-              <div>
-                <h3 class="fw-bold mb-3">Registered Subject</h3>
-              </div>
-              
-            </div>
-            <div class="col-sm-6 col-md-3">
-              <div class="card card-stats card-round">
-                <div class="card-body">
-                  <div class="row align-items-center">
-                    <div class="col-icon">
-                      <div
-                        class="icon-big text-center icon-info bubble-shadow-small"
-                      >
-                        <i class="fas fa-book"></i>
-                      </div>
-                    </div>
-                    <div class="col col-stats ms-3 ms-sm-0">
-                      <div class="numbers">
-                        <p class="card-category">Registered Subject</p>
-                        <h4 class="card-title" id="daftarMapel">Loading...</h4>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div class="page-header">
+              <h3 class="fw-bold mb-3">Input Data</h3>     
             </div>
             <div class="row">
               <div class="col-md-12">
-                <div class="card card-round">
+                <div class="card">
                   <div class="card-header">
-                    <div class="card-head-row card-tools-still-right">
-                      <h4 class="card-title">Subject List</h4>
-                      <div class="card-tools d-flex justify-content-between align-items-center">
-                        <div>
-                          <a href="addSubject.html" class="btn btn-success btn-round">
-                            <i class="fas fa-user-plus"></i> Add
-                          </a>
-                        </div>
-                        <div>
-                          <a href="#" class="btn btn-danger btn-round" onclick="showMassDeleteModal()">
-                              <i class="fas fa-trash"></i> Delete
-                          </a>
-                        </div>
-                      </div>
-                    </div>
+                    <div class="card-title">Subject Form</div>
                   </div>
                   <div class="card-body">
-                    <div class="row">
-                      <div class="col-md-13">
-                        <div class="table-responsive table-hover table-sales">
-                          <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Select</th>
-                                    <th>Grade</th>
-                                    <th>Subject</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="subjectTable">
-                                <!-- Dynamic rows will be populated here -->
-                            </tbody>
-                          </table>
+                    <form id="subject-form">
+                      <div class="row">
+                        <div class="col-md-6 col-lg-4">
+                          <div class="form-group">
+                            <label for="username">Subject Name</label>
+                            <input type="text" class="form-control" id="subjectName" placeholder="biology 7" required />
+                          </div>
+                          <div class="form-group">
+                            <label for="grade">Grade</label>
+                            <input type="number" class="form-control" id="subjectGrade" min="1" max="99" oninput="validateInput(this)" placeholder="1,2,3,4,5,6,7,8,9, ..." required>
+                          </div>
                         </div>
+                      <div class="card-action">
+                        <button type="submit" class="btn btn-success">Submit</button>
+                        <a href="registeredSubject.html" class="btn btn-danger">Cancel</a>
                       </div>
-                    </div>
+                    </form>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-
         <footer class="footer">
           <div class="container-fluid d-flex justify-content-between">
             <nav class="pull-left">
@@ -503,6 +390,7 @@
           </div>
         </footer>
       </div>
+
     </div>
     <!--   Core JS Files   -->
     <script src="assets/js/core/jquery-3.7.1.min.js"></script>
@@ -586,82 +474,67 @@
       document.getElementById("confirmAPIResponse").addEventListener("click", function() {
         $('#APIResponse').modal('hide');
       });
-      
+
       function logout() {
         // Show the confirmation modal
         $('#logoutConfirmationModal').modal('show');
       }
       
-      function showMassDeleteModal() {
-        if (selectedUserIds.length === 0) {
-          // Show error message if no users are selected
+      document.getElementById('subject-form').addEventListener('submit', async (e) => {
+        const token = localStorage.getItem("authToken");
+        e.preventDefault();
+        
+        const data = {
+          name: document.getElementById('subjectName').value, 
+          grade: parseInt(document.getElementById('subjectGrade').value, 10), 
+        };
+        
+        try {
+          const response = await fetch('http://127.0.0.1:8000/user/add-subject', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token,
+            },
+            body: JSON.stringify(data),
+          });
+      
+          const responseData = await response.json();
           const messageElement = document.getElementById("msgs");
-          messageElement.innerHTML = "Please select at least one Subject to delete.";
+      
+          if (responseData.success) {
+            // Success message and form reset
+            messageElement.textContent = responseData.message;
+            messageElement.classList.remove("text-danger");
+            messageElement.classList.add("text-success");
+      
+            // Reset form fields
+            document.getElementById('subject-form').reset();
+          } else {
+            errorMessage = responseData.error
+            messageElement.innerHTML = errorMessage;
+            messageElement.classList.remove("text-success");
+            messageElement.classList.add("text-danger");
+          }
+      
+          // Show the modal with the response message
+          $('#APIResponse').modal('show');
+      
+        } catch (error) {
+          console.error('Error:', error);
+          // Display error message in modal
+          const messageElement = document.getElementById("msgs");
+          messageElement.textContent = errorMessage;
           messageElement.classList.remove("text-success");
           messageElement.classList.add("text-danger");
-  
-          const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
-          apiResponseModal.show();
-          return;
+      
+          $('#APIResponse').modal('show');
         }
-        // Update modal with user count
-        document.getElementById("userLength").textContent = selectedUserIds.length;
-    
-        // Show the confirmation modal
-        $('#massDeleteConfirmationModal').modal('show');
-      }
-
-      let selectedUserIds = []
-
-      function deleteMass() {
-        const token = localStorage.getItem("authToken");
-        // Make the API request
-        fetch("http://127.0.0.1:8000/user/rm/subjects", {
-            method: "POST",
-            headers: {
-                "Authorization": token,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ subject_ids: selectedUserIds }),
-        })
-            .then(response => response.json())
-            .then(data => {
-                const messageElement = document.getElementById("msgs");
-                if (data.success) {
-                    // Show success message
-                    messageElement.innerHTML = data.message;
-                    messageElement.classList.remove("text-danger");
-                    messageElement.classList.add("text-success");
-    
-                    // Refresh user list
-                    fetchSubjects(token);
-                    selectedUserIds = []; // Clear selection
-                } else {
-                    // Show failure message
-                    messageElement.innerHTML = data.error;
-                    messageElement.classList.remove("text-success");
-                    messageElement.classList.add("text-danger");
-                }
-    
-                const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
-                apiResponseModal.show();
-            })
-            .catch(error => {
-                console.error("Error during mass deletion:", error);
-                const messageElement = document.getElementById("msgs");
-                messageElement.innerHTML = "An error occurred. Please try again.";
-                messageElement.classList.remove("text-success");
-                messageElement.classList.add("text-danger");
-    
-                const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
-                apiResponseModal.show();
-            });
-      }
-
-      // Event listener for confirming logout
-      document.getElementById("confirmMassDeleteButton").addEventListener("click", function () {
-        $('#massDeleteConfirmationModal').modal('hide');
-        deleteMass()
+      
+        // Event listener to close the modal when "Ok" button is clicked
+        document.getElementById("confirmAPIResponse").addEventListener("click", function() {
+          $('#APIResponse').modal('hide');
+        });
       });
 
       // Event listener for confirming logout
@@ -706,14 +579,13 @@
             $('#unauthorizedModal').modal('show');
             setTimeout(() => {
                 window.location.href = "login.html";
-            }, 3000); // Redirect after 5 seconds
+            }, 3000); // Redirect after 3 seconds
             return;
         }
     
         // If the token exists, run the functions without waiting for backend verification
         fetchProfileData(token);
         fetchDataChangeRequestCount(token);
-        fetchSubjects(token);
       });
 
       function fetchDataChangeRequestCount(token) {
@@ -736,155 +608,10 @@
         .catch(error => console.error("Error:", error));
       }
 
-      function fetchSubjects(token) {
-          fetch("http://127.0.0.1:8000/user/subject/all", {
-              method: "GET",
-              headers: {
-                  "Authorization": `${token}`,
-                  "Content-Type": "application/json"
-              }
-          })
-          .then(response => response.json())
-          .then(data => {
-              if (data.success && data.data) {
-                  let subjects = data.data;
-
-                  // Sort subjects by grade in ascending order
-                  subjects.sort((a, b) => a.grade - b.grade);
-
-                  const subjectTable = document.getElementById("subjectTable");
-
-                  // Clear any existing rows in the table
-                  subjectTable.innerHTML = "";
-
-                  // Update the count
-                  const dataLength = subjects.length;
-                  document.getElementById("daftarMapel").textContent = dataLength;
-
-                  // Populate the table rows
-                  subjects.forEach(subject => {
-                      const row = document.createElement("tr");
-
-                      row.innerHTML = `
-                          <td>
-                              <input class="custom-checkbox" type="checkbox" name="selectSubject" value="${subject.subject_id}" />
-                          </td>
-                          <td>${subject.grade}</td>
-                          <td>${subject.name}</td>
-                          <td>
-                            <button class="btn btn-warning btn-sm update-btn" onclick="event.stopPropagation(); runSubjectUpdateModal(${subject.subject_id})">Update</button>
-                            <button class="btn btn-danger btn-sm delete-btn" onclick="event.stopPropagation(); showDeleteModal(${subject.subject_id}, '${subject.name}')">Delete</button>
-                          </td>
-                      `;
-
-                      // Add checkbox event listener for user selection
-                      const checkbox = row.querySelector('.custom-checkbox');
-                      checkbox.addEventListener('change', (event) => toggleUserSelection(event, subject.subject_id));
-
-                      subjectTable.appendChild(row);
-                  });
-              } else {
-                  console.error("Failed to fetch data or no data available.");
-              }
-          })
-          .catch(error => console.error("Error:", error));
-        }
-
-      document.getElementById("saveChanges").addEventListener("click", function () {
-        const token = localStorage.getItem("authToken");
-        const modalSubjectName = document.getElementById("modalSubjectName");
-    
-        const subjectId = modalSubjectName.getAttribute("data-subject-id");
-    
-        const subjectName = modalSubjectName.value;
-        const grade = document.getElementById("modalSubjectGrade").value;
-    
-        const messageElement = document.getElementById("msgs");
-    
-        const payload = {
-            name: subjectName,
-            grade: parseInt(grade, 10), // Ensure grade is an integer
-        };
-    
-        fetch(`http://127.0.0.1:8000/user/subject/modify/${subjectId}`, {
-            method: "PUT",
-            headers: {
-                "Authorization": `${token}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload), // Corrected: No extra wrapping for payload
-        })
-            .then((response) => response.json())
-            .then((data) => {
-                if (data.success) {
-                    messageElement.innerHTML = data.message;
-                    messageElement.classList.remove("text-danger");
-                    messageElement.classList.add("text-success");
-                    $('#updateSubjectModal').modal('hide');
-                    $('#APIResponse').modal('show');
-                    fetchSubjects(token)
-                } else {
-                    messageElement.innerHTML = data.error;
-                    messageElement.classList.remove("text-success");
-                    messageElement.classList.add("text-danger");
-                    $('#updateSubjectModal').modal('hide');
-                    $('#APIResponse').modal('show');
-                }
-            })
-            .catch((error) => console.error("Error fetching user details:", error));
-    });
-    
-    function runSubjectUpdateModal(subjectId) {
-        const token = localStorage.getItem("authToken");
-        const messageElement = document.getElementById("msgs");
-        const modalSubjectName = document.getElementById("modalSubjectName");
-        const modalSubjectGrade = document.getElementById("modalSubjectGrade");
-    
-        // Fetch user details
-        fetch(`http://127.0.0.1:8000/user/subject/${subjectId}`, {
-            method: "GET",
-            headers: {
-                "Authorization": `${token}`,
-                "Content-Type": "application/json",
-            },
-        })
-            .then((response) => response.json())
-            .then((data) => {
-                if (data.success) {
-                    const subjectData = data.data;
-    
-                    modalSubjectName.value = subjectData.name;
-                    modalSubjectGrade.value = subjectData.grade;
-    
-                    modalSubjectName.setAttribute("data-subject-id", subjectData.subject_id);
-                } else {
-                    messageElement.innerHTML = data.error || "Failed to fetch user details.";
-                    messageElement.classList.remove("text-success");
-                    messageElement.classList.add("text-danger");
-                    $('#APIResponse').modal('show');
-                }
-            })
-            .catch((error) => console.error("Error fetching user details:", error));
-    
-        // Show the modal
-        $('#updateSubjectModal').modal('show');
-      }
-    
-
-      function toggleUserSelection(event, userId) {
-        event.stopPropagation(); // Prevents row click event
-        
-        const checkbox = event.target;
-        if (checkbox.checked) {
-            selectedUserIds.push(userId);
-        } else {
-            selectedUserIds = selectedUserIds.filter(id => id !== userId);
-        }
-      }
-
-      // Convert selected IDs to JSON format
-      function getSelectedIdsJson() {
-        return JSON.stringify({ ids: selectedUserIds });
+      // Helper function to parse class strings (e.g., "2A" to [2, "A"])
+      function parseClass(classStr) {
+          const match = classStr.match(/^(\d+)([A-Z])$/);
+          return match ? [parseInt(match[1], 10), match[2]] : [0, ''];
       }
 
       // Show an error message with Bootstrap alert (or custom UI)
@@ -922,63 +649,6 @@
         });
       }
 
-      function deleteSubject(subjectId) {
-        const token = localStorage.getItem("authToken");
-        const messageElement = document.getElementById("msgs");
-
-        fetch(`http://127.0.0.1:8000/user/subject/rm/${subjectId}`, {
-          method: "DELETE",
-          headers: {
-              "Authorization": `${token}`,
-              "Content-Type": "application/json"
-          }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-              messageElement.innerHTML = data.message;
-              messageElement.classList.remove("text-danger");
-              messageElement.classList.add("text-success");
-              $('#APIResponse').modal('show');
-              fetchSubjects(token)
-            } else {
-              messageElement.innerHTML = data.error;
-              messageElement.classList.remove("text-success");
-              messageElement.classList.add("text-danger");
-              $('#APIResponse').modal('show');
-            }
-        })
-        .catch(error => {
-            console.error("Error fetching profile data:", error);
-        });
-      }
-      // Function to show the modal and set dynamic data for deletion
-      function showDeleteModal(subjectId, subjectName) {
-        document.getElementById("subjectName").textContent = subjectName;
-        
-        const confirmDeleteButton = document.getElementById("confirmDeleteButton");
-        confirmDeleteButton.setAttribute("data-subject-id", subjectId);
-        
-        // Show the modal
-        $('#deleteConfirmationModal').modal('show');
-      }
-
-      // Add an event listener to the "Delete" button in the modal
-      document.getElementById("confirmDeleteButton").addEventListener("click", function() {
-        const subjectId = this.getAttribute("data-subject-id");
-        deleteSubject(subjectId);
-        
-        // Hide the modal after deletion
-        $('#deleteConfirmationModal').modal('hide');
-      });
-
-      $(document).ready(function() {
-        // Ensure both buttons trigger modal hiding
-        $('.close, .btn-secondary').on('click', function() {
-            $('#deleteConfirmationModal').modal('hide');
-        });
-      });
-
       $(document).ready(function() {
         // Ensure both buttons trigger modal hiding
         $('.close, .btn-secondary').on('click', function() {
@@ -996,7 +666,7 @@
       $(document).ready(function() {
         // Ensure both buttons trigger modal hiding
         $('.close, .btn-secondary').on('click', function() {
-            $('#updateSubjectModal').modal('hide');
+            $('#APIResponse').modal('hide');
         });
       });
 
