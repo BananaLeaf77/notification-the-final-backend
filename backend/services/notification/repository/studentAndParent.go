@@ -307,6 +307,49 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 	return nil
 }
 
+func (spr *studentParentRepository) SPMassDelete(ctx context.Context, studentIDs *[]int) error {
+	// Check if students exist and are eligible for deletion
+	var students []domain.Student
+	err := spr.db.WithContext(ctx).
+		Where("student_id IN (?) AND deleted_at IS NULL", *studentIDs).
+		Find(&students).Error
+	if err != nil {
+		return fmt.Errorf("could not retrieve student details: %v", err)
+	}
+
+	if len(students) == 0 {
+		return fmt.Errorf("no students eligible for deletion")
+	}
+
+	parentIDs := make([]int, 0)
+	for _, student := range students {
+		if student.ParentID != 0 {
+			parentIDs = append(parentIDs, student.ParentID)
+		}
+	}
+
+	now := time.Now()
+	err = spr.db.WithContext(ctx).
+		Model(&domain.Student{}).
+		Where("student_id IN (?)", *studentIDs).
+		Update("deleted_at", now).Error
+	if err != nil {
+		return fmt.Errorf("could not delete students: %v", err)
+	}
+
+	if len(parentIDs) > 0 {
+		err = spr.db.WithContext(ctx).
+			Model(&domain.Parent{}).
+			Where("parent_id IN (?)", parentIDs).
+			Update("deleted_at", now).Error
+		if err != nil {
+			return fmt.Errorf("could not delete parents: %v", err)
+		}
+	}
+
+	return nil
+}
+
 func (spr *studentParentRepository) DeleteStudentAndParent(ctx context.Context, studentID int) error {
 	// Start a transaction
 	tx := spr.db.Begin()

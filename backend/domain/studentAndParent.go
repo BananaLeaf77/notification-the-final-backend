@@ -31,6 +31,7 @@ type StudentParentRepo interface {
 	GetStudentDetailsByID(ctx context.Context, id int) (*StudentAndParent, error)
 	CreateStudentAndParent(ctx context.Context, req *StudentAndParent) *[]string
 	DeleteStudentAndParent(ctx context.Context, id int) error
+	SPMassDelete(ctx context.Context, studentIDS *[]int) error
 	UpdateStudentAndParent(ctx context.Context, id int, payload *StudentAndParent) *[]string
 	// GetClassIDByName(className string) (*int, error)
 
@@ -43,6 +44,7 @@ type StudentParentUseCase interface {
 	GetStudentDetailsByID(ctx context.Context, id int) (*StudentAndParent, error)
 	CreateStudentAndParentUC(ctx context.Context, req *StudentAndParent) *[]string
 	DeleteStudentAndParent(ctx context.Context, id int) error
+	SPMassDelete(ctx context.Context, studentIDS *[]int) error
 	UpdateStudentAndParent(ctx context.Context, id int, payload *StudentAndParent) *[]string
 	// GetClassIDByName(className string) (*int, error)
 

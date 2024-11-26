@@ -100,6 +100,14 @@ func (spu *studentParentUseCase) GetAllDataChangeRequest(ctx context.Context) (*
 	return v, nil
 }
 
+func (spu *studentParentUseCase) SPMassDelete(ctx context.Context, studentIDS *[]int) error {
+	err := spu.repo.SPMassDelete(ctx, studentIDS)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // func (spu *studentParentUseCase) GetClassIDByName(className string) (*int, error) {
 
 // 	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)

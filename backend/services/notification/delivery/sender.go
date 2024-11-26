@@ -42,7 +42,8 @@ func (h *senderHandler) sendMassHandler(c *fiber.Ctx) error {
 	if err := c.BodyParser(&payload); err != nil {
 		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "sendMassHandler")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "invalid request body",
+			"error":   "invalid request body",
+			"success": false,
 		})
 	}
 
@@ -50,8 +51,9 @@ func (h *senderHandler) sendMassHandler(c *fiber.Ctx) error {
 		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "sendMassHandler")
 
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":  "failed to send notifications",
-			"detail": err.Error(),
+			"success": false,
+			"error":   "failed to send notifications",
+			"detail":  err.Error(),
 		})
 	}
 
@@ -59,5 +61,6 @@ func (h *senderHandler) sendMassHandler(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "notifications sent successfully",
+		"success": true,
 	})
 }

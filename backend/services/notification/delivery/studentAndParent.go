@@ -49,6 +49,7 @@ func NewStudentParentHandlerDeploy(app *fiber.App, useCase domain.StudentParentU
 	route.Get("/student/:id", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetStudentDetailsByID)
 	route.Post("/req/data-change-request", handler.DataChangeRequest)
 	route.Get("/get-all-data-change-request", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.GetAllDataChangeRequest)
+	route.Post("/rms", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.SPMassDelete)
 }
 
 func (sph *studentParentHandler) GetAllDataChangeRequest(c *fiber.Ctx) error {
@@ -72,6 +73,39 @@ func (sph *studentParentHandler) GetAllDataChangeRequest(c *fiber.Ctx) error {
 		"data":    v,
 	}))
 
+}
+
+func (sph *studentParentHandler) SPMassDelete(c *fiber.Ctx) error {
+	userToken := c.Locals("user").(*domain.Claims)
+	var payload struct {
+		IDS []int `json:"student_ids"`
+	}
+
+	err := c.BodyParser(&payload)
+	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "SPMassDelete")
+		return c.Status(fiber.StatusInternalServerError).JSON((fiber.Map{
+			"success": false,
+			"error":   err.Error(),
+			"message": "Failed to delete users",
+		}))
+	}
+
+	err = sph.uc.SPMassDelete(c.Context(), &payload.IDS)
+	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "SPMassDelete")
+		return c.Status(fiber.StatusInternalServerError).JSON((fiber.Map{
+			"success": false,
+			"error":   err.Error(),
+			"message": "Failed to delete users",
+		}))
+	}
+
+	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "SPMassDelete")
+	return c.Status(fiber.StatusOK).JSON((fiber.Map{
+		"success": true,
+		"message": "Users deleted successfully",
+	}))
 }
 
 func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {

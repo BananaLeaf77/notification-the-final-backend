@@ -44,26 +44,7 @@
     <link rel="stylesheet" href="assets/css/demo.css" />
   </head>
   <body>
-    <!-- API Response Modal -->
-    <div class="modal fade" id="APIResponse" tabindex="-1" aria-labelledby="APIResponseLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content" style="border: 2px solid #ccc !important; border-radius: 5px;">
-              <div class="modal-header">
-                  <h5 class="modal-title" id="APIResponseLabel">Message</h5>
-                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                      <span aria-hidden="true">&times;</span>
-                  </button>
-              </div>
-              <div class="modal-body">
-                  <span id="msgs"></span>
-              </div>
-              <div class="modal-footer">
-                  <button type="button" class="btn btn-danger" id="confirmAPIResponse">Ok</button>
-              </div>
-          </div>
-      </div>
-    </div>
-    
+
     <!-- The Modal -->
     <div class="modal fade" id="updateSPModal" tabindex="-1" aria-labelledby="updateSPModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -84,7 +65,7 @@
                 </div>
                 <div class="form-group">
                   <label for="modalStudentGrade">Grade</label>
-                  <input type="text" class="form-control" id="modalStudentGrade" placeholder="1,2,3,4,5,6,7,8,9, ...">
+                  <input type="number" class="form-control" id="modalStudentGrade" min="1" max="99" oninput="validateInput(this)" placeholder="1,2,3,4,5,6,7,8,9, ..." required>
                 </div>
                 <div class="form-group">
                   <label for="modalStudentGradeLabel">Grade Label</label>
@@ -146,7 +127,7 @@
         </div>
       </div>
     </div>
-        
+    
     <!-- Unauthorized -->
     <div class="modal fade" id="unauthorizedModal" tabindex="-1" aria-labelledby="unauthorizedModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
@@ -206,6 +187,77 @@
               </div>
           </div>
       </div>
+    </div>
+
+    <div class="modal fade" id="massDeleteConfirmationModal" tabindex="-1" aria-labelledby="massDeleteConfirmationLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+              <div class="modal-header">
+                  <h5 class="modal-title" id="massDeleteConfirmationLabel">Delete</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                  </button>
+              </div>
+              <div class="modal-body">
+                  Are you sure you want to delete <span id="studentLength"></span> students?
+              </div>
+              <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                  <button type="button" class="btn btn-danger" id="confirmMassDeleteButton">Delete</button>
+              </div>
+          </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="sendMassModal" tabindex="-1" aria-labelledby="sendMassModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+              <div class="modal-header">
+                  <h5 class="modal-title" id="sendMassModalLabel">Attendance Notification Sender</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                  </button>
+              </div>
+              <div class="modal-body">
+                Are you sure you want to notify <span id="studentLengthSendMass"></span> students?
+              </div>
+              <div class="form-group">
+                <label>Choose on what subject is student is not attended!</label>
+                <div id="subjectTable" class="subject-container d-flex flex-wrap gap-2">
+                    <!-- Subjects will be dynamically populated here -->
+                </div>
+            </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="sendIt">Send</button>
+              </div>
+          </div>
+      </div>
+    </div>
+
+    <!-- API Response Modal -->
+    <div class="modal fade" id="APIResponse" tabindex="-1" aria-labelledby="APIResponseLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content" style="border: 2px solid #ccc !important; border-radius: 5px;">
+              <div class="modal-header">
+                  <h5 class="modal-title" id="APIResponseLabel">Message</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                  </button>
+              </div>
+              <div class="modal-body">
+                  <span id="msgs"></span>
+              </div>
+              <div class="modal-footer">
+                  <button type="button" class="btn btn-danger" id="confirmAPIResponse">Ok</button>
+              </div>
+          </div>
+      </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loadingIndicator" class="spinner-border text-primary" role="status" style="display: none;">
+      <span class="sr-only">Loading...</span>
     </div>
 
     <div class="wrapper">
@@ -290,7 +342,7 @@
         <div class="main-header">
           <div class="main-header-logo">
             <!-- Logo Header -->
-            <div class="logo-header" data-background-color="dark">
+            <div class="logo-header" data-background-color="light">
               <a href="index.html" class="logo">
                 <img
                   src="assets/img/kaiadmin/logo_light.svg"
@@ -527,12 +579,12 @@
                           </a>
                         </div>
                         <div>
-                          <a href="#" class="btn btn-danger btn-round">
+                          <a href="#" class="btn btn-danger btn-round" onclick="showMassDeleteModal()">
                             <i class="fas fa-trash"></i> Delete
                           </a>
                         </div>
                         <div class="timeline-badge">
-                          <a href="#" class="btn btn-primary btn-round" onclick="massSend()">
+                          <a href="#" class="btn btn-primary btn-round" onclick="showSendMassInfo()">
                             <i class="far fa-paper-plane"></i> Send
                           </a>
                         </div>
@@ -714,6 +766,312 @@
         return [classNum, classLetter];
       }
 
+      document.getElementById("confirmMassDeleteButton").addEventListener("click", function () {
+        $('#massDeleteConfirmationModal').modal('hide');
+        deleteStudentMass()
+      });
+
+      document.getElementById("sendIt").addEventListener("click", function () {
+        const token = localStorage.getItem("authToken");
+        const selectedSubject = document.querySelector('input[name="subject"]:checked');
+        const messageElement = document.getElementById("msgs");
+    
+        // Validate the selected subject
+        if (!selectedSubject) {
+            messageElement.innerHTML = "Please select a subject.";
+            messageElement.classList.remove("text-success");
+            messageElement.classList.add("text-danger");
+    
+            const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+            apiResponseModal.show();
+            return;
+        }
+    
+        // Validate the selected students
+        if (!selectedStudentIds || selectedStudentIds.length === 0) {
+            messageElement.innerHTML = "Please select at least one student.";
+            messageElement.classList.remove("text-success");
+            messageElement.classList.add("text-danger");
+    
+            const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+            apiResponseModal.show();
+            return;
+        }
+    
+        // Prepare the payload
+        const payload = {
+            ids: selectedStudentIds,
+            subject_id: parseInt(selectedSubject.value, 10)
+        };
+        console.log(payload)
+        // Make the API request
+        fetch("http://127.0.0.1:8000/sender/send-mass", {
+            method: "POST",
+            headers: {
+                "Authorization": `${token}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data)
+                if (data.success) {
+                    messageElement.innerHTML = data.message;
+                    messageElement.classList.remove("text-danger");
+                    messageElement.classList.add("text-success");
+                } else {
+                    messageElement.innerHTML = data.error;
+                    messageElement.classList.remove("text-success");
+                    messageElement.classList.add("text-danger");
+                }
+    
+                // Show the response modal
+                const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+                apiResponseModal.show();
+            })
+            .catch(error => {
+                console.error("Error sending notification:", error);
+    
+                messageElement.innerHTML = "An error occurred while sending notifications.";
+                messageElement.classList.remove("text-success");
+                messageElement.classList.add("text-danger");
+    
+                // Show the response modal
+                const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+                apiResponseModal.show();
+            });
+      });
+    
+
+      function showSendMassInfo() {
+        const messageElement = document.getElementById("msgs");
+        const subjectTable = document.getElementById("subjectTable");
+        const token = localStorage.getItem("authToken");
+    
+        // Check if at least one student is selected
+        if (selectedStudentIds.length === 0) {
+            messageElement.innerHTML = "Please select at least one student to send notification.";
+            messageElement.classList.remove("text-success");
+            messageElement.classList.add("text-danger");
+    
+            const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+            apiResponseModal.show();
+            return;
+        }
+
+        document.getElementById("studentLengthSendMass").textContent = selectedStudentIds.length;
+    
+        // Clear any existing subjects
+        subjectTable.innerHTML = "";
+    
+        // Fetch all subjects
+        fetch("http://127.0.0.1:8000/user/subject/all", {
+            method: "GET",
+            headers: {
+                "Authorization": `${token}`,
+                "Content-Type": "application/json"
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const subjects = data.data;
+    
+                    if (subjects.length === 0) {
+                        subjectTable.innerHTML = `<p>No subjects available.</p>`;
+                    } else {
+                        // Dynamically create radio buttons for each subject
+                        subjects.forEach(subject => {
+                            const subjectRadio = `
+                                <div class="form-check">
+                                    <input 
+                                        class="form-check-input" 
+                                        type="radio" 
+                                        name="subject" 
+                                        id="subject-${subject.subject_id}" 
+                                        value="${subject.subject_id}">
+                                    <label class="form-check-label" for="subject-${subject.subject_id}">
+                                        ${subject.name} (Grade ${subject.grade})
+                                    </label>
+                                </div>
+                            `;
+                            subjectTable.innerHTML += subjectRadio;
+                        });
+                    }
+                } else {
+                    // Handle API failure
+                    messageElement.innerHTML = "Failed to fetch subjects.";
+                    messageElement.classList.remove("text-success");
+                    messageElement.classList.add("text-danger");
+                    return;
+                }
+    
+                // Show the modal after populating subjects
+                $('#sendMassModal').modal('show');
+            })
+            .catch(error => {
+                console.error("Error fetching subjects:", error);
+                messageElement.innerHTML = "An error occurred while fetching subjects.";
+                messageElement.classList.remove("text-success");
+                messageElement.classList.add("text-danger");
+            });
+      }
+    
+      function sendMass() {
+        const token = localStorage.getItem("authToken");
+        const selectedSubject = document.querySelector('input[name="subject"]:checked');
+        const sendButton = document.getElementById("sendIt");
+        const loadingIndicator = document.getElementById("loadingIndicator");
+    
+        // Show loading indicator immediately before making the API call
+        loadingIndicator.style.display = "block";  // Show the spinner
+        sendButton.disabled = true;  // Disable the button to prevent multiple clicks
+        sendButton.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...`;  // Change button text
+    
+        // Check if a subject is selected
+        if (!selectedSubject) {
+            const messageElement = document.getElementById("msgs");
+            messageElement.innerHTML = "Please select a subject to proceed.";
+            messageElement.classList.remove("text-success");
+            messageElement.classList.add("text-danger");
+    
+            // Hide loading spinner
+            loadingIndicator.style.display = "none";  // Hide the spinner
+            sendButton.disabled = false;  // Re-enable the button
+            sendButton.innerHTML = "Send";  // Reset button text
+    
+            const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+            apiResponseModal.show();
+            return;
+        }
+    
+        // Prepare payload
+        const payload = {
+            ids: selectedStudentIds,
+            subject_id: parseInt(selectedSubject.value),
+        };
+    
+        // Make the API request
+        fetch("http://127.0.0.1:8000/sender/send-mass", {
+            method: "POST",
+            headers: {
+                "Authorization": token,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+        })
+            .then(response => response.json())
+            .then(data => {
+                const messageElement = document.getElementById("msgs");
+                if (data.success) {
+                    // Show success message
+                    messageElement.innerHTML = data.message || "Notifications sent successfully!";
+                    messageElement.classList.remove("text-danger");
+                    messageElement.classList.add("text-success");
+    
+                    // Refresh student list (if applicable)
+                    if (typeof fetchStudents === "function") {
+                        fetchStudents(token);
+                    }
+    
+                    // Clear selections
+                    selectedStudentIds = [];
+                    document.querySelectorAll('input[name="subject"]').forEach(input => input.checked = false);
+                } else {
+                    // Show failure message
+                    messageElement.innerHTML = data.error || "Failed to send notifications.";
+                    messageElement.classList.remove("text-success");
+                    messageElement.classList.add("text-danger");
+                }
+    
+                // Show the response modal
+                const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+                apiResponseModal.show();
+            })
+            .catch(error => {
+                console.error("Error during sending notifications:", error);
+    
+                const messageElement = document.getElementById("msgs");
+                messageElement.innerHTML = "An error occurred while sending notifications.";
+                messageElement.classList.remove("text-success");
+                messageElement.classList.add("text-danger");
+    
+                const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+                apiResponseModal.show();
+            })
+            .finally(() => {
+                // Hide the loading spinner and re-enable the button once the request completes (success or failure)
+                loadingIndicator.style.display = "none";  // Hide the spinner
+                sendButton.disabled = false;  // Re-enable the button
+                sendButton.innerHTML = "Send";  // Reset button text
+            });
+      }
+
+      function deleteStudentMass() {
+        const token = localStorage.getItem("authToken");
+        // Make the API request
+        fetch("http://127.0.0.1:8000/student-and-parent/rms", {
+            method: "POST",
+            headers: {
+                "Authorization": token,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ student_ids: selectedStudentIds }),
+        })
+            .then(response => response.json())
+            .then(data => {
+                const messageElement = document.getElementById("msgs");
+                if (data.success) {
+                    // Show success message
+                    messageElement.innerHTML = data.message;
+                    messageElement.classList.remove("text-danger");
+                    messageElement.classList.add("text-success");
+    
+                    // Refresh user list
+                    fetchStudents(token);
+                    selectedStudentIds = []; // Clear selection
+                } else {
+                    // Show failure message
+                    messageElement.innerHTML = data.error;
+                    messageElement.classList.remove("text-success");
+                    messageElement.classList.add("text-danger");
+                }
+    
+                const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+                apiResponseModal.show();
+            })
+            .catch(error => {
+                console.error("Error during mass deletion:", error);
+                const messageElement = document.getElementById("msgs");
+                messageElement.innerHTML = data.error;
+                messageElement.classList.remove("text-success");
+                messageElement.classList.add("text-danger");
+    
+                const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+                apiResponseModal.show();
+            });
+      }
+    
+      function showMassDeleteModal() {
+        if (selectedStudentIds.length === 0) {
+          // Show error message if no users are selected
+          const messageElement = document.getElementById("msgs");
+          messageElement.innerHTML = "Please select at least one Student to delete.";
+          messageElement.classList.remove("text-success");
+          messageElement.classList.add("text-danger");
+  
+          const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+          apiResponseModal.show();
+          return;
+        }
+        // Update modal with user count
+        document.getElementById("studentLength").textContent = selectedStudentIds.length;
+    
+        // Show the confirmation modal
+        $('#massDeleteConfirmationModal').modal('show');
+      }
+
       document.addEventListener("DOMContentLoaded", function () {
         const token = localStorage.getItem("authToken");
     
@@ -723,7 +1081,7 @@
             $('#unauthorizedModal').modal('show');
             setTimeout(() => {
                 window.location.href = "login.html";
-            }, 3000); // Redirect after 5 seconds
+            }, 3000); // Redirect after 3 seconds
             return;
         }
     
@@ -735,6 +1093,7 @@
         fetchSubjectsCount(token);
         fetchDataChangeRequestCount(token);
       });
+    
     
 
       function fetchUserCount(token) {
@@ -1002,16 +1361,16 @@
           .then((data) => {
               if (data.success) {
                   // Success message
+                  console.log("succes")
                   messageElement.innerHTML = data.message;
                   messageElement.classList.remove("text-danger");
                   messageElement.classList.add("text-success");
                   $('#updateSPModal').modal('hide');
                   $('#APIResponse').modal('show');
                   fetchStudents(token)
-                  // You can call fetchSubjects or similar to refresh the data
-                  // fetchSubjects(token); // Uncomment if needed
                 } else {
                   // Error message
+                  console.log("error")
                   messageElement.innerHTML = data.error;
                   messageElement.classList.remove("text-success");
                   messageElement.classList.add("text-danger");
@@ -1019,6 +1378,7 @@
               }
           })
           .catch((error) => {
+            console.log("error2")
             messageElement.innerHTML = data.error;
             messageElement.classList.remove("text-success");
             messageElement.classList.add("text-danger");
@@ -1082,6 +1442,7 @@
       .catch(error => {
           console.error("Error fetching student details:", error);
       });
+
     }
   
       function fetchProfileData(token) {
@@ -1153,9 +1514,9 @@
       // Function to delete the student
       function deleteStudent(studentId) {
         const token = localStorage.getItem("authToken");
+        const messageElement = document.getElementById("msgs");
 
         if (!token) {
-          const messageElement = document.getElementById("msgs");
           messageElement.innerHTML = "You are not authorized. Please log in first."; 
           messageElement.classList.remove("text-success");
           messageElement.classList.add("text-danger");
@@ -1172,21 +1533,22 @@
                 'Content-Type': 'application/json'
             }
         })
-        .then(response => {
-            if (response.ok) {
-                fetchStudents(token); // Refresh the list of students
-            } else {
-              const messageElement = document.getElementById("msgs");
-              messageElement.innerHTML = response.error; 
-              messageElement.classList.remove("text-success");
-              messageElement.classList.add("text-danger");
-          
-              const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
-              apiResponseModal.show();
-              return
-            }
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            messageElement.innerHTML = data.message;
+            messageElement.classList.remove("text-danger");
+            messageElement.classList.add("text-success");
+            $('#APIResponse').modal('show');
+            fetchStudents(token)
+          } else {
+            messageElement.innerHTML = data.error;
+            messageElement.classList.remove("text-success");
+            messageElement.classList.add("text-danger");
+            $('#APIResponse').modal('show');
+          }
         })
-        .catch(error => console.error('Error:', error));
+        
       }
 
       $(document).ready(function() {
@@ -1221,6 +1583,20 @@
         // Ensure both buttons trigger modal hiding
         $('.close, .btn-secondary').on('click', function() {
             $('#APIResponse').modal('hide');
+        });
+      });
+
+      $(document).ready(function() {
+        // Ensure both buttons trigger modal hiding
+        $('.close, .btn-secondary').on('click', function() {
+            $('#massDeleteConfirmationModal').modal('hide');
+        });
+      });
+
+      $(document).ready(function() {
+        // Ensure both buttons trigger modal hiding
+        $('.close, .btn-secondary').on('click', function() {
+            $('#sendMassModal').modal('hide');
         });
       });
 
