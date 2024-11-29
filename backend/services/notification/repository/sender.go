@@ -193,7 +193,7 @@ func (m *senderRepository) initTextWithSubject(payload *domain.StudentAndParent,
 	subject = fmt.Sprintf("Pemberitahuan Ketidakhadiran %s pada %s %s, tanggal %s", payload.Student.Name, hourAndMinute, isAM, formattedDate)
 
 	bodyMale = fmt.Sprintf(`
-															SINOAN Service 🔔
+SINOAN Service 🔔
 
 					
 
@@ -208,7 +208,7 @@ Jika terdapat pertanyaan atau memerlukan bantuan lebih lanjut, Bapak dapat mengh
 Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Student.Name, strings.ToUpper(subjectName), formattedDate, hourAndMinute, isAM, m.schoolPhone)
 
 	bodyFemale = fmt.Sprintf(`
-															SINOAN Service 🔔
+SINOAN Service 🔔
 
 					
 
@@ -225,7 +225,7 @@ Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Stu
 	// email
 
 	bodyMaleEmail = fmt.Sprintf(`
-									SINOAN Service 🔔
+SINOAN Service 🔔
 
 					
 
@@ -240,7 +240,7 @@ Jika terdapat pertanyaan atau memerlukan bantuan lebih lanjut, Bapak dapat mengh
 Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Student.Name, strings.ToUpper(subjectName), formattedDate, hourAndMinute, isAM, m.schoolPhone)
 
 	bodyFemaleEmail = fmt.Sprintf(`
-									SINOAN Service 🔔
+SINOAN Service 🔔
 
 					
 

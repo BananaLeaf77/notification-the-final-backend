@@ -874,10 +874,6 @@
         return JSON.stringify({ ids: selectedUserIds });
       }
 
-      // Show an error message with Bootstrap alert (or custom UI)
-      function showError(message) {
-          alert(message); // Replace with a Bootstrap modal or custom UI if desired
-      }
 
       function fetchProfileData(token) {
         fetch("http://127.0.0.1:8000/user/profile-dashboard", {
@@ -900,12 +896,10 @@
                 const pRole = document.getElementById("clickedProfileRole");
                 pRole.textContent = `Role : ${data.data.role}`;
             } else {
-                alert("Failed to load profile information.");
             }
         })
         .catch(error => {
             console.error("Error fetching profile data:", error);
-            alert("An error occurred while fetching profile information.");
         });
       }
 

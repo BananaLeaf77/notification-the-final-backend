@@ -10,13 +10,15 @@ type StudentAndParent struct {
 	Parent  Parent  `json:"parent"`
 }
 
+
 type DataChangeRequest struct {
 	RequestID           int       `gorm:"primaryKey;autoIncrement" json:"request_id"`
 	OldStudentName      *string   `json:"old_student_name,omitempty"`
-	OldStudentTelephone *string   `json:"old_student_telephone,omitempty"`
+	OldStudentTelephone string    `json:"old_student_telephone,omitempty"`
 	OldParentName       *string   `json:"old_parent_name,omitempty"`
 	OldParentTelephone  *string   `json:"old_parent_telephone,omitempty"`
 	OldParentEmail      *string   `json:"old_parent_email,omitempty"`
+	OldParentGender     *string   `json:"old_parent_gender"`
 	NewStudentName      *string   `json:"new_student_name,omitempty"`
 	NewStudentTelephone *string   `json:"new_student_telephone,omitempty"`
 	NewParentName       *string   `json:"new_parent_name,omitempty"`
@@ -26,6 +28,7 @@ type DataChangeRequest struct {
 	UpdatedAt           time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 	IsReviewed          bool      `gorm:"default:false" json:"is_reviewed"`
 }
+
 
 type StudentParentRepo interface {
 	GetStudentDetailsByID(ctx context.Context, id int) (*StudentAndParent, error)

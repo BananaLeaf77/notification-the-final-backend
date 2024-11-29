@@ -968,6 +968,9 @@
                     // Clear selections
                     selectedStudentIds = [];
                     document.querySelectorAll('input[name="subject"]').forEach(input => input.checked = false);
+
+                    $('#sendMassModal').modal('hide');
+
                 } else {
                     // Show failure message
                     messageElement.innerHTML = data.error || "Failed to send notifications.";
@@ -976,6 +979,8 @@
                 }
     
                 // Show the response modal
+                $('#sendMassModal').modal('hide');
+
                 const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
                 apiResponseModal.show();
             })
@@ -986,6 +991,8 @@
                 messageElement.innerHTML = "An error occurred while sending notifications.";
                 messageElement.classList.remove("text-success");
                 messageElement.classList.add("text-danger");
+                $('#sendMassModal').modal('hide');  
+
     
                 const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
                 apiResponseModal.show();
@@ -995,6 +1002,7 @@
                 loadingIndicator.style.display = "none";  // Hide the spinner
                 sendButton.disabled = false;  // Re-enable the button
                 sendButton.innerHTML = "Send";  // Reset button text
+                $('#sendMassModal').modal('hide');
             });
       }
 
@@ -1256,10 +1264,6 @@
           return JSON.stringify({ ids: selectedStudentIds });
       }
 
-      // Show an error message with Bootstrap alert (or custom UI)
-      function showError(message) {
-          alert(message); // Replace with a Bootstrap modal or custom UI if desired
-      }
 
       function createStudentRow(student) {
         const row = document.createElement('tr');
