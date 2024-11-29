@@ -32,6 +32,31 @@ func NewStudentDeliveryDeploy(app *fiber.App, uc domain.StudentUseCase) {
 	route := app.Group("/student")
 	route.Get("/get-all", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.deliveryGetAllStudent)
 	route.Get("/download_input_template", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.deliveryDownloadTemplate)
+	route.Get("/telephone/:telephone", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.GetStudentByParentTelephone)
+}
+
+func (sh *studentHandler) GetStudentByParentTelephone(c *fiber.Ctx) error {
+	userToken, _ := c.Locals("user").(*domain.Claims)
+	tel := c.Params("telephone")
+
+	data, err := sh.suc.GetStudentByParentTelephone(c.Context(), tel)
+	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "GetStudentByParentTelephone")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Failed to retrieve student",
+			"error":   err.Error(),
+			"data":    nil,
+		})
+	}
+
+	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "GetStudentByParentTelephone")
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Student retrieved successfully",
+		"data":    data,
+	})
+
 }
 
 func (sh *studentHandler) deliveryGetAllStudent(c *fiber.Ctx) error {

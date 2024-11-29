@@ -513,13 +513,12 @@ func (sph *studentParentHandler) GetStudentDetailsByID(c *fiber.Ctx) error {
 }
 
 func (sph *studentParentHandler) DataChangeRequest(c *fiber.Ctx) error {
-	userClaims := c.Locals("user").(*domain.Claims)
-
+	guess := "Guest"
 	var datas domain.DataChangeRequest
 
 	err := c.BodyParser(&datas)
 	if err != nil {
-		config.PrintLogInfo(&userClaims.Username, fiber.StatusBadRequest, "DataChangeRequest")
+		config.PrintLogInfo(&guess, fiber.StatusBadRequest, "DataChangeRequest")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"message": "Invalid Request",
@@ -529,7 +528,7 @@ func (sph *studentParentHandler) DataChangeRequest(c *fiber.Ctx) error {
 
 	err = sph.uc.DataChangeRequest(c.Context(), datas)
 	if err != nil {
-		config.PrintLogInfo(nil, fiber.StatusInternalServerError, "DataChangeRequest")
+		config.PrintLogInfo(&guess, fiber.StatusInternalServerError, "DataChangeRequest")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"message": "Failed to send data change request",
@@ -537,7 +536,7 @@ func (sph *studentParentHandler) DataChangeRequest(c *fiber.Ctx) error {
 		})
 	}
 
-	config.PrintLogInfo(nil, fiber.StatusOK, "DataChangeRequest")
+	config.PrintLogInfo(&guess, fiber.StatusOK, "DataChangeRequest")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
 		"message": "Successfully sent data changes",

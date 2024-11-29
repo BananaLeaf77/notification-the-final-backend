@@ -195,8 +195,6 @@ func (m *senderRepository) initTextWithSubject(payload *domain.StudentAndParent,
 	bodyMale = fmt.Sprintf(`
 SINOAN Service 🔔
 
-					
-
 Kepada Yth. Bapak %s,
 
 Kami ingin memberitahukan bahwa anak Bapak, %s, tidak hadir di pelajaran "%s" pada tanggal %s pukul %s %s.
@@ -209,8 +207,6 @@ Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Stu
 
 	bodyFemale = fmt.Sprintf(`
 SINOAN Service 🔔
-
-					
 
 Kepada Yth. Ibu %s,
 
@@ -227,8 +223,6 @@ Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Stu
 	bodyMaleEmail = fmt.Sprintf(`
 SINOAN Service 🔔
 
-					
-
 Kepada Yth. Bapak %s,
 
 Kami ingin memberitahukan bahwa anak Bapak, %s, tidak hadir di pelajaran "%s" pada tanggal %s pukul %s %s.
@@ -241,8 +235,6 @@ Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Stu
 
 	bodyFemaleEmail = fmt.Sprintf(`
 SINOAN Service 🔔
-
-					
 
 Kepada Yth. Ibu %s,
 
