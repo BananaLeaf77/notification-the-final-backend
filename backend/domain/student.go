@@ -36,8 +36,8 @@ type TestScore struct {
 	Student     Student        `gorm:"references:StudentID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"student"`
 	SubjectID   int            `json:"subject_id"`
 	Subject     Subject        `gorm:"references:SubjectID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"subject"`
-	TeacherID   int            `json:"teacher_id"`
-	Teacher     User           `gorm:"references:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL" json:"teacher"`
+	UserID      int            `json:"user_ids"`
+	User        User           `gorm:"references:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL" json:"user"`
 	Score       *float64       `json:"score" valid:"required~Score is required"`
 	CreatedAt   time.Time      `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt   time.Time      `gorm:"autoUpdateTime" json:"updated_at"`

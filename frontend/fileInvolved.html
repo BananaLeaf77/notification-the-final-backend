@@ -322,41 +322,46 @@
         <div class="container">
           <div class="page-inner">
             <div class="page-header">
-              <h3 class="fw-bold mb-3">Input Data</h3>     
+              <h3 class="fw-bold mb-3"></h3>     
             </div>
             <div class="row">
               <div class="col-md-12">
                 <div class="card">
-                  <div class="card-header">
-                    <div class="card-title">Student and Parent Form</div>
-                  </div>
+                  <div class="card">
+                    <div class="card-header d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="card-title">Input Data</div>
+                            <button type="button" onclick="runDownloader()" class="btn btn-outline-secondary">
+                                <i class="fas fa-download me-1"></i> Download CSV Template
+                            </button>
+                        </div>
+                        <p class="card-category mb-0">
+                            File needed to be .csv format, else something could go wrong.
+                        </p>
+                    </div>
+                </div>
                   <div class="card-body">
                     <div class="container mt-5">
                       <div class="row justify-content-center">
                         <div class="col-md-6">
                           <div class="card shadow-sm">
-                            <div class="card-header bg-primary text-white text-center">
-                              <h5 class="mb-0">Upload File</h5>
-                            </div>
                             <div class="card-body">
-                              <form id="sp-form" onsubmit="runUpload(event)">
-                                <div class="form-group mb-4">
-                                  <label for="exampleFormControlFile1" class="form-label fw-bold">
-                                    Select a File to Upload
-                                  </label>
-                                  <input
-                                    type="file"
-                                    class="form-control"
-                                    id="exampleFormControlFile1"
-                                  />
+                              <form id="sp-form">
+                                <div class="row">
+                                    <div class="form-group mb-4">
+                                        <label for="exampleFormControlFile1" class="form-label fw-bold">
+                                            Select a File to Upload
+                                        </label>
+                                        <input
+                                            type="file"
+                                            class="form-control"
+                                            id="exampleFormControlFile1"
+                                        />
+                                    </div>
                                 </div>
-                                <div class="d-flex justify-content-between">
-                                  <button type="submit" class="btn btn-success">
-                                    <i class="fas fa-upload me-1"></i> Upload
-                                  </button>
-                                  <button type="button" onclick="runDownloader()" class="btn btn-outline-secondary">
-                                    <i class="fas fa-download me-1"></i> Download CSV Template
-                                  </button>
+                                <div class="card-action">
+                                    <button type="submit" class="btn btn-success">Submit</button>
+                                    <a href="addStudent.html" class="btn btn-danger">Cancel</a>
                                 </div>
                               </form>
                             </div>
@@ -461,74 +466,6 @@
 
     <!-- API HIT -->
     <script>
-
-      function runUpload(event) {
-        event.preventDefault(); // Prevent form submission from reloading the page
-    
-        const token = localStorage.getItem("authToken"); // Retrieve authorization token
-        const fileInput = document.getElementById("exampleFormControlFile1");
-        const messageElement = document.getElementById("msgs");
-    
-        // Ensure a file is selected
-        if (!fileInput.files.length) {
-            messageElement.textContent = "Please select a file to upload.";
-            messageElement.classList.add("text-danger");
-            $('#APIResponse').modal('show'); // Show the modal with error
-            return;
-        }
-    
-        // Prepare FormData
-        const formData = new FormData();
-        formData.append("file", fileInput.files[0]);
-    
-        fetch("http://127.0.0.1:8000/student-and-parent/import", {
-            method: "POST",
-            headers: {
-                "Authorization": `${token}` // Pass the token in the header
-            },
-            body: formData
-        })
-        .then(response => response.json()) // Convert response to JSON
-        .then(data => {
-            let errorMessage = ""; // Initialize error message
-    
-            if (data.success) {
-                // If upload is successful
-                messageElement.textContent = data.message || "File uploaded successfully!";
-                messageElement.classList.remove("text-danger");
-                messageElement.classList.add("text-success");
-            } else {
-                // If upload failed, handle the error
-                errorMessage += data.message ? `${data.message}:` : "Errors found:";
-                
-                if (Array.isArray(data.error) && data.error.length > 0) {
-                    errorMessage += "<ul>";
-                    data.error.forEach(err => {
-                        errorMessage += `<li>${err}</li>`; // Display each error in a list item
-                    });
-                    errorMessage += "</ul>";
-                } else {
-                    errorMessage += " No additional details provided."; // Fallback if no specific errors
-                }
-    
-                messageElement.innerHTML = errorMessage; // Set the message with HTML content
-                messageElement.classList.remove("text-success");
-                messageElement.classList.add("text-danger");
-            }
-    
-            $('#APIResponse').modal('show'); // Show the modal with message
-        })
-        .catch(error => {
-            // Handle fetch or unexpected errors
-            console.error("Error:", error);
-            messageElement.textContent = "Failed to upload the file. Please try again later.";
-            messageElement.classList.remove("text-success");
-            messageElement.classList.add("text-danger");
-            $('#APIResponse').modal('show'); // Show modal for error
-        });
-      }
-    
-    
       function runDownloader() {
         const token = localStorage.getItem("authToken"); // Ensure token is retrieved correctly
     
@@ -608,8 +545,76 @@
         return [classNum, classLetter];
       }
 
+      document.getElementById('sp-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        console.log(e.preventDefault())
+    
+        const token = localStorage.getItem("authToken");
+        const messageElement = document.getElementById("msgs");
+        const fileInput = document.getElementById("exampleFormControlFile1");
+    
+        // Ensure a file is selected
+        if (!fileInput.files.length) {
+            messageElement.textContent = "Please select a file to upload.";
+            messageElement.classList.add("text-danger");
+            $('#APIResponse').modal('show'); // Show the modal
+            return;
+        }
+    
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+    
+        try {
+            const response = await fetch('http://127.0.0.1:8000/student-and-parent/import', {
+                method: 'POST',
+                headers: {
+                    'Authorization': token,
+                },
+                body: formData,
+            });
+    
+            const responseData = await response.json();
+    
+            if (responseData.success) {
+                messageElement.textContent = responseData.message || "File uploaded successfully!";
+                messageElement.classList.remove("text-danger");
+                messageElement.classList.add("text-success");
+    
+                // Reset the form fields
+                document.getElementById('sp-form').reset();
+                fileInput.value = ""; // Clear the file input
+    
+            } else {
+                let errorMessage = responseData.message + ":";
+                if (responseData.error && responseData.error.length > 0) {
+                    errorMessage += "<ul>";
+                    responseData.error.forEach(err => {
+                        errorMessage += `<li>${err}</li>`;
+                    });
+                    errorMessage += "</ul>";
+                }
+                messageElement.innerHTML = errorMessage;
+                messageElement.classList.remove("text-success");
+                messageElement.classList.add("text-danger");
+            }
+    
+            // Show the modal with the response message
+            $('#APIResponse').modal('show');
+    
+        } catch (error) {
+            console.log("Error occurred:", error);
+            messageElement.textContent = "An error occurred while uploading the file.";
+            messageElement.classList.remove("text-success");
+            messageElement.classList.add("text-danger");
+    
+            // Show the modal
+            $('#APIResponse').modal('show');
+        }
+      });
+
       document.addEventListener("DOMContentLoaded", function () {
         const token = localStorage.getItem("authToken");
+        
     
         // Check if the token exists
         if (!token) {
@@ -621,7 +626,6 @@
             return;
         }
     
-        // If the token exists, run the functions without waiting for backend verification
         fetchProfileData(token);
         fetchDataChangeRequestCount(token);
       });

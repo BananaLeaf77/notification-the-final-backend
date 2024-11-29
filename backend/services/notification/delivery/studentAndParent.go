@@ -241,7 +241,7 @@ func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
 	badRequests, internalServerResponse, _ := sph.processCSVFile(c.Context(), filePath)
 
 	if badRequests != nil && len(*badRequests) > 0 {
-		config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "UploadAndImport")
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "UploadAndImport")
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"success": false,
 			"message": "Import Failure, bad input found.",
@@ -250,7 +250,7 @@ func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
 	}
 
 	if internalServerResponse != nil && len(*internalServerResponse) > 0 {
-		config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "UploadAndImport")
+		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "UploadAndImport")
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"success": false,
 			"message": "Import Failure, duplicates found.",

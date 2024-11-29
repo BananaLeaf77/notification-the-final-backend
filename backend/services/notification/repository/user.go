@@ -42,7 +42,7 @@ func (r *userRepository) InputTestScores(ctx context.Context, teacherID int, tes
 	var userDetail domain.User
 	err := r.db.WithContext(ctx).Where("user_id = ? AND deleted_at is NULL", teacherID).First(&userDetail).Error
 	if err != nil {
-		return fmt.Errorf("teacher with id %d not found", teacherID)
+		return fmt.Errorf("user with id %d not found", teacherID)
 	}
 
 	for _, score := range *testScores {
@@ -67,7 +67,7 @@ func (r *userRepository) InputTestScores(ctx context.Context, teacherID int, tes
 
 			if err != nil || count == 0 {
 				tx.Rollback()
-				return fmt.Errorf("teacher is not authorized to input scores for subject ID %d", score.SubjectID)
+				return fmt.Errorf("user is not authorized to input scores for subject ID %d", score.SubjectID)
 			}
 		}
 
@@ -84,7 +84,7 @@ func (r *userRepository) InputTestScores(ctx context.Context, teacherID int, tes
 		if existingScore.TestScoreID > 0 {
 			// Update the existing score
 			existingScore.Score = score.Score
-			existingScore.TeacherID = teacherID // Optionally update the teacher ID to the new one
+			existingScore.UserID = teacherID // Optionally update the teacher ID to the new one
 			if err := tx.Save(&existingScore).Error; err != nil {
 				tx.Rollback()
 				return err
@@ -94,7 +94,7 @@ func (r *userRepository) InputTestScores(ctx context.Context, teacherID int, tes
 			newScore := domain.TestScore{
 				StudentID: score.StudentID,
 				SubjectID: score.SubjectID,
-				TeacherID: teacherID,
+				UserID:    teacherID,
 				Score:     score.Score,
 			}
 			if err := tx.Create(&newScore).Error; err != nil {
