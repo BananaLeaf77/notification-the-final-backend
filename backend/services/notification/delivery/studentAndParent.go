@@ -50,6 +50,28 @@ func NewStudentParentHandlerDeploy(app *fiber.App, useCase domain.StudentParentU
 	route.Post("/req/data-change-request", handler.DataChangeRequest)
 	route.Get("/get-all-data-change-request", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.GetAllDataChangeRequest)
 	route.Post("/rms", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.SPMassDelete)
+	route.Get("/download-template", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DownloadTemplate)
+}
+
+func (sph *studentParentHandler) DownloadTemplate(c *fiber.Ctx) error {
+	userToken := c.Locals("user").(*domain.Claims)
+
+	filePath := "./template/up2.csv"
+
+	c.Set(fiber.HeaderContentDisposition, `attachment; filename="up2.csv"`)
+	c.Set(fiber.HeaderContentType, "text/csv")
+
+	err := c.SendFile(filePath, true)
+	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "DownloadTemplate")
+
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to download template: " + err.Error(),
+		})
+	}
+
+	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "DownloadTemplate")
+	return nil
 }
 
 func (sph *studentParentHandler) GetAllDataChangeRequest(c *fiber.Ctx) error {

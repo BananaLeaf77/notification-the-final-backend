@@ -1,0 +1,18 @@
+#sp-form label {
+    font-size: 1.1rem;
+    color: #495057;
+}
+
+.card-header {
+font-size: 1.25rem;
+letter-spacing: 0.5px;
+}
+
+#uploadBtn {
+transition: background-color 0.3s ease-in-out, transform 0.2s;
+}
+
+#uploadBtn:hover {
+background-color: #ceefd6;
+transform: scale(1.05);
+}

@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>SINOAN Profile</title>
+    <title>SINOAN Import/Download</title>
     <meta
       content="width=device-width, initial-scale=1.0, shrink-to-fit=no"
       name="viewport"
@@ -133,11 +133,9 @@
         <div class="sidebar-wrapper scrollbar scrollbar-inner">
           <div class="sidebar-content">
             <ul class="nav nav-secondary">
-              <li class="nav-item active">
+              <li class="nav-item">
                 <a
-                  data-bs-toggle="collapse"
                   href="index.html"
-                  class="collapsed"
                   aria-expanded="false"
                 >
                   <i class="fas fa-home"></i>
@@ -215,18 +213,6 @@
               <nav
                 class="navbar navbar-header-left navbar-expand-lg navbar-form nav-search p-0 d-none d-lg-flex"
               >
-                <div class="input-group">
-                  <div class="input-group-prepend">
-                    <button type="submit" class="btn btn-search pe-1">
-                      <i class="fa fa-search search-icon"></i>
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Search ..."
-                    class="form-control"
-                  />
-                </div>
               </nav>
 
               <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
@@ -336,44 +322,46 @@
         <div class="container">
           <div class="page-inner">
             <div class="page-header">
-              <h3 class="fw-bold mb-3">Profile</h3>     
+              <h3 class="fw-bold mb-3">Input Data</h3>     
             </div>
             <div class="row">
-              <div class="card-body">
-                <div class="card card-profile">
-                  <div
-                    class="card-header"
-                    style="background-image: url('assets/img/blogpost.jpg')"
-                  >
-                    <div class="profile-picture">
-                      <div class="avatar avatar-xl">
-                        <img
-                          src="assets/img/profile-img.jpg"
-                          alt="..."
-                          class="avatar-img rounded-circle"
-                        />
-                      </div>
-                    </div>
+              <div class="col-md-12">
+                <div class="card">
+                  <div class="card-header">
+                    <div class="card-title">Student and Parent Form</div>
                   </div>
                   <div class="card-body">
-                    <div class="user-profile text-center">
-                      <div class="name">Loading...</div>
-                      <div class="assigned-subject">Loading...</div>
-                    </div>
-                  </div>
-                  <div class="card-footer">
-                    <div class="row user-stats text-center">
-                      <div class="col">
-                        <div class="number">125</div>
-                        <div class="title">Post</div>
-                      </div>
-                      <div class="col">
-                        <div class="number">25K</div>
-                        <div class="title">Followers</div>
-                      </div>
-                      <div class="col">
-                        <div class="number">134</div>
-                        <div class="title">Following</div>
+                    <div class="container mt-5">
+                      <div class="row justify-content-center">
+                        <div class="col-md-6">
+                          <div class="card shadow-sm">
+                            <div class="card-header bg-primary text-white text-center">
+                              <h5 class="mb-0">Upload File</h5>
+                            </div>
+                            <div class="card-body">
+                              <form id="sp-form" onsubmit="runUpload(event)">
+                                <div class="form-group mb-4">
+                                  <label for="exampleFormControlFile1" class="form-label fw-bold">
+                                    Select a File to Upload
+                                  </label>
+                                  <input
+                                    type="file"
+                                    class="form-control"
+                                    id="exampleFormControlFile1"
+                                  />
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                  <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-upload me-1"></i> Upload
+                                  </button>
+                                  <button type="button" onclick="runDownloader()" class="btn btn-outline-secondary">
+                                    <i class="fas fa-download me-1"></i> Download CSV Template
+                                  </button>
+                                </div>
+                              </form>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -382,7 +370,6 @@
             </div>
           </div>
         </div>
-
         <footer class="footer">
           <div class="container-fluid d-flex justify-content-between">
             <nav class="pull-left">
@@ -470,14 +457,124 @@
         fillColor: "rgba(255, 165, 52, .14)",
       });
     </script>
+    
+
     <!-- API HIT -->
-    <script>      
+    <script>
+
+      function runUpload(event) {
+        event.preventDefault(); // Prevent form submission from reloading the page
+    
+        const token = localStorage.getItem("authToken"); // Retrieve authorization token
+        const fileInput = document.getElementById("exampleFormControlFile1");
+        const messageElement = document.getElementById("msgs");
+    
+        // Ensure a file is selected
+        if (!fileInput.files.length) {
+            messageElement.textContent = "Please select a file to upload.";
+            messageElement.classList.add("text-danger");
+            $('#APIResponse').modal('show'); // Show the modal with error
+            return;
+        }
+    
+        // Prepare FormData
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+    
+        fetch("http://127.0.0.1:8000/student-and-parent/import", {
+            method: "POST",
+            headers: {
+                "Authorization": `${token}` // Pass the token in the header
+            },
+            body: formData
+        })
+        .then(response => response.json()) // Convert response to JSON
+        .then(data => {
+            let errorMessage = ""; // Initialize error message
+    
+            if (data.success) {
+                // If upload is successful
+                messageElement.textContent = data.message || "File uploaded successfully!";
+                messageElement.classList.remove("text-danger");
+                messageElement.classList.add("text-success");
+            } else {
+                // If upload failed, handle the error
+                errorMessage += data.message ? `${data.message}:` : "Errors found:";
+                
+                if (Array.isArray(data.error) && data.error.length > 0) {
+                    errorMessage += "<ul>";
+                    data.error.forEach(err => {
+                        errorMessage += `<li>${err}</li>`; // Display each error in a list item
+                    });
+                    errorMessage += "</ul>";
+                } else {
+                    errorMessage += " No additional details provided."; // Fallback if no specific errors
+                }
+    
+                messageElement.innerHTML = errorMessage; // Set the message with HTML content
+                messageElement.classList.remove("text-success");
+                messageElement.classList.add("text-danger");
+            }
+    
+            $('#APIResponse').modal('show'); // Show the modal with message
+        })
+        .catch(error => {
+            // Handle fetch or unexpected errors
+            console.error("Error:", error);
+            messageElement.textContent = "Failed to upload the file. Please try again later.";
+            messageElement.classList.remove("text-success");
+            messageElement.classList.add("text-danger");
+            $('#APIResponse').modal('show'); // Show modal for error
+        });
+      }
+    
+    
+      function runDownloader() {
+        const token = localStorage.getItem("authToken"); // Ensure token is retrieved correctly
+    
+        fetch("http://127.0.0.1:8000/student-and-parent/download-template", {
+            method: "GET",
+            headers: {
+              "Authorization": `${token}` // Pass the authorization token
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+                return response.blob(); // Convert response to a Blob
+            })
+            .then(blob => {
+                // Create a temporary URL for the Blob
+                const url = window.URL.createObjectURL(blob);
+                
+                // Create a temporary <a> element to trigger the download
+                const a = document.createElement("a");
+                a.style.display = "none";
+                a.href = url;
+                a.download = "sinoan_template.csv"; // The name of the downloaded file
+                
+                // Append the <a> to the body, trigger the click, and remove it
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+    
+                // Revoke the URL after download to free up memory
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => console.error("Error during download:", error));
+      }
+    
+
+      document.getElementById("confirmAPIResponse").addEventListener("click", function() {
+        $('#APIResponse').modal('hide');
+      });
 
       function logout() {
         // Show the confirmation modal
         $('#logoutConfirmationModal').modal('show');
-      }      
-          
+      }
+      
       // Event listener for confirming logout
       document.getElementById("confirmLogoutButton").addEventListener("click", function () {
           // Remove the token from local storage
@@ -549,13 +646,6 @@
         .catch(error => console.error("Error:", error));
       }
 
-      // Helper function to parse class strings (e.g., "2A" to [2, "A"])
-      function parseClass(classStr) {
-          const match = classStr.match(/^(\d+)([A-Z])$/);
-          return match ? [parseInt(match[1], 10), match[2]] : [0, ''];
-      }
-
-      // Show an error message with Bootstrap alert (or custom UI)
       function showError(message) {
           alert(message); // Replace with a Bootstrap modal or custom UI if desired
       }
@@ -586,7 +676,6 @@
         })
         .catch(error => {
             console.error("Error fetching profile data:", error);
-            alert("An error occurred while fetching profile information.");
         });
       }
 

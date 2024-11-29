@@ -235,6 +235,11 @@
       </div>
     </div>
 
+    <!-- Loading Spinner -->
+    <div id="loadingIndicator" class="spinner-border text-primary" role="status" style="display: none;">
+      <span class="sr-only">Loading...</span>
+    </div>
+    
     <!-- API Response Modal -->
     <div class="modal fade" id="APIResponse" tabindex="-1" aria-labelledby="APIResponseLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
@@ -255,10 +260,6 @@
       </div>
     </div>
 
-    <!-- Loading Spinner -->
-    <div id="loadingIndicator" class="spinner-border text-primary" role="status" style="display: none;">
-      <span class="sr-only">Loading...</span>
-    </div>
 
     <div class="wrapper">
       <!-- Sidebar -->
@@ -373,18 +374,7 @@
               <nav
                 class="navbar navbar-header-left navbar-expand-lg navbar-form nav-search p-0 d-none d-lg-flex"
               >
-                <div class="input-group">
-                  <div class="input-group-prepend">
-                    <button type="submit" class="btn btn-search pe-1">
-                      <i class="fa fa-search search-icon"></i>
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Search ..."
-                    class="form-control"
-                  />
-                </div>
+               
               </nav>
 
               <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">

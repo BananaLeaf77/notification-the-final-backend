@@ -407,17 +407,11 @@
                             </div>
                           </div>
                         </div>
-                        <div class="col-md-6 col-lg-4">
-                          <div class="form-group">
-                            <label for="importCsv" class="mb-3"><b>Import Student and Parent Data</b></label>
-                            <button class="btn btn-success w-100" id="importCsvBtn" data-toggle="modal" data-target="#importCsvModal">
-                              <i class="fas fa-upload"></i> Import CSV
-                            </button>
-                          </div>
-                        </div>
                       <div class="card-action">
                         <button type="submit" class="btn btn-success">Submit</button>
                         <a href="index.html" class="btn btn-danger">Cancel</a>
+                        <a href="fileInvolved.html" class="btn btn-primary">                              <i class="fas fa-upload"></i> 
+Import Data</a>
                       </div>
                     </form>
                   </div>
@@ -574,7 +568,6 @@
           const messageElement = document.getElementById("msgs");
       
           if (responseData.success) {
-            console.log("bjir success")
             // Success message and form reset
             messageElement.textContent = responseData.message;
             messageElement.classList.remove("text-danger");
