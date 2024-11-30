@@ -10,25 +10,18 @@ type StudentAndParent struct {
 	Parent  Parent  `json:"parent"`
 }
 
-
 type DataChangeRequest struct {
 	RequestID           int       `gorm:"primaryKey;autoIncrement" json:"request_id"`
-	OldStudentName      *string   `json:"old_student_name,omitempty"`
-	OldStudentTelephone string    `json:"old_student_telephone,omitempty"`
-	OldParentName       *string   `json:"old_parent_name,omitempty"`
-	OldParentTelephone  *string   `json:"old_parent_telephone,omitempty"`
-	OldParentEmail      *string   `json:"old_parent_email,omitempty"`
-	OldParentGender     *string   `json:"old_parent_gender"`
+	OldParentTelephone  string    `json:"old_parent_telephone,omitempty"`
 	NewStudentName      *string   `json:"new_student_name,omitempty"`
 	NewStudentTelephone *string   `json:"new_student_telephone,omitempty"`
 	NewParentName       *string   `json:"new_parent_name,omitempty"`
 	NewParentTelephone  *string   `json:"new_parent_telephone,omitempty"`
 	NewParentEmail      *string   `json:"new_parent_email,omitempty"`
+	NewParentGender     *string   `gorm:"type:gender_enum" json:"new_parent_gender" valid:"required~Gender is required,in(male|female)~Invalid gender"`
 	CreatedAt           time.Time `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt           time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 	IsReviewed          bool      `gorm:"default:false" json:"is_reviewed"`
 }
-
 
 type StudentParentRepo interface {
 	GetStudentDetailsByID(ctx context.Context, id int) (*StudentAndParent, error)
@@ -39,8 +32,10 @@ type StudentParentRepo interface {
 	// GetClassIDByName(className string) (*int, error)
 
 	ImportCSV(ctx context.Context, payload *[]StudentAndParent) (*[]string, error)
+	GetAllDataChangeRequestByID(ctx context.Context, dcrID int) (*DataChangeRequest, error)
 	GetAllDataChangeRequest(ctx context.Context) (*[]DataChangeRequest, error)
 	DataChangeRequest(ctx context.Context, datas DataChangeRequest) error
+	ReviewDCR(ctx context.Context, dcrID int) error
 }
 
 type StudentParentUseCase interface {
@@ -53,5 +48,7 @@ type StudentParentUseCase interface {
 
 	ImportCSV(ctx context.Context, payload *[]StudentAndParent) (*[]string, error)
 	GetAllDataChangeRequest(ctx context.Context) (*[]DataChangeRequest, error)
+	GetAllDataChangeRequestByID(ctx context.Context, dcrID int) (*DataChangeRequest, error)
 	DataChangeRequest(ctx context.Context, datas DataChangeRequest) error
+	ReviewDCR(ctx context.Context, dcrID int) error
 }

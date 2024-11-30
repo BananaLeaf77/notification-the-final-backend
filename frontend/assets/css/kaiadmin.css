@@ -832,11 +832,11 @@ body {
     font-size: 18px;
     opacity: .9; }
 
-.sidebar[data-background-color="dark"] .nav .nav-item > a:hover, .sidebar[data-background-color="dark"] .nav .nav-item > a:focus, .sidebar[data-background-color="dark"] .nav .nav-item.submenu, .sidebar[data-background-color="dark2"] .nav .nav-item > a:hover, .sidebar[data-background-color="dark2"] .nav .nav-item > a:focus, .sidebar[data-background-color="dark2"] .nav .nav-item.submenu {
+.sidebar[data-background-color="light"] .nav .nav-item > a:hover, .sidebar[data-background-color="light"] .nav .nav-item > a:focus, .sidebar[data-background-color="light"] .nav .nav-item.submenu, .sidebar[data-background-color="dark2"] .nav .nav-item > a:hover, .sidebar[data-background-color="dark2"] .nav .nav-item > a:focus, .sidebar[data-background-color="dark2"] .nav .nav-item.submenu {
   background: rgba(0, 0, 0, 0.16); }
-.sidebar[data-background-color="dark"] .nav .nav-item.submenu > a, .sidebar[data-background-color="dark2"] .nav .nav-item.submenu > a {
+.sidebar[data-background-color="light"] .nav .nav-item.submenu > a, .sidebar[data-background-color="dark2"] .nav .nav-item.submenu > a {
   background: transparent !important; }
-.sidebar[data-background-color="dark"] .nav .nav-item.active > a, .sidebar[data-background-color="dark2"] .nav .nav-item.active > a {
+.sidebar[data-background-color="light"] .nav .nav-item.active > a, .sidebar[data-background-color="dark2"] .nav .nav-item.active > a {
   background: rgba(0, 0, 0, 0.16); }
 
 .logo-header {
@@ -987,13 +987,13 @@ body {
     color: #ffffff !important; }
   .sidebar.sidebar-style-2 .nav.nav-danger > .nav-item.active > a[data-toggle=collapse][aria-expanded=true] i {
     color: #ffffff !important; }
-.sidebar.sidebar-style-2[data-background-color="dark"] .nav .nav-item a:hover p, .sidebar.sidebar-style-2[data-background-color="dark"] .nav .nav-item a:hover i, .sidebar.sidebar-style-2[data-background-color="dark"] .nav .nav-item a:focus p, .sidebar.sidebar-style-2[data-background-color="dark"] .nav .nav-item a:focus i, .sidebar.sidebar-style-2[data-background-color="dark"] .nav .nav-item a[data-toggle=collapse][aria-expanded=true] p, .sidebar.sidebar-style-2[data-background-color="dark"] .nav .nav-item a[data-toggle=collapse][aria-expanded=true] i, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item a:hover p, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item a:hover i, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item a:focus p, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item a:focus i, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item a[data-toggle=collapse][aria-expanded=true] p, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item a[data-toggle=collapse][aria-expanded=true] i {
+.sidebar.sidebar-style-2[data-background-color="light"] .nav .nav-item a:hover p, .sidebar.sidebar-style-2[data-background-color="light"] .nav .nav-item a:hover i, .sidebar.sidebar-style-2[data-background-color="light"] .nav .nav-item a:focus p, .sidebar.sidebar-style-2[data-background-color="light"] .nav .nav-item a:focus i, .sidebar.sidebar-style-2[data-background-color="light"] .nav .nav-item a[data-toggle=collapse][aria-expanded=true] p, .sidebar.sidebar-style-2[data-background-color="light"] .nav .nav-item a[data-toggle=collapse][aria-expanded=true] i, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item a:hover p, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item a:hover i, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item a:focus p, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item a:focus i, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item a[data-toggle=collapse][aria-expanded=true] p, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item a[data-toggle=collapse][aria-expanded=true] i {
   color: #b9babf !important; }
-.sidebar.sidebar-style-2[data-background-color="dark"] .nav .nav-item.active a, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item.active a {
+.sidebar.sidebar-style-2[data-background-color="light"] .nav .nav-item.active a, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item.active a {
   color: #ffffff; }
-  .sidebar.sidebar-style-2[data-background-color="dark"] .nav .nav-item.active a p, .sidebar.sidebar-style-2[data-background-color="dark"] .nav .nav-item.active a i, .sidebar.sidebar-style-2[data-background-color="dark"] .nav .nav-item.active a .caret, .sidebar.sidebar-style-2[data-background-color="dark"] .nav .nav-item.active a span, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item.active a p, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item.active a i, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item.active a .caret, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item.active a span {
+  .sidebar.sidebar-style-2[data-background-color="light"] .nav .nav-item.active a p, .sidebar.sidebar-style-2[data-background-color="light"] .nav .nav-item.active a i, .sidebar.sidebar-style-2[data-background-color="light"] .nav .nav-item.active a .caret, .sidebar.sidebar-style-2[data-background-color="light"] .nav .nav-item.active a span, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item.active a p, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item.active a i, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item.active a .caret, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item.active a span {
     color: #ffffff; }
-  .sidebar.sidebar-style-2[data-background-color="dark"] .nav .nav-item.active a[data-toggle=collapse][aria-expanded=true] p, .sidebar.sidebar-style-2[data-background-color="dark"] .nav .nav-item.active a[data-toggle=collapse][aria-expanded=true] i, .sidebar.sidebar-style-2[data-background-color="dark"] .nav .nav-item.active a[data-toggle=collapse][aria-expanded=true] .caret, .sidebar.sidebar-style-2[data-background-color="dark"] .nav .nav-item.active a[data-toggle=collapse][aria-expanded=true] span, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item.active a[data-toggle=collapse][aria-expanded=true] p, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item.active a[data-toggle=collapse][aria-expanded=true] i, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item.active a[data-toggle=collapse][aria-expanded=true] .caret, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item.active a[data-toggle=collapse][aria-expanded=true] span {
+  .sidebar.sidebar-style-2[data-background-color="light"] .nav .nav-item.active a[data-toggle=collapse][aria-expanded=true] p, .sidebar.sidebar-style-2[data-background-color="light"] .nav .nav-item.active a[data-toggle=collapse][aria-expanded=true] i, .sidebar.sidebar-style-2[data-background-color="light"] .nav .nav-item.active a[data-toggle=collapse][aria-expanded=true] .caret, .sidebar.sidebar-style-2[data-background-color="light"] .nav .nav-item.active a[data-toggle=collapse][aria-expanded=true] span, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item.active a[data-toggle=collapse][aria-expanded=true] p, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item.active a[data-toggle=collapse][aria-expanded=true] i, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item.active a[data-toggle=collapse][aria-expanded=true] .caret, .sidebar.sidebar-style-2[data-background-color="dark2"] .nav .nav-item.active a[data-toggle=collapse][aria-expanded=true] span {
     color: #ffffff; }
 
 /*    sidebar minimized   */
@@ -1162,56 +1162,56 @@ body {
 .main-header .navbar-header[data-background-color]:not([data-background-color="white"]) .navbar-nav .topbar-user .profile-pic, .main-header[data-background-color="custom"] .navbar-header .navbar-nav .topbar-user .profile-pic {
   color: #fff; }
 
-body[data-background-color="dark"] .border-left,
-body[data-background-color="dark"] .border-right,
-body[data-background-color="dark"] .border-bottom,
-body[data-background-color="dark"] .border-top, body[data-background-color="dark"] .border-left,
-body[data-background-color="dark"] .border-right,
-body[data-background-color="dark"] .border-bottom,
-body[data-background-color="dark"] .border-top {
+body[data-background-color="light"] .border-left,
+body[data-background-color="light"] .border-right,
+body[data-background-color="light"] .border-bottom,
+body[data-background-color="light"] .border-top, body[data-background-color="light"] .border-left,
+body[data-background-color="light"] .border-right,
+body[data-background-color="light"] .border-bottom,
+body[data-background-color="light"] .border-top {
   border-color: rgba(181, 181, 181, 0.1) !important; }
 
-.main-header .navbar-header[data-background-color][data-background-color="dark"] .dropdown-menu, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .dropdown-menu {
+.main-header .navbar-header[data-background-color][data-background-color="light"] .dropdown-menu, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .dropdown-menu {
   background: #202940 !important; }
-  .main-header .navbar-header[data-background-color][data-background-color="dark"] .dropdown-menu:after, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .dropdown-menu:after {
+  .main-header .navbar-header[data-background-color][data-background-color="light"] .dropdown-menu:after, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .dropdown-menu:after {
     border-bottom-color: #202940; }
-  .main-header .navbar-header[data-background-color][data-background-color="dark"] .dropdown-menu .dropdown-title, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .dropdown-menu .dropdown-title {
+  .main-header .navbar-header[data-background-color][data-background-color="light"] .dropdown-menu .dropdown-title, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .dropdown-menu .dropdown-title {
     border-color: rgba(181, 181, 181, 0.1) !important;
     color: #fff; }
-  .main-header .navbar-header[data-background-color][data-background-color="dark"] .dropdown-menu .dropdown-divider, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .dropdown-menu .dropdown-divider {
+  .main-header .navbar-header[data-background-color][data-background-color="light"] .dropdown-menu .dropdown-divider, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .dropdown-menu .dropdown-divider {
     border-color: rgba(181, 181, 181, 0.1) !important; }
-  .main-header .navbar-header[data-background-color][data-background-color="dark"] .dropdown-menu .dropdown-item, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .dropdown-menu .dropdown-item {
+  .main-header .navbar-header[data-background-color][data-background-color="light"] .dropdown-menu .dropdown-item, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .dropdown-menu .dropdown-item {
     color: #fff; }
-    .main-header .navbar-header[data-background-color][data-background-color="dark"] .dropdown-menu .dropdown-item:hover, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .dropdown-menu .dropdown-item:hover {
+    .main-header .navbar-header[data-background-color][data-background-color="light"] .dropdown-menu .dropdown-item:hover, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .dropdown-menu .dropdown-item:hover {
       background: rgba(0, 0, 0, 0.1) !important; }
-.main-header .navbar-header[data-background-color][data-background-color="dark"] .messages-notif-box .notif-center a,
-.main-header .navbar-header[data-background-color][data-background-color="dark"] .notif-box .see-all,
-.main-header .navbar-header[data-background-color][data-background-color="dark"] .messages-notif-box .see-all, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .messages-notif-box .notif-center a,
+.main-header .navbar-header[data-background-color][data-background-color="light"] .messages-notif-box .notif-center a,
+.main-header .navbar-header[data-background-color][data-background-color="light"] .notif-box .see-all,
+.main-header .navbar-header[data-background-color][data-background-color="light"] .messages-notif-box .see-all, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .messages-notif-box .notif-center a,
 .main-header .navbar-header[data-background-color][data-background-color="dark2"] .notif-box .see-all,
 .main-header .navbar-header[data-background-color][data-background-color="dark2"] .messages-notif-box .see-all {
   border-color: rgba(181, 181, 181, 0.1) !important;
   color: #fff; }
-.main-header .navbar-header[data-background-color][data-background-color="dark"] .notif-box .notif-center a,
-.main-header .navbar-header[data-background-color][data-background-color="dark"] .messages-notif-box .notif-center a, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .notif-box .notif-center a,
+.main-header .navbar-header[data-background-color][data-background-color="light"] .notif-box .notif-center a,
+.main-header .navbar-header[data-background-color][data-background-color="light"] .messages-notif-box .notif-center a, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .notif-box .notif-center a,
 .main-header .navbar-header[data-background-color][data-background-color="dark2"] .messages-notif-box .notif-center a {
   color: #ffffff; }
-  .main-header .navbar-header[data-background-color][data-background-color="dark"] .notif-box .notif-center a:hover,
-  .main-header .navbar-header[data-background-color][data-background-color="dark"] .messages-notif-box .notif-center a:hover, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .notif-box .notif-center a:hover,
+  .main-header .navbar-header[data-background-color][data-background-color="light"] .notif-box .notif-center a:hover,
+  .main-header .navbar-header[data-background-color][data-background-color="light"] .messages-notif-box .notif-center a:hover, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .notif-box .notif-center a:hover,
   .main-header .navbar-header[data-background-color][data-background-color="dark2"] .messages-notif-box .notif-center a:hover {
     background: rgba(0, 0, 0, 0.1) !important; }
-.main-header .navbar-header[data-background-color][data-background-color="dark"] .notif-box .notif-center a .notif-content .time,
-.main-header .navbar-header[data-background-color][data-background-color="dark"] .messages-notif-box .notif-center a .notif-content .time, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .notif-box .notif-center a .notif-content .time,
+.main-header .navbar-header[data-background-color][data-background-color="light"] .notif-box .notif-center a .notif-content .time,
+.main-header .navbar-header[data-background-color][data-background-color="light"] .messages-notif-box .notif-center a .notif-content .time, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .notif-box .notif-center a .notif-content .time,
 .main-header .navbar-header[data-background-color][data-background-color="dark2"] .messages-notif-box .notif-center a .notif-content .time {
   color: #b9babf !important; }
-.main-header .navbar-header[data-background-color][data-background-color="dark"] .scrollbar-outer > .scroll-element, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .scrollbar-outer > .scroll-element {
+.main-header .navbar-header[data-background-color][data-background-color="light"] .scrollbar-outer > .scroll-element, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .scrollbar-outer > .scroll-element {
   background: transparent; }
-.main-header .navbar-header[data-background-color][data-background-color="dark"] .topbar-user .profile-pic, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .topbar-user .profile-pic {
+.main-header .navbar-header[data-background-color][data-background-color="light"] .topbar-user .profile-pic, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .topbar-user .profile-pic {
   color: #fff !important; }
-.main-header .navbar-header[data-background-color][data-background-color="dark"] .nav-search .input-group, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .nav-search .input-group {
+.main-header .navbar-header[data-background-color][data-background-color="light"] .nav-search .input-group, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .nav-search .input-group {
   background: rgba(185, 185, 185, 0.18) !important; }
-.main-header .navbar-header[data-background-color][data-background-color="dark"] .navbar-nav .nav-item .nav-link:hover, .main-header .navbar-header[data-background-color][data-background-color="dark"] .navbar-nav .nav-item .nav-link:focus, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .navbar-nav .nav-item .nav-link:hover, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .navbar-nav .nav-item .nav-link:focus {
+.main-header .navbar-header[data-background-color][data-background-color="light"] .navbar-nav .nav-item .nav-link:hover, .main-header .navbar-header[data-background-color][data-background-color="light"] .navbar-nav .nav-item .nav-link:focus, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .navbar-nav .nav-item .nav-link:hover, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .navbar-nav .nav-item .nav-link:focus {
   background: rgba(185, 185, 185, 0.18) !important; }
-.main-header .navbar-header[data-background-color][data-background-color="dark"] .navbar-nav .nav-item.active .nav-link, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .navbar-nav .nav-item.active .nav-link {
+.main-header .navbar-header[data-background-color][data-background-color="light"] .navbar-nav .nav-item.active .nav-link, .main-header .navbar-header[data-background-color][data-background-color="dark2"] .navbar-nav .nav-item.active .nav-link {
   background: rgba(185, 185, 185, 0.18) !important; }
 
 .btn-toggle {
@@ -1247,13 +1247,13 @@ body[data-background-color="dark"] .border-top {
 .logo-header[data-background-color="grey"] {
   background: #fafafe !important; }
 
-.logo-header[data-background-color="dark"] {
+.logo-header[data-background-color="light"] {
   background: #1a2035 !important; }
 
 .logo-header[data-background-color="dark2"] {
   background: #151a2b !important; }
 
-.navbar-header[data-background-color="dark"] {
+.navbar-header[data-background-color="light"] {
   background: #1a2035 !important; }
 
 .navbar-header[data-background-color="dark2"] {
@@ -1334,44 +1334,44 @@ body[data-background-color="dark"] .border-top {
 .sidebar[data-background-color="grey"] {
   background: #fafafe; }
 
-.sidebar[data-background-color="dark"] {
+.sidebar[data-background-color="light"] {
   background: #1a2035 !important; }
-  .sidebar[data-background-color="dark"] .user {
+  .sidebar[data-background-color="light"] .user {
     border-color: rgba(181, 181, 181, 0.1) !important; }
-    .sidebar[data-background-color="dark"] .user .info a > span {
+    .sidebar[data-background-color="light"] .user .info a > span {
       color: #b9babf; }
-      .sidebar[data-background-color="dark"] .user .info a > span .user-level {
+      .sidebar[data-background-color="light"] .user .info a > span .user-level {
         color: #8d9498; }
-  .sidebar[data-background-color="dark"] .nav > .nav-item.active > a p,
-  .sidebar[data-background-color="dark"] .nav > .nav-item.active a:hover p,
-  .sidebar[data-background-color="dark"] .nav > .nav-item.active a:focus p {
+  .sidebar[data-background-color="light"] .nav > .nav-item.active > a p,
+  .sidebar[data-background-color="light"] .nav > .nav-item.active a:hover p,
+  .sidebar[data-background-color="light"] .nav > .nav-item.active a:focus p {
     color: #fff !important; }
-  .sidebar[data-background-color="dark"] .nav > .nav-item a {
+  .sidebar[data-background-color="light"] .nav > .nav-item a {
     color: #b9babf !important; }
-    .sidebar[data-background-color="dark"] .nav > .nav-item a:hover p, .sidebar[data-background-color="dark"] .nav > .nav-item a:focus p, .sidebar[data-background-color="dark"] .nav > .nav-item a[data-toggle="collapse"][aria-expanded="true"] p {
+    .sidebar[data-background-color="light"] .nav > .nav-item a:hover p, .sidebar[data-background-color="light"] .nav > .nav-item a:focus p, .sidebar[data-background-color="light"] .nav > .nav-item a[data-toggle="collapse"][aria-expanded="true"] p {
       color: #b9babf !important; }
-  .sidebar[data-background-color="dark"].sidebar-style-2 .nav .nav-item.active > a,
-  .sidebar[data-background-color="dark"].sidebar-style-2 .nav .nav-item.active > a:hover,
-  .sidebar[data-background-color="dark"].sidebar-style-2 .nav .nav-item.active > a:focus,
-  .sidebar[data-background-color="dark"].sidebar-style-2 .nav .nav-item.active > a[data-toggle="collapse"][aria-expanded="true"] {
+  .sidebar[data-background-color="light"].sidebar-style-2 .nav .nav-item.active > a,
+  .sidebar[data-background-color="light"].sidebar-style-2 .nav .nav-item.active > a:hover,
+  .sidebar[data-background-color="light"].sidebar-style-2 .nav .nav-item.active > a:focus,
+  .sidebar[data-background-color="light"].sidebar-style-2 .nav .nav-item.active > a[data-toggle="collapse"][aria-expanded="true"] {
     background: #fff !important;
     color: #1a2035 !important; }
-    .sidebar[data-background-color="dark"].sidebar-style-2 .nav .nav-item.active > a p,
-    .sidebar[data-background-color="dark"].sidebar-style-2 .nav .nav-item.active > a i,
-    .sidebar[data-background-color="dark"].sidebar-style-2 .nav .nav-item.active > a .caret,
-    .sidebar[data-background-color="dark"].sidebar-style-2 .nav .nav-item.active > a:hover p,
-    .sidebar[data-background-color="dark"].sidebar-style-2 .nav .nav-item.active > a:hover i,
-    .sidebar[data-background-color="dark"].sidebar-style-2 .nav .nav-item.active > a:hover .caret,
-    .sidebar[data-background-color="dark"].sidebar-style-2 .nav .nav-item.active > a:focus p,
-    .sidebar[data-background-color="dark"].sidebar-style-2 .nav .nav-item.active > a:focus i,
-    .sidebar[data-background-color="dark"].sidebar-style-2 .nav .nav-item.active > a:focus .caret,
-    .sidebar[data-background-color="dark"].sidebar-style-2 .nav .nav-item.active > a[data-toggle="collapse"][aria-expanded="true"] p,
-    .sidebar[data-background-color="dark"].sidebar-style-2 .nav .nav-item.active > a[data-toggle="collapse"][aria-expanded="true"] i,
-    .sidebar[data-background-color="dark"].sidebar-style-2 .nav .nav-item.active > a[data-toggle="collapse"][aria-expanded="true"] .caret {
+    .sidebar[data-background-color="light"].sidebar-style-2 .nav .nav-item.active > a p,
+    .sidebar[data-background-color="light"].sidebar-style-2 .nav .nav-item.active > a i,
+    .sidebar[data-background-color="light"].sidebar-style-2 .nav .nav-item.active > a .caret,
+    .sidebar[data-background-color="light"].sidebar-style-2 .nav .nav-item.active > a:hover p,
+    .sidebar[data-background-color="light"].sidebar-style-2 .nav .nav-item.active > a:hover i,
+    .sidebar[data-background-color="light"].sidebar-style-2 .nav .nav-item.active > a:hover .caret,
+    .sidebar[data-background-color="light"].sidebar-style-2 .nav .nav-item.active > a:focus p,
+    .sidebar[data-background-color="light"].sidebar-style-2 .nav .nav-item.active > a:focus i,
+    .sidebar[data-background-color="light"].sidebar-style-2 .nav .nav-item.active > a:focus .caret,
+    .sidebar[data-background-color="light"].sidebar-style-2 .nav .nav-item.active > a[data-toggle="collapse"][aria-expanded="true"] p,
+    .sidebar[data-background-color="light"].sidebar-style-2 .nav .nav-item.active > a[data-toggle="collapse"][aria-expanded="true"] i,
+    .sidebar[data-background-color="light"].sidebar-style-2 .nav .nav-item.active > a[data-toggle="collapse"][aria-expanded="true"] .caret {
       color: #1a2035 !important; }
-  .sidebar[data-background-color="dark"] .scrollbar-inner > .scroll-element .scroll-bar {
+  .sidebar[data-background-color="light"] .scrollbar-inner > .scroll-element .scroll-bar {
     background-color: #f7f7f7; }
-  .sidebar[data-background-color="dark"] .scrollbar-inner > .scroll-element.scroll-draggable .scroll-bar, .sidebar[data-background-color="dark"] .scrollbar-inner > .scroll-element:hover .scroll-bar {
+  .sidebar[data-background-color="light"] .scrollbar-inner > .scroll-element.scroll-draggable .scroll-bar, .sidebar[data-background-color="light"] .scrollbar-inner > .scroll-element:hover .scroll-bar {
     background-color: #dcdbdb; }
 
 .sidebar[data-background-color="dark2"] {
@@ -6095,19 +6095,19 @@ body {
     background: #ffffff; }
   body[data-background-color="bg3"] {
     background: #f1f1f1; }
-  body[data-background-color="dark"] {
+  body[data-background-color="light"] {
     background: #1a2035; }
   body[data-background-color="dark2"] {
     background: #151a2b; }
-  body[data-background-color="dark"] .text-muted, body[data-background-color="dark2"] .text-muted {
+  body[data-background-color="light"] .text-muted, body[data-background-color="dark2"] .text-muted {
     color: #b9babf !important; }
-  body[data-background-color="dark"] .main-header, body[data-background-color="dark2"] .main-header {
+  body[data-background-color="light"] .main-header, body[data-background-color="dark2"] .main-header {
     box-shadow: 0px 0px 5px #121727; }
-  body[data-background-color="dark"] .main-panel, body[data-background-color="dark2"] .main-panel {
+  body[data-background-color="light"] .main-panel, body[data-background-color="dark2"] .main-panel {
     color: rgba(169, 175, 187, 0.82); }
-    body[data-background-color="dark"] .main-panel p,
-    body[data-background-color="dark"] .main-panel input[type="file"],
-    body[data-background-color="dark"] .main-panel .card:not(.card-primary,
+    body[data-background-color="light"] .main-panel p,
+    body[data-background-color="light"] .main-panel input[type="file"],
+    body[data-background-color="light"] .main-panel .card:not(.card-primary,
     .card-secondary,
     .card-info,
     .card-success,
@@ -6125,20 +6125,20 @@ body {
     )
     .card-body {
       color: rgba(169, 175, 187, 0.82); }
-    body[data-background-color="dark"] .main-panel .h1,
-    body[data-background-color="dark"] .main-panel .h2,
-    body[data-background-color="dark"] .main-panel .h3,
-    body[data-background-color="dark"] .main-panel .h4,
-    body[data-background-color="dark"] .main-panel .h5,
-    body[data-background-color="dark"] .main-panel .h6,
-    body[data-background-color="dark"] .main-panel h1,
-    body[data-background-color="dark"] .main-panel h2,
-    body[data-background-color="dark"] .main-panel h3,
-    body[data-background-color="dark"] .main-panel h4,
-    body[data-background-color="dark"] .main-panel h5,
-    body[data-background-color="dark"] .main-panel h6,
-    body[data-background-color="dark"] .main-panel label,
-    body[data-background-color="dark"] .main-panel .badge-count, body[data-background-color="dark2"] .main-panel .h1,
+    body[data-background-color="light"] .main-panel .h1,
+    body[data-background-color="light"] .main-panel .h2,
+    body[data-background-color="light"] .main-panel .h3,
+    body[data-background-color="light"] .main-panel .h4,
+    body[data-background-color="light"] .main-panel .h5,
+    body[data-background-color="light"] .main-panel .h6,
+    body[data-background-color="light"] .main-panel h1,
+    body[data-background-color="light"] .main-panel h2,
+    body[data-background-color="light"] .main-panel h3,
+    body[data-background-color="light"] .main-panel h4,
+    body[data-background-color="light"] .main-panel h5,
+    body[data-background-color="light"] .main-panel h6,
+    body[data-background-color="light"] .main-panel label,
+    body[data-background-color="light"] .main-panel .badge-count, body[data-background-color="dark2"] .main-panel .h1,
     body[data-background-color="dark2"] .main-panel .h2,
     body[data-background-color="dark2"] .main-panel .h3,
     body[data-background-color="dark2"] .main-panel .h4,
@@ -6153,7 +6153,7 @@ body {
     body[data-background-color="dark2"] .main-panel label,
     body[data-background-color="dark2"] .main-panel .badge-count {
       color: #fff !important; }
-  body[data-background-color="dark"] .card:not(.card-primary,
+  body[data-background-color="light"] .card:not(.card-primary,
   .card-secondary,
   .card-info,
   .card-success,
@@ -6161,9 +6161,9 @@ body {
   .card-danger,
   .card-list-messages
   ),
-  body[data-background-color="dark"] .row-card-no-pd,
-  body[data-background-color="dark"] .list-group-item.unread,
-  body[data-background-color="dark"] .timeline > li > .timeline-panel, body[data-background-color="dark2"] .card:not(.card-primary,
+  body[data-background-color="light"] .row-card-no-pd,
+  body[data-background-color="light"] .list-group-item.unread,
+  body[data-background-color="light"] .timeline > li > .timeline-panel, body[data-background-color="dark2"] .card:not(.card-primary,
   .card-secondary,
   .card-info,
   .card-success,
@@ -6175,30 +6175,30 @@ body {
   body[data-background-color="dark2"] .list-group-item.unread,
   body[data-background-color="dark2"] .timeline > li > .timeline-panel {
     background: #202940 !important; }
-  body[data-background-color="dark"] .card-list-messages, body[data-background-color="dark2"] .card-list-messages {
+  body[data-background-color="light"] .card-list-messages, body[data-background-color="dark2"] .card-list-messages {
     background: transparent !important; }
-  body[data-background-color="dark"] .card-pricing2, body[data-background-color="dark2"] .card-pricing2 {
+  body[data-background-color="light"] .card-pricing2, body[data-background-color="dark2"] .card-pricing2 {
     background: #202940 !important; }
-  body[data-background-color="dark"] .row-card-no-pd [class*="col"] .card:before, body[data-background-color="dark2"] .row-card-no-pd [class*="col"] .card:before {
+  body[data-background-color="light"] .row-card-no-pd [class*="col"] .card:before, body[data-background-color="dark2"] .row-card-no-pd [class*="col"] .card:before {
     background: rgba(181, 181, 181, 0.1) !important; }
-  body[data-background-color="dark"] .card .card-header,
-  body[data-background-color="dark"] .card .card-footer,
-  body[data-background-color="dark"] .card .card-action,
-  body[data-background-color="dark"] .card-profile .user-stats [class^="col"],
-  body[data-background-color="dark"] .timeline > li > .timeline-panel,
-  body[data-background-color="dark"] .table td,
-  body[data-background-color="dark"] .table th,
-  body[data-background-color="dark"] .breadcrumbs,
-  body[data-background-color="dark"] .separator-dashed,
-  body[data-background-color="dark"] .separator-solid,
-  body[data-background-color="dark"] .separator-dot,
-  body[data-background-color="dark"] .list-group .list-group-item,
-  body[data-background-color="dark"] .conversations .messages-form,
-  body[data-background-color="dark"] .mail-wrapper .mail-content .inbox-body .email-list .email-list-item,
-  body[data-background-color="dark"] .page-with-aside .page-aside,
-  body[data-background-color="dark"] .mail-wrapper .mail-content .email-head,
-  body[data-background-color="dark"] .mail-wrapper .mail-content .email-sender,
-  body[data-background-color="dark"] .main-panel .page-divider, body[data-background-color="dark2"] .card .card-header,
+  body[data-background-color="light"] .card .card-header,
+  body[data-background-color="light"] .card .card-footer,
+  body[data-background-color="light"] .card .card-action,
+  body[data-background-color="light"] .card-profile .user-stats [class^="col"],
+  body[data-background-color="light"] .timeline > li > .timeline-panel,
+  body[data-background-color="light"] .table td,
+  body[data-background-color="light"] .table th,
+  body[data-background-color="light"] .breadcrumbs,
+  body[data-background-color="light"] .separator-dashed,
+  body[data-background-color="light"] .separator-solid,
+  body[data-background-color="light"] .separator-dot,
+  body[data-background-color="light"] .list-group .list-group-item,
+  body[data-background-color="light"] .conversations .messages-form,
+  body[data-background-color="light"] .mail-wrapper .mail-content .inbox-body .email-list .email-list-item,
+  body[data-background-color="light"] .page-with-aside .page-aside,
+  body[data-background-color="light"] .mail-wrapper .mail-content .email-head,
+  body[data-background-color="light"] .mail-wrapper .mail-content .email-sender,
+  body[data-background-color="light"] .main-panel .page-divider, body[data-background-color="dark2"] .card .card-header,
   body[data-background-color="dark2"] .card .card-footer,
   body[data-background-color="dark2"] .card .card-action,
   body[data-background-color="dark2"] .card-profile .user-stats [class^="col"],
@@ -6219,24 +6219,24 @@ body {
     border-color: rgba(181, 181, 181, 0.1) !important;
     color: rgba(169, 175, 187, 0.82);
     background: transparent; }
-  body[data-background-color="dark"] .card-primary p,
-  body[data-background-color="dark"] .card-primary i,
-  body[data-background-color="dark"] .card-primary input[type="file"],
-  body[data-background-color="dark"] .card-secondary p,
-  body[data-background-color="dark"] .card-secondary i,
-  body[data-background-color="dark"] .card-secondary input[type="file"],
-  body[data-background-color="dark"] .card-info p,
-  body[data-background-color="dark"] .card-info i,
-  body[data-background-color="dark"] .card-info input[type="file"],
-  body[data-background-color="dark"] .card-success p,
-  body[data-background-color="dark"] .card-success i,
-  body[data-background-color="dark"] .card-success input[type="file"],
-  body[data-background-color="dark"] .card-warning p,
-  body[data-background-color="dark"] .card-warning i,
-  body[data-background-color="dark"] .card-warning input[type="file"],
-  body[data-background-color="dark"] .card-danger p,
-  body[data-background-color="dark"] .card-danger i,
-  body[data-background-color="dark"] .card-danger input[type="file"], body[data-background-color="dark2"] .card-primary p,
+  body[data-background-color="light"] .card-primary p,
+  body[data-background-color="light"] .card-primary i,
+  body[data-background-color="light"] .card-primary input[type="file"],
+  body[data-background-color="light"] .card-secondary p,
+  body[data-background-color="light"] .card-secondary i,
+  body[data-background-color="light"] .card-secondary input[type="file"],
+  body[data-background-color="light"] .card-info p,
+  body[data-background-color="light"] .card-info i,
+  body[data-background-color="light"] .card-info input[type="file"],
+  body[data-background-color="light"] .card-success p,
+  body[data-background-color="light"] .card-success i,
+  body[data-background-color="light"] .card-success input[type="file"],
+  body[data-background-color="light"] .card-warning p,
+  body[data-background-color="light"] .card-warning i,
+  body[data-background-color="light"] .card-warning input[type="file"],
+  body[data-background-color="light"] .card-danger p,
+  body[data-background-color="light"] .card-danger i,
+  body[data-background-color="light"] .card-danger input[type="file"], body[data-background-color="dark2"] .card-primary p,
   body[data-background-color="dark2"] .card-primary i,
   body[data-background-color="dark2"] .card-primary input[type="file"],
   body[data-background-color="dark2"] .card-secondary p,
@@ -6255,78 +6255,78 @@ body {
   body[data-background-color="dark2"] .card-danger i,
   body[data-background-color="dark2"] .card-danger input[type="file"] {
     color: #fff; }
-  body[data-background-color="dark"] .card-primary .h1,
-  body[data-background-color="dark"] .card-primary .h2,
-  body[data-background-color="dark"] .card-primary .h3,
-  body[data-background-color="dark"] .card-primary .h4,
-  body[data-background-color="dark"] .card-primary .h5,
-  body[data-background-color="dark"] .card-primary .h6,
-  body[data-background-color="dark"] .card-primary h1,
-  body[data-background-color="dark"] .card-primary h2,
-  body[data-background-color="dark"] .card-primary h3,
-  body[data-background-color="dark"] .card-primary h4,
-  body[data-background-color="dark"] .card-primary h5,
-  body[data-background-color="dark"] .card-primary h6,
-  body[data-background-color="dark"] .card-secondary .h1,
-  body[data-background-color="dark"] .card-secondary .h2,
-  body[data-background-color="dark"] .card-secondary .h3,
-  body[data-background-color="dark"] .card-secondary .h4,
-  body[data-background-color="dark"] .card-secondary .h5,
-  body[data-background-color="dark"] .card-secondary .h6,
-  body[data-background-color="dark"] .card-secondary h1,
-  body[data-background-color="dark"] .card-secondary h2,
-  body[data-background-color="dark"] .card-secondary h3,
-  body[data-background-color="dark"] .card-secondary h4,
-  body[data-background-color="dark"] .card-secondary h5,
-  body[data-background-color="dark"] .card-secondary h6,
-  body[data-background-color="dark"] .card-info .h1,
-  body[data-background-color="dark"] .card-info .h2,
-  body[data-background-color="dark"] .card-info .h3,
-  body[data-background-color="dark"] .card-info .h4,
-  body[data-background-color="dark"] .card-info .h5,
-  body[data-background-color="dark"] .card-info .h6,
-  body[data-background-color="dark"] .card-info h1,
-  body[data-background-color="dark"] .card-info h2,
-  body[data-background-color="dark"] .card-info h3,
-  body[data-background-color="dark"] .card-info h4,
-  body[data-background-color="dark"] .card-info h5,
-  body[data-background-color="dark"] .card-info h6,
-  body[data-background-color="dark"] .card-success .h1,
-  body[data-background-color="dark"] .card-success .h2,
-  body[data-background-color="dark"] .card-success .h3,
-  body[data-background-color="dark"] .card-success .h4,
-  body[data-background-color="dark"] .card-success .h5,
-  body[data-background-color="dark"] .card-success .h6,
-  body[data-background-color="dark"] .card-success h1,
-  body[data-background-color="dark"] .card-success h2,
-  body[data-background-color="dark"] .card-success h3,
-  body[data-background-color="dark"] .card-success h4,
-  body[data-background-color="dark"] .card-success h5,
-  body[data-background-color="dark"] .card-success h6,
-  body[data-background-color="dark"] .card-warning .h1,
-  body[data-background-color="dark"] .card-warning .h2,
-  body[data-background-color="dark"] .card-warning .h3,
-  body[data-background-color="dark"] .card-warning .h4,
-  body[data-background-color="dark"] .card-warning .h5,
-  body[data-background-color="dark"] .card-warning .h6,
-  body[data-background-color="dark"] .card-warning h1,
-  body[data-background-color="dark"] .card-warning h2,
-  body[data-background-color="dark"] .card-warning h3,
-  body[data-background-color="dark"] .card-warning h4,
-  body[data-background-color="dark"] .card-warning h5,
-  body[data-background-color="dark"] .card-warning h6,
-  body[data-background-color="dark"] .card-danger .h1,
-  body[data-background-color="dark"] .card-danger .h2,
-  body[data-background-color="dark"] .card-danger .h3,
-  body[data-background-color="dark"] .card-danger .h4,
-  body[data-background-color="dark"] .card-danger .h5,
-  body[data-background-color="dark"] .card-danger .h6,
-  body[data-background-color="dark"] .card-danger h1,
-  body[data-background-color="dark"] .card-danger h2,
-  body[data-background-color="dark"] .card-danger h3,
-  body[data-background-color="dark"] .card-danger h4,
-  body[data-background-color="dark"] .card-danger h5,
-  body[data-background-color="dark"] .card-danger h6, body[data-background-color="dark2"] .card-primary .h1,
+  body[data-background-color="light"] .card-primary .h1,
+  body[data-background-color="light"] .card-primary .h2,
+  body[data-background-color="light"] .card-primary .h3,
+  body[data-background-color="light"] .card-primary .h4,
+  body[data-background-color="light"] .card-primary .h5,
+  body[data-background-color="light"] .card-primary .h6,
+  body[data-background-color="light"] .card-primary h1,
+  body[data-background-color="light"] .card-primary h2,
+  body[data-background-color="light"] .card-primary h3,
+  body[data-background-color="light"] .card-primary h4,
+  body[data-background-color="light"] .card-primary h5,
+  body[data-background-color="light"] .card-primary h6,
+  body[data-background-color="light"] .card-secondary .h1,
+  body[data-background-color="light"] .card-secondary .h2,
+  body[data-background-color="light"] .card-secondary .h3,
+  body[data-background-color="light"] .card-secondary .h4,
+  body[data-background-color="light"] .card-secondary .h5,
+  body[data-background-color="light"] .card-secondary .h6,
+  body[data-background-color="light"] .card-secondary h1,
+  body[data-background-color="light"] .card-secondary h2,
+  body[data-background-color="light"] .card-secondary h3,
+  body[data-background-color="light"] .card-secondary h4,
+  body[data-background-color="light"] .card-secondary h5,
+  body[data-background-color="light"] .card-secondary h6,
+  body[data-background-color="light"] .card-info .h1,
+  body[data-background-color="light"] .card-info .h2,
+  body[data-background-color="light"] .card-info .h3,
+  body[data-background-color="light"] .card-info .h4,
+  body[data-background-color="light"] .card-info .h5,
+  body[data-background-color="light"] .card-info .h6,
+  body[data-background-color="light"] .card-info h1,
+  body[data-background-color="light"] .card-info h2,
+  body[data-background-color="light"] .card-info h3,
+  body[data-background-color="light"] .card-info h4,
+  body[data-background-color="light"] .card-info h5,
+  body[data-background-color="light"] .card-info h6,
+  body[data-background-color="light"] .card-success .h1,
+  body[data-background-color="light"] .card-success .h2,
+  body[data-background-color="light"] .card-success .h3,
+  body[data-background-color="light"] .card-success .h4,
+  body[data-background-color="light"] .card-success .h5,
+  body[data-background-color="light"] .card-success .h6,
+  body[data-background-color="light"] .card-success h1,
+  body[data-background-color="light"] .card-success h2,
+  body[data-background-color="light"] .card-success h3,
+  body[data-background-color="light"] .card-success h4,
+  body[data-background-color="light"] .card-success h5,
+  body[data-background-color="light"] .card-success h6,
+  body[data-background-color="light"] .card-warning .h1,
+  body[data-background-color="light"] .card-warning .h2,
+  body[data-background-color="light"] .card-warning .h3,
+  body[data-background-color="light"] .card-warning .h4,
+  body[data-background-color="light"] .card-warning .h5,
+  body[data-background-color="light"] .card-warning .h6,
+  body[data-background-color="light"] .card-warning h1,
+  body[data-background-color="light"] .card-warning h2,
+  body[data-background-color="light"] .card-warning h3,
+  body[data-background-color="light"] .card-warning h4,
+  body[data-background-color="light"] .card-warning h5,
+  body[data-background-color="light"] .card-warning h6,
+  body[data-background-color="light"] .card-danger .h1,
+  body[data-background-color="light"] .card-danger .h2,
+  body[data-background-color="light"] .card-danger .h3,
+  body[data-background-color="light"] .card-danger .h4,
+  body[data-background-color="light"] .card-danger .h5,
+  body[data-background-color="light"] .card-danger .h6,
+  body[data-background-color="light"] .card-danger h1,
+  body[data-background-color="light"] .card-danger h2,
+  body[data-background-color="light"] .card-danger h3,
+  body[data-background-color="light"] .card-danger h4,
+  body[data-background-color="light"] .card-danger h5,
+  body[data-background-color="light"] .card-danger h6, body[data-background-color="dark2"] .card-primary .h1,
   body[data-background-color="dark2"] .card-primary .h2,
   body[data-background-color="dark2"] .card-primary .h3,
   body[data-background-color="dark2"] .card-primary .h4,
@@ -6399,49 +6399,49 @@ body {
   body[data-background-color="dark2"] .card-danger h5,
   body[data-background-color="dark2"] .card-danger h6 {
     color: #fff !important; }
-  body[data-background-color="dark"] .nav-line, body[data-background-color="dark2"] .nav-line {
+  body[data-background-color="light"] .nav-line, body[data-background-color="dark2"] .nav-line {
     border-color: rgba(181, 181, 181, 0.1) !important; }
-  body[data-background-color="dark"] .accordion .card, body[data-background-color="dark2"] .accordion .card {
+  body[data-background-color="light"] .accordion .card, body[data-background-color="dark2"] .accordion .card {
     background: #1a2035 !important; }
-    body[data-background-color="dark"] .accordion .card .card-body, body[data-background-color="dark2"] .accordion .card .card-body {
+    body[data-background-color="light"] .accordion .card .card-body, body[data-background-color="dark2"] .accordion .card .card-body {
       border-color: rgba(181, 181, 181, 0.1) !important; }
-  body[data-background-color="dark"] .timeline > li > .timeline-panel:before, body[data-background-color="dark2"] .timeline > li > .timeline-panel:before {
+  body[data-background-color="light"] .timeline > li > .timeline-panel:before, body[data-background-color="dark2"] .timeline > li > .timeline-panel:before {
     border-left-color: rgba(181, 181, 181, 0.1);
     border-right-color: rgba(181, 181, 181, 0.1); }
-  body[data-background-color="dark"] .timeline > li > .timeline-panel:after, body[data-background-color="dark2"] .timeline > li > .timeline-panel:after {
+  body[data-background-color="light"] .timeline > li > .timeline-panel:after, body[data-background-color="dark2"] .timeline > li > .timeline-panel:after {
     border-left-color: #202940;
     border-right-color: #202940; }
-  body[data-background-color="dark"] .activity-feed .feed-item, body[data-background-color="dark2"] .activity-feed .feed-item {
+  body[data-background-color="light"] .activity-feed .feed-item, body[data-background-color="dark2"] .activity-feed .feed-item {
     border-color: rgba(181, 181, 181, 0.1) !important; }
-  body[data-background-color="dark"] .timeline:before,
-  body[data-background-color="dark"] .progress,
-  body[data-background-color="dark"] .progress-stacked, body[data-background-color="dark2"] .timeline:before,
+  body[data-background-color="light"] .timeline:before,
+  body[data-background-color="light"] .progress,
+  body[data-background-color="light"] .progress-stacked, body[data-background-color="dark2"] .timeline:before,
   body[data-background-color="dark2"] .progress,
   body[data-background-color="dark2"] .progress-stacked {
     background-color: rgba(181, 181, 181, 0.1) !important; }
-  body[data-background-color="dark"] .page-title,
-  body[data-background-color="dark"] .breadcrumbs li a, body[data-background-color="dark2"] .page-title,
+  body[data-background-color="light"] .page-title,
+  body[data-background-color="light"] .breadcrumbs li a, body[data-background-color="dark2"] .page-title,
   body[data-background-color="dark2"] .breadcrumbs li a {
     color: rgba(169, 175, 187, 0.82); }
-  body[data-background-color="dark"] .page-category, body[data-background-color="dark2"] .page-category {
+  body[data-background-color="light"] .page-category, body[data-background-color="dark2"] .page-category {
     color: #828282; }
-  body[data-background-color="dark"] .card-title,
-  body[data-background-color="dark"] .card-title a,
-  body[data-background-color="dark"] .card-title a:hover,
-  body[data-background-color="dark"] .card-title a:focus, body[data-background-color="dark2"] .card-title,
+  body[data-background-color="light"] .card-title,
+  body[data-background-color="light"] .card-title a,
+  body[data-background-color="light"] .card-title a:hover,
+  body[data-background-color="light"] .card-title a:focus, body[data-background-color="dark2"] .card-title,
   body[data-background-color="dark2"] .card-title a,
   body[data-background-color="dark2"] .card-title a:hover,
   body[data-background-color="dark2"] .card-title a:focus {
     color: #fff; }
-  body[data-background-color="dark"] .card-category, body[data-background-color="dark2"] .card-category {
+  body[data-background-color="light"] .card-category, body[data-background-color="dark2"] .card-category {
     color: #8b92a9; }
-  body[data-background-color="dark"] .card-black,
-  body[data-background-color="dark"] .card-primary,
-  body[data-background-color="dark"] .card-secondary,
-  body[data-background-color="dark"] .card-info,
-  body[data-background-color="dark"] .card-success,
-  body[data-background-color="dark"] .card-warning,
-  body[data-background-color="dark"] .card-danger, body[data-background-color="dark2"] .card-black,
+  body[data-background-color="light"] .card-black,
+  body[data-background-color="light"] .card-primary,
+  body[data-background-color="light"] .card-secondary,
+  body[data-background-color="light"] .card-info,
+  body[data-background-color="light"] .card-success,
+  body[data-background-color="light"] .card-warning,
+  body[data-background-color="light"] .card-danger, body[data-background-color="dark2"] .card-black,
   body[data-background-color="dark2"] .card-primary,
   body[data-background-color="dark2"] .card-secondary,
   body[data-background-color="dark2"] .card-info,
@@ -6449,20 +6449,20 @@ body {
   body[data-background-color="dark2"] .card-warning,
   body[data-background-color="dark2"] .card-danger {
     color: #fff !important; }
-    body[data-background-color="dark"] .card-black .card-title,
-    body[data-background-color="dark"] .card-black .card-category,
-    body[data-background-color="dark"] .card-primary .card-title,
-    body[data-background-color="dark"] .card-primary .card-category,
-    body[data-background-color="dark"] .card-secondary .card-title,
-    body[data-background-color="dark"] .card-secondary .card-category,
-    body[data-background-color="dark"] .card-info .card-title,
-    body[data-background-color="dark"] .card-info .card-category,
-    body[data-background-color="dark"] .card-success .card-title,
-    body[data-background-color="dark"] .card-success .card-category,
-    body[data-background-color="dark"] .card-warning .card-title,
-    body[data-background-color="dark"] .card-warning .card-category,
-    body[data-background-color="dark"] .card-danger .card-title,
-    body[data-background-color="dark"] .card-danger .card-category, body[data-background-color="dark2"] .card-black .card-title,
+    body[data-background-color="light"] .card-black .card-title,
+    body[data-background-color="light"] .card-black .card-category,
+    body[data-background-color="light"] .card-primary .card-title,
+    body[data-background-color="light"] .card-primary .card-category,
+    body[data-background-color="light"] .card-secondary .card-title,
+    body[data-background-color="light"] .card-secondary .card-category,
+    body[data-background-color="light"] .card-info .card-title,
+    body[data-background-color="light"] .card-info .card-category,
+    body[data-background-color="light"] .card-success .card-title,
+    body[data-background-color="light"] .card-success .card-category,
+    body[data-background-color="light"] .card-warning .card-title,
+    body[data-background-color="light"] .card-warning .card-category,
+    body[data-background-color="light"] .card-danger .card-title,
+    body[data-background-color="light"] .card-danger .card-category, body[data-background-color="dark2"] .card-black .card-title,
     body[data-background-color="dark2"] .card-black .card-category,
     body[data-background-color="dark2"] .card-primary .card-title,
     body[data-background-color="dark2"] .card-primary .card-category,
@@ -6477,69 +6477,69 @@ body {
     body[data-background-color="dark2"] .card-danger .card-title,
     body[data-background-color="dark2"] .card-danger .card-category {
       color: #fff !important; }
-  body[data-background-color="dark"] .nav-pills .nav-link:not(.active), body[data-background-color="dark2"] .nav-pills .nav-link:not(.active) {
+  body[data-background-color="light"] .nav-pills .nav-link:not(.active), body[data-background-color="dark2"] .nav-pills .nav-link:not(.active) {
     background: #1a2035;
     color: #a0aaac;
     border-color: #20263d; }
-  body[data-background-color="dark"] .card-pricing .specification-list li, body[data-background-color="dark2"] .card-pricing .specification-list li {
+  body[data-background-color="light"] .card-pricing .specification-list li, body[data-background-color="dark2"] .card-pricing .specification-list li {
     border-color: #373d4c; }
-  body[data-background-color="dark"] .input-group-text, body[data-background-color="dark2"] .input-group-text {
+  body[data-background-color="light"] .input-group-text, body[data-background-color="dark2"] .input-group-text {
     border-color: #2f374b !important;
     background-color: #1f283e;
     color: #fff; }
-  body[data-background-color="dark"] .input-solid, body[data-background-color="dark2"] .input-solid {
+  body[data-background-color="light"] .input-solid, body[data-background-color="dark2"] .input-solid {
     background: #363b4c !important;
     border-color: #363b4c !important; }
-  body[data-background-color="dark"] .table, body[data-background-color="dark2"] .table {
+  body[data-background-color="light"] .table, body[data-background-color="dark2"] .table {
     background-color: transparent; }
-  body[data-background-color="dark"] .list-group-messages .list-group-item-title a,
-  body[data-background-color="dark"] .list-group .list-group-item-text, body[data-background-color="dark2"] .list-group-messages .list-group-item-title a,
+  body[data-background-color="light"] .list-group-messages .list-group-item-title a,
+  body[data-background-color="light"] .list-group .list-group-item-text, body[data-background-color="dark2"] .list-group-messages .list-group-item-title a,
   body[data-background-color="dark2"] .list-group .list-group-item-text {
     color: inherit; }
-  body[data-background-color="dark"] .footer, body[data-background-color="dark2"] .footer {
+  body[data-background-color="light"] .footer, body[data-background-color="dark2"] .footer {
     border-top: 1px solid #293247;
     background: #1f283e; }
-  body[data-background-color="dark"] .form-control,
-  body[data-background-color="dark"] .form-select,
-  body[data-background-color="dark"] .form-group-default,
-  body[data-background-color="dark"] .select2-container--bootstrap .select2-selection, body[data-background-color="dark2"] .form-control,
+  body[data-background-color="light"] .form-control,
+  body[data-background-color="light"] .form-select,
+  body[data-background-color="light"] .form-group-default,
+  body[data-background-color="light"] .select2-container--bootstrap .select2-selection, body[data-background-color="dark2"] .form-control,
   body[data-background-color="dark2"] .form-select,
   body[data-background-color="dark2"] .form-group-default,
   body[data-background-color="dark2"] .select2-container--bootstrap .select2-selection {
     background-color: #1a2035;
     color: #fff;
     border-color: #2f374b; }
-  body[data-background-color="dark"] select option, body[data-background-color="dark2"] select option {
+  body[data-background-color="light"] select option, body[data-background-color="dark2"] select option {
     background: #1a2035; }
-  body[data-background-color="dark"] .bootstrap-tagsinput, body[data-background-color="dark2"] .bootstrap-tagsinput {
+  body[data-background-color="light"] .bootstrap-tagsinput, body[data-background-color="dark2"] .bootstrap-tagsinput {
     background: transparent; }
-  body[data-background-color="dark"] .selectgroup-button, body[data-background-color="dark2"] .selectgroup-button {
+  body[data-background-color="light"] .selectgroup-button, body[data-background-color="dark2"] .selectgroup-button {
     border: 1px solid #2f374b; }
-  body[data-background-color="dark"] .conversations .message-header, body[data-background-color="dark2"] .conversations .message-header {
+  body[data-background-color="light"] .conversations .message-header, body[data-background-color="dark2"] .conversations .message-header {
     background: #1a2035;
     box-shadow: 0 1px 1px 0 rgba(0, 0, 0, 0.07); }
-  body[data-background-color="dark"] .conversations .conversations-content, body[data-background-color="dark2"] .conversations .conversations-content {
+  body[data-background-color="light"] .conversations .conversations-content, body[data-background-color="dark2"] .conversations .conversations-content {
     color: #575962;
     border-color: #2e364a; }
-  body[data-background-color="dark"] .mail-wrapper .mail-content .inbox-body .email-list .email-list-item.unread, body[data-background-color="dark2"] .mail-wrapper .mail-content .inbox-body .email-list .email-list-item.unread {
+  body[data-background-color="light"] .mail-wrapper .mail-content .inbox-body .email-list .email-list-item.unread, body[data-background-color="dark2"] .mail-wrapper .mail-content .inbox-body .email-list .email-list-item.unread {
     background: #151a2b !important; }
-  body[data-background-color="dark"] .mail-wrapper .mail-content .inbox-body .email-list .email-list-item:hover, body[data-background-color="dark2"] .mail-wrapper .mail-content .inbox-body .email-list .email-list-item:hover {
+  body[data-background-color="light"] .mail-wrapper .mail-content .inbox-body .email-list .email-list-item:hover, body[data-background-color="dark2"] .mail-wrapper .mail-content .inbox-body .email-list .email-list-item:hover {
     background: #171e2f !important; }
-  body[data-background-color="dark"] .page-with-aside .page-aside .aside-nav .nav > li:hover,
-  body[data-background-color="dark"] .page-with-aside .page-aside .aside-nav .nav > li:focus,
-  body[data-background-color="dark"] .page-with-aside .page-aside .aside-nav .nav > li.active, body[data-background-color="dark2"] .page-with-aside .page-aside .aside-nav .nav > li:hover,
+  body[data-background-color="light"] .page-with-aside .page-aside .aside-nav .nav > li:hover,
+  body[data-background-color="light"] .page-with-aside .page-aside .aside-nav .nav > li:focus,
+  body[data-background-color="light"] .page-with-aside .page-aside .aside-nav .nav > li.active, body[data-background-color="dark2"] .page-with-aside .page-aside .aside-nav .nav > li:hover,
   body[data-background-color="dark2"] .page-with-aside .page-aside .aside-nav .nav > li:focus,
   body[data-background-color="dark2"] .page-with-aside .page-aside .aside-nav .nav > li.active {
     background: rgba(0, 0, 0, 0.03); }
-  body[data-background-color="dark"] .page-with-aside .page-aside .aside-nav .nav > li.active > a, body[data-background-color="dark2"] .page-with-aside .page-aside .aside-nav .nav > li.active > a {
+  body[data-background-color="light"] .page-with-aside .page-aside .aside-nav .nav > li.active > a, body[data-background-color="dark2"] .page-with-aside .page-aside .aside-nav .nav > li.active > a {
     color: #b9babf !important; }
-  body[data-background-color="dark"] .board, body[data-background-color="dark2"] .board {
+  body[data-background-color="light"] .board, body[data-background-color="dark2"] .board {
     color: #575962; }
-  body[data-background-color="dark"] .dropzone:hover, body[data-background-color="dark2"] .dropzone:hover {
+  body[data-background-color="light"] .dropzone:hover, body[data-background-color="dark2"] .dropzone:hover {
     background: #1a2035 !important; }
-  body[data-background-color="dark"] .dropzone .dz-preview.dz-image-preview, body[data-background-color="dark2"] .dropzone .dz-preview.dz-image-preview {
+  body[data-background-color="light"] .dropzone .dz-preview.dz-image-preview, body[data-background-color="dark2"] .dropzone .dz-preview.dz-image-preview {
     background: transparent !important; }
-  body[data-background-color="dark"] .jvm-zoom-btn, body[data-background-color="dark2"] .jvm-zoom-btn {
+  body[data-background-color="light"] .jvm-zoom-btn, body[data-background-color="dark2"] .jvm-zoom-btn {
     background: #fff;
     color: #292929; }
 

@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>SINOAN Detail User</title>
+    <title>SINOAN DCR Detail</title>
     <meta
       content="width=device-width, initial-scale=1.0, shrink-to-fit=no"
       name="viewport"
@@ -136,7 +136,6 @@
               <li class="nav-item">
                 <a
                   href="index.html"
-                  class="collapsed"
                   aria-expanded="false"
                 >
                   <i class="fas fa-home"></i>
@@ -214,7 +213,6 @@
               <nav
                 class="navbar navbar-header-left navbar-expand-lg navbar-form nav-search p-0 d-none d-lg-flex"
               >
-               
               </nav>
 
               <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
@@ -231,17 +229,6 @@
                   >
                     <i class="fa fa-search"></i>
                   </a>
-                  <ul class="dropdown-menu dropdown-search animated fadeIn">
-                    <form class="navbar-left navbar-form nav-search">
-                      <div class="input-group">
-                        <input
-                          type="text"
-                          placeholder="Search ..."
-                          class="form-control"
-                        />
-                      </div>
-                    </form>
-                  </ul>
                 </li>            
                 <li class="nav-item topbar-icon dropdown hidden-caret">
                   <a
@@ -323,53 +310,45 @@
         <div class="container">
           <div class="page-inner">
             <div class="page-header">
-              <h3 class="fw-bold mb-3">Detail User Profile</h3>     
+              <h3 class="fw-bold mb-3">Data Change Request Detail</h3>
             </div>
             <div class="row">
-              <div class="card-body">
-                <div class="card card-profile">
-                  <div
-                    class="card-header"
-                    style="background-image: url('assets/img/blogpost.jpg')"
-                  >
-                    <div class="profile-picture">
-                      <div class="avatar avatar-xl">
-                        <img
-                          src="assets/img/profile-img.jpg"
-                          alt="..."
-                          class="avatar-img rounded-circle"
-                        />
-                      </div>
-                    </div>
-                  </div>
+              <div class="col-md-12">
+                <div class="card">
                   <div class="card-body">
-                    <div class="user-profile text-center">
-                      <div class="profile-name" id="detailUsername">Loading...</div>
-                    </div>
-                  </div>
-                  <div class="card-footer">
-                    <div class="row user-stats text-center">
-                      <div class="col">
-                        <div class="assigned-subject-count"><span id="detailRole"> Role Loading...</span></div>
-                        <div class="assigned-subject-count"><span id="detailUserSubjectCount"> Subject Count Loading...</span></div>
-                        <table class="table table-striped">
-                          <thead>
-                              <tr>
-                              </tr>
-                          </thead>
-                          <tbody id="subjectTable">
-                              <!-- Dynamic rows will be populated here -->
-                          </tbody>
-                        </table>
+                    <div class="row">
+                      <!-- Old Data Section -->
+                      <div class="col-md-5">
+                        <h5>Old Data</h5>
+                        <div id="oldData">
+                          <!-- Old Data Will Be Populated Here -->
+                        </div>
+                      </div>
+        
+                      <!-- Arrow Section -->
+                      <div class="col-md-2 d-flex justify-content-center align-items-center">
+                        <i class="fas fa-arrow-right fa-3x"></i>
+                      </div>
+        
+                      <!-- New Data Section -->
+                      <div class="col-md-5">
+                        <h5>New Data</h5>
+                        <div id="newData">
+                          <!-- New Data Will Be Populated Here -->
+                        </div>
                       </div>
                     </div>
+                  </div>
+                  <div class="card-action text-right">
+                    <button class="btn btn-success" id="approveBtn">Approve Changes</button>
+                    <a href="dataChangeRequest.html" class="btn btn-danger">Cancel</a>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-
+        
         <footer class="footer">
           <div class="container-fluid d-flex justify-content-between">
             <nav class="pull-left">
@@ -457,14 +436,224 @@
         fillColor: "rgba(255, 165, 52, .14)",
       });
     </script>
+    
+
     <!-- API HIT -->
-    <script>      
+    <script>
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const token = localStorage.getItem("authToken");
+    
+        // Check if the token exists
+        if (!token) {
+            // Show unauthorized modal and redirect to login
+            $('#unauthorizedModal').modal('show');
+            setTimeout(() => {
+                window.location.href = "login.html";
+            }, 3000); // Redirect after 3 seconds
+            return;
+        }
+    
+        // Fetch the profile and data change request count
+        fetchProfileData(token);
+        fetchDataChangeRequestCount(token);
+    
+        const params = new URLSearchParams(window.location.search);
+        const requestId = params.get("request_id");
+        const telephone = params.get("telephone");
+    
+        const oldDataContainer = document.getElementById("oldData");
+        const newDataContainer = document.getElementById("newData");
+        const approveBtn = document.getElementById("approveBtn");
+    
+        // Fetch Old Data
+        fetch(`http://127.0.0.1:8000/student/telephone/${telephone}`, {
+            headers: {
+                "Authorization": `${token}`,
+            },
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const student = data.data.student;
+                    const parent = student.parent;
+    
+                    oldDataContainer.innerHTML = `
+                        <p><b>Student Name:</b> ${student.name}</p>
+                        <p><b>Grade:</b> ${student.grade}${student.grade_label}</p>
+                        <p><b>Gender:</b> ${student.gender}</p>
+                        <p><b>Telephone:</b> ${student.telephone}</p>
+                        <hr>
+                        <p><b>Parent Name:</b> ${parent.name}</p>
+                        <p><b>Parent Gender:</b> ${parent.gender}</p>
+                        <p><b>Parent Telephone:</b> ${parent.telephone}</p>
+                        <p><b>Parent Email:</b> ${parent.email || "-"}</p>
+                    `;
+                } else {
+                    oldDataContainer.innerHTML = `<p class="text-danger">Failed to load old data.</p>`;
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching old data:", error);
+                oldDataContainer.innerHTML = `<p class="text-danger">Error loading old data.</p>`;
+            });
+    
+        // Fetch Data Change Request
+        fetch(`http://127.0.0.1:8000/student-and-parent/get-all-data-change-request/${requestId}`, {
+            headers: {
+                "Authorization": `${token}`,
+            },
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const request = data.data;
+    
+                    newDataContainer.innerHTML = `
+                        <p><b>Student Name:</b> ${request.new_student_name || "-"}</p>
+                        <p><b>Telephone:</b> ${request.new_student_telephone || "-"}</p>
+                        <hr>
+                        <p><b>Parent Name:</b> ${request.new_parent_name || "-"}</p>
+                        <p><b>Parent Gender:</b> ${request.new_parent_gender || "-"}</p>
+                        <p><b>Parent Telephone:</b> ${request.new_parent_telephone || "-"}</p>
+                        <p><b>Parent Email:</b> ${request.new_parent_email || "-"}</p>
+                    `;
+                } else {
+                    newDataContainer.innerHTML = `<p class="text-danger">Failed to load new data.</p>`;
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching new data:", error);
+                newDataContainer.innerHTML = `<p class="text-danger">Error loading new data.</p>`;
+            });
+    
+        // Handle Approve Button
+        approveBtn.addEventListener("click", () => {
+            // Mark as Reviewed
+            fetch(`http://127.0.0.1:8000/student-and-parent/review/dcr/${requestId}`, {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `${token}`,
+                },
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("Request marked as reviewed!");
+                        window.location.href = "dataChangeRequest.html";
+                    } else {
+                        alert("Failed to mark request as reviewed: " + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error marking request as reviewed:", error);
+                    alert("An error occurred while marking request as reviewed.");
+                });
+        });
+      });
+    
+    
+
+      function validateInput(input) {
+        // Remove any invalid characters (non-numeric and spaces)
+        input.value = input.value.replace(/[^0-9]/g, '');
+    
+        // Ensure the value stays within the range of 1-99
+        if (input.value !== '') {
+            const num = parseInt(input.value, 10);
+            if (num < 1) input.value = '1';
+            if (num > 99) input.value = '99';
+        }
+      }
+
+      document.getElementById("confirmAPIResponse").addEventListener("click", function() {
+        $('#APIResponse').modal('hide');
+      });
 
       function logout() {
         // Show the confirmation modal
         $('#logoutConfirmationModal').modal('show');
-      }      
+      }
+      
+      document.getElementById('student-parent-form').addEventListener('submit', async (e) => {
+        const token = localStorage.getItem("authToken");
+        e.preventDefault();
+      
+        const data = {
+          student: {
+            name: document.getElementById('studentName').value,
+            grade: parseInt(document.getElementById('studentGrade').value, 10),
+            grade_label: document.getElementById('studentGradeLabel').value,
+            gender: document.querySelector('input[name="studentGender"]:checked').value,
+            telephone: document.getElementById('studentTelephone').value,
+          },
+          parent: {
+            name: document.getElementById('parentName').value,
+            telephone: document.getElementById('parentTelephone').value,
+            email: document.getElementById('parentEmail').value || '',
+            gender: document.querySelector('input[name="parentGender"]:checked').value,
+          },
+        };
+      
+        console.log(JSON.stringify(data));
+        try {
+          const response = await fetch('http://127.0.0.1:8000/student-and-parent/insert', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token,
+            },
+            body: JSON.stringify(data),
+          });
+      
+          const responseData = await response.json();
+          const messageElement = document.getElementById("msgs");
+      
+          if (responseData.success) {
+            // Success message and form reset
+            messageElement.textContent = responseData.message;
+            messageElement.classList.remove("text-danger");
+            messageElement.classList.add("text-success");
+      
+            // Reset form fields
+            document.getElementById('student-parent-form').reset();
+          } else {
+            // Failure message with error details
+            let errorMessage = responseData.message + ":";
+            if (responseData.error && responseData.error.length > 0) {
+              errorMessage += "<ul>";
+              responseData.error.forEach(err => {
+                errorMessage += `<li>${err}</li>`;
+              });
+              errorMessage += "</ul>";
+            }
+            messageElement.innerHTML = errorMessage;
+            messageElement.classList.remove("text-success");
+            messageElement.classList.add("text-danger");
+          }
+      
+          // Show the modal with the response message
+          $('#APIResponse').modal('show');
+        } catch (error) {
+          console.log("masuk catch")
           
+          const messageElement = document.getElementById("msgs");
+          messageElement.textContent = "Error Occured";
+          messageElement.classList.remove("text-success");
+          messageElement.classList.add("text-danger");
+      
+          // Show the modal
+          $('#APIResponse').modal('show');
+        }
+      
+        // Event listener to close the modal when "Ok" button is clicked
+        document.getElementById("confirmAPIResponse").addEventListener("click", function() {
+          $('#APIResponse').modal('hide');
+        });
+      });
+      
+
       // Event listener for confirming logout
       document.getElementById("confirmLogoutButton").addEventListener("click", function () {
           // Remove the token from local storage
@@ -489,6 +678,7 @@
         $('#logoutConfirmationModal').modal('hide');
       });
 
+      userRole = ""
 
       function parseClass(classStr) {
         // Assuming classStr is in the format "7A", "8B", etc.
@@ -497,92 +687,6 @@
         return [classNum, classLetter];
       }
 
-      document.addEventListener("DOMContentLoaded", function () {
-        const token = localStorage.getItem("authToken");
-    
-        // Check if the token exists
-        if (!token) {
-            // Show unauthorized modal and redirect to login
-            $('#unauthorizedModal').modal('show');
-            setTimeout(() => {
-                window.location.href = "login.html";
-            }, 3000); // Redirect after 3 seconds
-            return;
-        }
-    
-        // If the token exists, run the functions without waiting for backend verification
-        fetchProfileData(token);
-        fetchDataChangeRequestCount(token);
-        fetchUserDetail(token);
-      });
-
-      const queryString = window.location.search;
-      const urlParams = new URLSearchParams(queryString);
-      const userId = urlParams.get("user_id");
-
-      function fetchUserDetail(token) {
-        fetch(`http://127.0.0.1:8000/user/details/${userId}`, {
-            method: "GET",
-            headers: {
-                "Authorization": `${token}`,
-                "Content-Type": "application/json"
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const userData = data.data;
-    
-                // Update user details
-                document.getElementById("detailUsername").textContent = userData.username;
-                document.getElementById("detailRole").textContent = `Role: ${userData.role}`;
-                document.getElementById("detailUserSubjectCount").textContent = `Assigned Subjects: ${userData.teaching.length}`;
-    
-                // Update the subjects display
-                const subjectContainer = document.getElementById("subjectTable");
-                subjectContainer.innerHTML = ""; // Clear any existing rows
-    
-                let row = null;
-    
-                userData.teaching.forEach((subject, index) => {
-                    // Create a new row every 3 subjects
-                    if (index % 3 === 0) {
-                        row = document.createElement("tr");
-                        subjectContainer.appendChild(row);
-                    }
-    
-                    // Create a cell for each subject card
-                    const cell = document.createElement("td");
-                    cell.innerHTML = `
-                        <div class="card card-stats card-round">
-                            <div class="card-body">
-                                <div class="row align-items-center">
-                                    <div class="col-icon">
-                                        <div class="icon-big text-center icon-info bubble-shadow-small">
-                                            <i class="fas fa-book"></i>
-                                        </div>
-                                    </div>
-                                    <div class="col col-stats ms-3 ms-sm-0">
-                                        <div class="numbers">
-                                            <h4 class="card-title">${subject.name}</h4>
-                                            <p class="card-category">Grade ${subject.grade}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-    
-                    // Append the cell to the current row
-                    row.appendChild(cell);
-                });
-            } else {
-                console.error("Failed to fetch data or no data available.");
-            }
-        })
-        .catch(error => console.error("Error:", error));
-      }
-    
       function fetchDataChangeRequestCount(token) {
         fetch("http://127.0.0.1:8000/student-and-parent/get-all-data-change-request", {
           method: "GET",
@@ -620,6 +724,7 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                userRole = data.data.role
                 const profileName = document.getElementById("profileName");
                 profileName.textContent = `${data.data.username} (${data.data.role})`;
 

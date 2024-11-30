@@ -49,8 +49,10 @@ func NewStudentParentHandlerDeploy(app *fiber.App, useCase domain.StudentParentU
 	route.Get("/student/:id", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetStudentDetailsByID)
 	route.Post("/req/data-change-request", handler.DataChangeRequest)
 	route.Get("/get-all-data-change-request", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.GetAllDataChangeRequest)
+	route.Get("/get-all-data-change-request/:request_id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.GetAllDataChangeRequestByID)
 	route.Post("/rms", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.SPMassDelete)
 	route.Get("/download-template", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DownloadTemplate)
+	route.Delete("/review/dcr/:request_id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.ReviewDCR)
 }
 
 func (sph *studentParentHandler) DownloadTemplate(c *fiber.Ctx) error {
@@ -74,6 +76,35 @@ func (sph *studentParentHandler) DownloadTemplate(c *fiber.Ctx) error {
 	return nil
 }
 
+func (sph *studentParentHandler) ReviewDCR(c *fiber.Ctx) error {
+	userToken := c.Locals("user").(*domain.Claims)
+	id := c.Params("request_id")
+	convertedID, err := strconv.Atoi(id)
+	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "ReviewDCR")
+		return c.Status(fiber.StatusBadRequest).JSON((fiber.Map{
+			"success": false,
+			"error":   err.Error(),
+			"message": "Converter Failure on request_id",
+		}))
+	}
+	err = sph.uc.ReviewDCR(c.Context(), convertedID)
+	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "ReviewDCR")
+		return c.Status(fiber.StatusInternalServerError).JSON((fiber.Map{
+			"success": false,
+			"error":   err.Error(),
+			"message": "Failed to review data change request",
+		}))
+	}
+
+	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "ReviewDCR")
+	return c.Status(fiber.StatusOK).JSON((fiber.Map{
+		"success": true,
+		"message": "Data Change Request reviewed successfully",
+	}))
+}
+
 func (sph *studentParentHandler) GetAllDataChangeRequest(c *fiber.Ctx) error {
 	userToken := c.Locals("user").(*domain.Claims)
 
@@ -93,6 +124,38 @@ func (sph *studentParentHandler) GetAllDataChangeRequest(c *fiber.Ctx) error {
 		"success": true,
 		"message": "Data Change Request Retrieved Successfully",
 		"data":    v,
+	}))
+
+}
+
+func (sph *studentParentHandler) GetAllDataChangeRequestByID(c *fiber.Ctx) error {
+	userToken := c.Locals("user").(*domain.Claims)
+	id := c.Params("request_id")
+	v, err := strconv.Atoi(id)
+	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "GetAllDataChangeRequestByID")
+		return c.Status(fiber.StatusBadRequest).JSON((fiber.Map{
+			"success": false,
+			"error":   err.Error(),
+			"message": "Converter failure",
+		}))
+	}
+
+	data, err := sph.uc.GetAllDataChangeRequestByID(c.Context(), v)
+	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "GetAllDataChangeRequestByID")
+		return c.Status(fiber.StatusInternalServerError).JSON((fiber.Map{
+			"success": false,
+			"error":   err.Error(),
+			"message": "Failed to get data change request",
+		}))
+	}
+
+	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "GetAllDataChangeRequestByID")
+	return c.Status(fiber.StatusOK).JSON((fiber.Map{
+		"success": true,
+		"message": "Data Change Request Retrieved Successfully",
+		"data":    data,
 	}))
 
 }
@@ -539,6 +602,6 @@ func (sph *studentParentHandler) DataChangeRequest(c *fiber.Ctx) error {
 	config.PrintLogInfo(&guess, fiber.StatusOK, "DataChangeRequest")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
-		"message": "Successfully sent data changes",
+		"message": "Successfully sent data changes request",
 	})
 }

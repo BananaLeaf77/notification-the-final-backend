@@ -152,7 +152,7 @@
     line-height: 1;
     color: #333439; }
 
-body[data-background-color="dark"] .demo-icon .icon-preview {
+body[data-background-color="light"] .demo-icon .icon-preview {
   color: #969696; }
 
 .demo-icon .icon-class {
@@ -160,7 +160,7 @@ body[data-background-color="dark"] .demo-icon .icon-preview {
   font-size: 13px;
   color: #777; }
 
-body[data-background-color="dark"] .demo-icon .icon-class {
+body[data-background-color="light"] .demo-icon .icon-class {
   color: #a9a8a8; }
 
 .form-show-notify .form-control {

@@ -266,7 +266,7 @@
         <div class="main-header">
           <div class="main-header-logo">
             <!-- Logo Header -->
-            <div class="logo-header" data-background-color="dark">
+            <div class="logo-header" data-background-color="light">
               <a href="index.html" class="logo">
                 <img
                   src="assets/img/kaiadmin/logo_light.svg"
@@ -328,10 +328,9 @@
                 <li class="nav-item topbar-icon dropdown hidden-caret">
                   <a
                     class="nav-link dropdown-toggle"
-                    href="#"
+                    href="dataChangeRequest.html"
                     id="notifDropdown"
                     role="button"
-                    data-bs-toggle="dropdown"
                     aria-haspopup="true"
                     aria-expanded="false"
                   >
@@ -428,11 +427,12 @@
                           <table class="table table-striped">
                               <thead>
                                   <tr>
-                                      <th>Date</th>
-                                      <th>Student Telephone</th>
+                                      <th>Sent Date</th>
+                                      <th>Parent Telephone</th>
+                                      <th>Action</th>
                                   </tr>
                               </thead>
-                              <tbody id="attendanceHistoryTable">
+                              <tbody id="dcrTable">
                                   <!-- Dynamic rows will be populated here -->
                               </tbody>
                           </table>
@@ -585,11 +585,11 @@
         // If the token exists, run the functions without waiting for backend verification
         fetchProfileData(token);
         fetchDataChangeRequestCount(token);
-        fetchDC(token);
+        fetchDataChangeRequests(token);
       });
       
-      function fetchDC(token) {
-        fetch("http://127.0.0.1:8000/student/data-change-request", {
+      function fetchDataChangeRequests(token) {
+        fetch("http://127.0.0.1:8000/student-and-parent/get-all-data-change-request", {
             method: "GET",
             headers: {
                 "Authorization": `${token}`,
@@ -598,60 +598,56 @@
         })
             .then(response => response.json())
             .then(data => {
+                const tableBody = document.getElementById("dcrTable");
+    
                 if (data.success) {
-                    let truancyData = data.data;
+                    let dataChangeRequests = data.data;
     
-                    // Sort truancy data by created_at in descending order (most recent first)
-                    truancyData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                    // Sort data by `created_at` in descending order
+                    dataChangeRequests.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     
-                    const tableBody = document.getElementById("attendanceHistoryTable");
-    
-                    // Clear existing rows
+                    // Clear existing table rows
                     tableBody.innerHTML = "";
     
                     // Populate rows dynamically
-                    truancyData.forEach(record => {
+                    dataChangeRequests.forEach(record => {
                         const createdAt = new Date(record.created_at);
-                        const date = createdAt.toLocaleDateString(); // Extract the date
-                        const time = createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); // Extract hour and minute
+                        const date = createdAt.toLocaleDateString(); // Extract date
     
                         const row = document.createElement("tr");
     
                         row.innerHTML = `
                             <td>${date}</td>
-                            <td>${time}</td>
-                            <td>Grade ${record.student.grade}${record.student.grade_label}</td>
-                            <td>${record.student.name}</td>
-                            <td>${record.parent.name}</td>
-                            <td>${record.user.username} (${record.user.role})</td>
-                            <td>${record.subject.name}</td>
-                            <td>${record.whatsapp_status ? "✅" : "❌"}</td>
-                            <td>${record.email_status ? "✅" : "❌"}</td>
+                            <td>${record.old_parent_telephone}</td>
+                            <td>
+                                <button class="btn btn-danger btn-sm delete-btn" onclick="showConfirmationDeleteModal(${record.request_id})">Delete</button>
+                            </td>
                         `;
     
-                        // Add click event to navigate to detailStudent.html with the student ID
-                        row.addEventListener("click", () => {
-                            window.location.href = `detailStudent.html?student_id=${record.student.student_id}`;
+                        // Make the row clickable, except for the Delete button
+                        row.addEventListener("click", (event) => {
+                            if (!event.target.classList.contains("delete-btn")) {
+                                window.location.href = `dataChangeRequestDetail.html?request_id=${record.request_id}&telephone=${record.old_parent_telephone}`;
+                            }
                         });
     
-                        // Add cursor pointer for better UX
+                        // Style for better UX
                         row.style.cursor = "pointer";
     
+                        // Append row to the table
                         tableBody.appendChild(row);
                     });
                 } else {
-                    console.error("Error fetching truancy history:", data.message);
-                    const tableBody = document.getElementById("attendanceHistoryTable");
-                    tableBody.innerHTML = `<tr><td colspan="9" class="text-center text-danger">No data available</td></tr>`;
+                    console.error("Error fetching data change requests:", data.message);
+                    tableBody.innerHTML = `<tr><td colspan="3" class="text-center text-danger">No data available</td></tr>`;
                 }
             })
             .catch(error => {
                 console.error("Error:", error);
-                const tableBody = document.getElementById("attendanceHistoryTable");
-                tableBody.innerHTML = `<tr><td colspan="9" class="text-center text-danger">Failed to load data</td></tr>`;
+                const tableBody = document.getElementById("dcrTable");
+                tableBody.innerHTML = `<tr><td colspan="3" class="text-center text-danger">Failed to load data</td></tr>`;
             });
       }
-    
     
 
       function fetchDataChangeRequestCount(token) {

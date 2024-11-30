@@ -471,10 +471,44 @@ func (spr *studentParentRepository) GetStudentDetailsByID(ctx context.Context, s
 	return &result, nil
 }
 
+func (spr *studentParentRepository) GetAllDataChangeRequestByID(ctx context.Context, dcrID int) (*domain.DataChangeRequest, error) {
+	var result domain.DataChangeRequest
+
+	err := spr.db.WithContext(ctx).
+		Where("request_id = ? AND is_reviewed IS FALSE", dcrID).
+		First(&result).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("data change request with ID %d not found", dcrID)
+		}
+		return nil, fmt.Errorf("could not fetch data change request details: %v", err)
+	}
+
+	return &result, nil
+}
+
 func (spr *studentParentRepository) DataChangeRequest(ctx context.Context, datas domain.DataChangeRequest) error {
 	err := spr.db.WithContext(ctx).Create(&datas).Error
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (spr *studentParentRepository) ReviewDCR(ctx context.Context, dcrID int) error {
+	result := spr.db.WithContext(ctx).
+		Model(&domain.DataChangeRequest{}).
+		Where("request_id = ?", dcrID).
+		Update("is_reviewed", true)
+
+	if result.Error != nil {
+		return fmt.Errorf("failed to update is_reviewed for request_id %d: %w", dcrID, result.Error)
+	}
+
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("no DataChangeRequest found with request_id %d", dcrID)
 	}
 
 	return nil
@@ -489,8 +523,6 @@ func (spr *studentParentRepository) GetAllDataChangeRequest(ctx context.Context)
 
 	return &req, nil
 }
-
-
 
 // func (spr *studentParentRepository) GetClassIDByName(className string) (*int, error) {
 // 	var class domain.Class

@@ -100,8 +100,28 @@ func (spu *studentParentUseCase) GetAllDataChangeRequest(ctx context.Context) (*
 	return v, nil
 }
 
+func (spu *studentParentUseCase) GetAllDataChangeRequestByID(ctx context.Context, dcrID int) (*domain.DataChangeRequest, error) {
+
+	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
+	// defer cancel()
+
+	v, err := spu.repo.GetAllDataChangeRequestByID(ctx, dcrID)
+	if err != nil {
+		return nil, err
+	}
+	return v, nil
+}
+
 func (spu *studentParentUseCase) SPMassDelete(ctx context.Context, studentIDS *[]int) error {
 	err := spu.repo.SPMassDelete(ctx, studentIDS)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (spu *studentParentUseCase) ReviewDCR(ctx context.Context, dcrID int) error {
+	err := spu.repo.ReviewDCR(ctx, dcrID)
 	if err != nil {
 		return err
 	}
