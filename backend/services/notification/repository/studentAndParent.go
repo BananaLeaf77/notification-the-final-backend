@@ -508,7 +508,7 @@ func (spr *studentParentRepository) ReviewDCR(ctx context.Context, dcrID int) er
 	}
 
 	if result.RowsAffected == 0 {
-		return fmt.Errorf("no DataChangeRequest found with request_id %d", dcrID)
+		return fmt.Errorf("no data change request found with request_id %d", dcrID)
 	}
 
 	return nil
