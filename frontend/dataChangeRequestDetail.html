@@ -440,7 +440,6 @@
 
     <!-- API HIT -->
     <script>
-
       document.addEventListener("DOMContentLoaded", () => {
         const token = localStorage.getItem("authToken");
     
@@ -529,27 +528,91 @@
     
         // Handle Approve Button
         approveBtn.addEventListener("click", () => {
-            // Mark as Reviewed
-            fetch(`http://127.0.0.1:8000/student-and-parent/review/dcr/${requestId}`, {
-                method: "DELETE",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `${token}`,
-                },
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert("Request marked as reviewed!");
+          const messageElement = document.getElementById("msgs");
+          
+          // Fetch old data and new data
+          const oldDataResponse = fetch(`http://127.0.0.1:8000/student/telephone/${telephone}`, {
+              headers: {
+                  "Authorization": `${token}`,
+              },
+          }).then(res => res.json());
+      
+          const newDataResponse = fetch(`http://127.0.0.1:8000/student-and-parent/get-all-data-change-request/${requestId}`, {
+              headers: {
+                  "Authorization": `${token}`,
+              },
+          }).then(res => res.json());
+      
+          Promise.all([oldDataResponse, newDataResponse])
+              .then(([oldData, newData]) => {
+                  if (!oldData.success || !newData.success) {
+                      throw new Error("Failed to fetch required data.");
+                  }
+      
+                  // Extract and combine data
+                  const studentOld = oldData.data.student;
+                  const parentOld = studentOld.parent;
+                  const requestNew = newData.data;
+                  console.log(studentOld)
+      
+                  const payload = {
+                      student: {
+                          name: requestNew.new_student_name || studentOld.name,
+                          grade: requestNew.new_student_grade || studentOld.grade,
+                          grade_label: requestNew.new_student_grade_label || studentOld.grade_label,
+                          gender: requestNew.new_student_gender || studentOld.gender,
+                          telephone: requestNew.new_student_telephone || studentOld.telephone,
+                      },
+                      parent: {
+                          name: requestNew.new_parent_name || parentOld.name,
+                          telephone: requestNew.new_parent_telephone || parentOld.telephone,
+                          email: requestNew.new_parent_email || parentOld.email,
+                          gender: requestNew.new_parent_gender || parentOld.gender,
+                      },
+                  };
+
+                  // Hit the update endpoint
+                  return fetch(`http://127.0.0.1:8000/student-and-parent/modify/${studentOld.student_id}`, {
+                      method: "PUT",
+                      headers: {
+                          "Content-Type": "application/json",
+                          "Authorization": `${token}`,
+                      },
+                      body: JSON.stringify(payload),
+                  });
+              })
+              .then(updateResponse => updateResponse.json())
+              .then(updateResult => {
+                  if (updateResult.success) {
+                      messageElement.textContent = updateResult.message;
+                      messageElement.classList.remove("text-danger");
+                      messageElement.classList.add("text-success");
+                      $('#APIResponse').modal('show');
+                      fetch(`http://127.0.0.1:8000/student-and-parent/review/dcr/${requestId}`, {
+                        method: "DELETE",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `${token}`,
+                        },
+                      });
+                      setTimeout(() => {
                         window.location.href = "dataChangeRequest.html";
-                    } else {
-                        alert("Failed to mark request as reviewed: " + data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error("Error marking request as reviewed:", error);
-                    alert("An error occurred while marking request as reviewed.");
-                });
+                      }, 5000);
+                  }else{
+                      let errorMessage = updateResult.message + ":";
+                      if (updateResult.error && updateResult.error.length > 0) {
+                        errorMessage += "<ul>";
+                        updateResult.error.forEach(err => {
+                          errorMessage += `<li>${err}</li>`;
+                        });
+                        errorMessage += "</ul>";
+                      }
+                      messageElement.innerHTML = errorMessage;
+                      messageElement.classList.remove("text-success");
+                      messageElement.classList.add("text-danger");
+                      $('#APIResponse').modal('show');
+                  }
+              })
         });
       });
     
@@ -576,84 +639,6 @@
         $('#logoutConfirmationModal').modal('show');
       }
       
-      document.getElementById('student-parent-form').addEventListener('submit', async (e) => {
-        const token = localStorage.getItem("authToken");
-        e.preventDefault();
-      
-        const data = {
-          student: {
-            name: document.getElementById('studentName').value,
-            grade: parseInt(document.getElementById('studentGrade').value, 10),
-            grade_label: document.getElementById('studentGradeLabel').value,
-            gender: document.querySelector('input[name="studentGender"]:checked').value,
-            telephone: document.getElementById('studentTelephone').value,
-          },
-          parent: {
-            name: document.getElementById('parentName').value,
-            telephone: document.getElementById('parentTelephone').value,
-            email: document.getElementById('parentEmail').value || '',
-            gender: document.querySelector('input[name="parentGender"]:checked').value,
-          },
-        };
-      
-        console.log(JSON.stringify(data));
-        try {
-          const response = await fetch('http://127.0.0.1:8000/student-and-parent/insert', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': token,
-            },
-            body: JSON.stringify(data),
-          });
-      
-          const responseData = await response.json();
-          const messageElement = document.getElementById("msgs");
-      
-          if (responseData.success) {
-            // Success message and form reset
-            messageElement.textContent = responseData.message;
-            messageElement.classList.remove("text-danger");
-            messageElement.classList.add("text-success");
-      
-            // Reset form fields
-            document.getElementById('student-parent-form').reset();
-          } else {
-            // Failure message with error details
-            let errorMessage = responseData.message + ":";
-            if (responseData.error && responseData.error.length > 0) {
-              errorMessage += "<ul>";
-              responseData.error.forEach(err => {
-                errorMessage += `<li>${err}</li>`;
-              });
-              errorMessage += "</ul>";
-            }
-            messageElement.innerHTML = errorMessage;
-            messageElement.classList.remove("text-success");
-            messageElement.classList.add("text-danger");
-          }
-      
-          // Show the modal with the response message
-          $('#APIResponse').modal('show');
-        } catch (error) {
-          console.log("masuk catch")
-          
-          const messageElement = document.getElementById("msgs");
-          messageElement.textContent = "Error Occured";
-          messageElement.classList.remove("text-success");
-          messageElement.classList.add("text-danger");
-      
-          // Show the modal
-          $('#APIResponse').modal('show');
-        }
-      
-        // Event listener to close the modal when "Ok" button is clicked
-        document.getElementById("confirmAPIResponse").addEventListener("click", function() {
-          $('#APIResponse').modal('hide');
-        });
-      });
-      
-
       // Event listener for confirming logout
       document.getElementById("confirmLogoutButton").addEventListener("click", function () {
           // Remove the token from local storage

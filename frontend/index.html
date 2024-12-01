@@ -1358,10 +1358,17 @@
                   fetchStudents(token)
                 } else {
                   // Error message
-                  console.log("error")
-                  messageElement.innerHTML = data.error;
-                  messageElement.classList.remove("text-success");
-                  messageElement.classList.add("text-danger");
+                  let errorMessage = data.message + ":";
+                    if (data.error && data.error.length > 0) {
+                      errorMessage += "<ul>";
+                      data.error.forEach(err => {
+                        errorMessage += `<li>${err}</li>`;
+                      });
+                      errorMessage += "</ul>";
+                    }
+                    messageElement.innerHTML = errorMessage;
+                    messageElement.classList.remove("text-success");
+                    messageElement.classList.add("text-danger");
                   $('#APIResponse').modal('show');
               }
           })

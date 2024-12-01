@@ -717,6 +717,7 @@
             messageElement.classList.add("text-success");
             $('#APIResponse').modal('show');
             fetchDataChangeRequests(token)
+            fetchDataChangeRequestCount(token)
           } else {
             messageElement.innerHTML = data.error;
             messageElement.classList.remove("text-success");
