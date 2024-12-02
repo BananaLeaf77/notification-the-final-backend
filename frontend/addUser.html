@@ -57,8 +57,7 @@
                   <span id="msgs"></span>
               </div>
               <div class="modal-footer">
-                  <button type="button" class="btn btn-danger" id="confirmAPIResponse">Ok</button>
-              </div>
+                  <button type="button" class="btn btn-info" id="confirmAPIResponse">Ok</button>              </div>
           </div>
       </div>
     </div>
@@ -345,6 +344,12 @@
                             </div>
                           </div>
                           <div class="form-group">
+                            <label for="name">Name</label>
+                            <div class="input-icon">
+                              <input type="text" class="form-control" id="name" placeholder="Enter name" required />
+                            </div>
+                          </div>
+                          <div class="form-group">
                             <label for="password">Password</label>
                             <input type="password" class="form-control" id="password" placeholder="Enter password" required />
                           </div>
@@ -474,9 +479,11 @@
         
         const data = {
           username: document.getElementById('username').value, 
+          name: document.getElementById('name').value, 
           password: document.getElementById('password').value, 
         };
-      
+        
+        console.log(data)
         try {
           const response = await fetch('http://127.0.0.1:8000/user/create-staff', {
             method: 'POST',

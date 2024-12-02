@@ -139,12 +139,16 @@ func (r *userRepository) GetSubjectsForTeacher(ctx context.Context, userID int) 
 
 func (ur *userRepository) CreateStaff(ctx context.Context, payload *domain.User) (*domain.User, error) {
 	payloadUsernameLowered := strings.ToLower(payload.Username)
-
 	// Check if username already exists
 	var existingUser domain.User
 	err := ur.db.WithContext(ctx).Where("username = ? AND deleted_at IS NULL", payloadUsernameLowered).First(&existingUser).Error
 	if err == nil {
 		return nil, fmt.Errorf("username %s already exists", payloadUsernameLowered)
+	}
+
+	err = ur.db.WithContext(ctx).Where("name = ? AND deleted_at IS NULL", payload.Name).First(&existingUser).Error
+	if err == nil {
+		return nil, fmt.Errorf("name %s already exists", payload.Name)
 	}
 
 	// Hash the password
@@ -198,6 +202,7 @@ func (ur *userRepository) GetAllStaff(ctx context.Context) (*[]domain.SafeStaffD
 		safeStaffData = append(safeStaffData, domain.SafeStaffData{
 			UserID:    user.UserID,
 			Username:  user.Username,
+			Name:      user.Name,
 			Role:      user.Role,
 			CreatedAt: user.CreatedAt,
 			UpdatedAt: user.UpdatedAt,
@@ -237,7 +242,6 @@ func (ur *userRepository) DeleteStaff(ctx context.Context, id int) error {
 
 func (ur *userRepository) UpdateStaff(ctx context.Context, id int, payload *domain.User, subjectIDs []int) error {
 	usernameLowered := strings.ToLower(payload.Username)
-
 	var foundUser domain.User
 	err := ur.db.WithContext(ctx).Where("user_id = ? AND deleted_at IS NULL", id).First(&foundUser).Error
 	if err != nil {
@@ -255,6 +259,11 @@ func (ur *userRepository) UpdateStaff(ctx context.Context, id int, payload *doma
 	err = ur.db.WithContext(ctx).Where("username = ? AND user_id != ? AND deleted_at IS NULL", usernameLowered, id).First(&existingUser).Error
 	if err == nil {
 		return fmt.Errorf("username %s already exists", usernameLowered)
+	}
+
+	err = ur.db.WithContext(ctx).Where("name = ? AND user_id != ? AND deleted_at IS NULL", payload.Name, id).First(&existingUser).Error
+	if err == nil {
+		return fmt.Errorf("name %s already exists", payload.Name)
 	}
 
 	updateUser := domain.User{
@@ -339,6 +348,7 @@ func (ur *userRepository) GetStaffDetail(ctx context.Context, id int) (*domain.S
 	safeData := domain.SafeStaffData{
 		UserID:    user.UserID,
 		Username:  user.Username,
+		Name:      user.Name,
 		Role:      user.Role,
 		Teaching:  subjects,
 		CreatedAt: user.CreatedAt,

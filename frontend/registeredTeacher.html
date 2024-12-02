@@ -60,6 +60,11 @@
                       <label for="modalUsername">Username</label>
                       <input type="text" class="form-control" id="modalUsername" placeholder="">
                   </div>
+
+                  <div class="form-group">
+                    <label for="modalName">Name</label>
+                    <input type="text" class="form-control" id="modalName" placeholder="">
+                </div>
                   
                   <!-- Password Field -->
                   <div class="form-group">
@@ -97,8 +102,7 @@
                   <span id="msgs"></span>
               </div>
               <div class="modal-footer">
-                  <button type="button" class="btn btn-danger" id="confirmAPIResponse">Ok</button>
-              </div>
+                  <button type="button" class="btn btn-info" id="confirmAPIResponse">Ok</button>              </div>
           </div>
       </div>
     </div>
@@ -454,7 +458,7 @@
                       </div>
                     </div>
                     <p class="card-category">
-                      User list complete with username, role, and count of assigned subject.
+                      User list complete with name, role, and count of assigned subject.
                     </p>
                   </div>
                   <div class="card-body">
@@ -465,7 +469,7 @@
                               <thead>
                                   <tr>
                                       <th>Select</th>
-                                      <th>Username</th>
+                                      <th>Name</th>
                                       <th>Role</th>
                                       <th>Assigned Subject</th>
                                       <th>Action</th>
@@ -825,7 +829,7 @@
             <td>
                 <input type="checkbox" class="custom-checkbox" data-id="${user.user_id}" onclick="event.stopPropagation(); toggleUserSelection(event, ${user.user_id})">
             </td>
-            <td>${user.username}</td>
+            <td>${user.name}</td>
             <td>${user.role}</td>
             <td>${teachingCount}</td> <!-- Display the count of subjects -->
             <td>
@@ -841,6 +845,7 @@
         // Collect updated data
         const userId = document.getElementById("modalUsername").dataset.userId; // Assume userId is stored in a data attribute
         const username = document.getElementById("modalUsername").value;
+        const name = document.getElementById("modalName").value;
         const password = document.getElementById("modalPassword").value;
         const subjectTable = document.getElementById("subjectTable");
     
@@ -856,6 +861,7 @@
     
         // Add username and password to the payload only if they're updated
         if (username) payload.user.username = username;
+        if (name) payload.user.name = name;
         if (password) payload.user.password = password;
     
         // Send the data to the API
@@ -909,6 +915,7 @@
         const token = localStorage.getItem("authToken");
         const messageElement = document.getElementById("msgs");
         const modalUsername = document.getElementById("modalUsername");
+        const modalName = document.getElementById("modalName");
         const modalPassword = document.getElementById("modalPassword");
         const subjectTable = document.getElementById("subjectTable");
     
@@ -925,10 +932,10 @@
             if (data.success) {
                 const userData = data.data;
     
-                // Populate username and clear password field
                 modalUsername.value = userData.username;
-                modalPassword.value = ""; // Clear password field
-                modalUsername.setAttribute("data-user-id", userId); // Set userId for later use
+                modalName.value = userData.name;
+                modalPassword.value = ""; 
+                modalUsername.setAttribute("data-user-id", userId); 
     
                 // Fetch all subjects to populate the checkboxes
                 fetch("http://127.0.0.1:8000/user/subject/all", {

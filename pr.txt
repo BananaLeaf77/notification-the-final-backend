@@ -9,4 +9,7 @@ bedain getall admin dan staff (subject done, student sudah)
 ubah attendance history masukin subject
 
 
-loading error, refreshed form import,
+modal loading error, refreshed form import,
+
+
+pr =  user punya name , go routine send wa and email.

@@ -10,6 +10,7 @@ import (
 type User struct {
 	UserID    int            `gorm:"primaryKey;autoIncrement" json:"user_id"`
 	Username  string         `gorm:"type:varchar(100);not null;" json:"username"`
+	Name      string         `gorm:"type:varchar(100);not null;" json:"name"`
 	Password  string         `gorm:"type:varchar(100);not null" json:"password"`
 	Role      string         `gorm:"type:varchar(10);not null" json:"role"`
 	Teaching  []*Subject     `gorm:"many2many:user_subjects" json:"teaching"`

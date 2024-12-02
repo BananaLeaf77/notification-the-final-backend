@@ -9,6 +9,7 @@ import (
 type SafeStaffData struct {
 	UserID    int        `json:"user_id"`
 	Username  string     `json:"username"`
+	Name      string     `json:"name"`
 	Role      string     `json:"role"`
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`
@@ -98,6 +99,7 @@ type StudentNoGorm struct {
 type UserResponse struct {
 	UserID    int            `json:"user_id"`
 	Username  string         `json:"username"`
+	Name      string         `json:"name"`
 	Role      string         `json:"role"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`

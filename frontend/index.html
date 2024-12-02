@@ -84,9 +84,10 @@
                       <label class="custom-control-label" for="modalStudentGenderFemale">female</label>
                   </div>
               </div>
+              
                 <div class="form-group">
                   <label for="modalStudentTelephone">Telephone</label>
-                  <input type="text" class="form-control" id="modalStudentTelephone" placeholder="Telephone">
+                  <input type="text" class="form-control" id="modalStudentTelephone" placeholder="08xx" maxlength="15" pattern="\d{1,15}" required />
                 </div>
               </div>
               
@@ -111,7 +112,7 @@
               </div>
                 <div class="form-group">
                   <label for="modalParentTelephone">Parent Telephone</label>
-                  <input type="text" class="form-control" id="modalParentTelephone" placeholder="Parent Telephone">
+                  <input type="text" class="form-control" id="modalParentTelephone" placeholder="08xx" maxlength="15" pattern="\d{1,15}" required />
                 </div>
                 <div class="form-group">
                   <label for="modalParentEmail">Parent Email</label>
@@ -254,8 +255,7 @@
                   <span id="msgs"></span>
               </div>
               <div class="modal-footer">
-                  <button type="button" class="btn btn-danger" id="confirmAPIResponse">Ok</button>
-              </div>
+                  <button type="button" class="btn btn-info" id="confirmAPIResponse">Ok</button>              </div>
           </div>
       </div>
     </div>

@@ -57,8 +57,7 @@
                   <span id="msgs"></span>
               </div>
               <div class="modal-footer">
-                  <button type="button" class="btn btn-danger" id="confirmAPIResponse">Ok</button>
-              </div>
+                  <button type="button" class="btn btn-info" id="confirmAPIResponse">Ok</button>              </div>
           </div>
       </div>
     </div>
@@ -346,6 +345,9 @@
                     <div class="user-profile text-center">
                       <div class="profile-name" id="detailUsername">Loading...</div>
                     </div>
+                    <div class="user-profile text-center">
+                      <div class="profile-name" id="detailName">Loading...</div>
+                    </div>
                   </div>
                   <div class="card-footer">
                     <div class="row user-stats text-center">
@@ -534,7 +536,8 @@
                 const userData = data.data;
     
                 // Update user details
-                document.getElementById("detailUsername").textContent = userData.username;
+                document.getElementById("detailUsername").textContent =`Username: ${userData.username}`;
+                document.getElementById("detailName").textContent = `Name: ${userData.name}`;
                 document.getElementById("detailRole").textContent = `Role: ${userData.role}`;
                 document.getElementById("detailUserSubjectCount").textContent = `Assigned Subjects: ${userData.teaching.length}`;
     

@@ -57,8 +57,7 @@
                   <span id="msgs"></span>
               </div>
               <div class="modal-footer">
-                  <button type="button" class="btn btn-danger" id="confirmAPIResponse">Ok</button>
-              </div>
+                  <button type="button" class="btn btn-info" id="confirmAPIResponse">Ok</button>              </div>
           </div>
       </div>
     </div>
@@ -465,6 +464,24 @@
 
     <!-- API HIT -->
     <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const token = localStorage.getItem("authToken");
+        
+    
+        // Check if the token exists
+        if (!token) {
+            // Show unauthorized modal and redirect to login
+            $('#unauthorizedModal').modal('show');
+            setTimeout(() => {
+                window.location.href = "login.html";
+            }, 3000); // Redirect after 3 seconds
+            return;
+        }
+    
+        fetchProfileData(token);
+        fetchDataChangeRequestCount(token);
+      });
+
       function runDownloader() {
         const token = localStorage.getItem("authToken"); // Ensure token is retrieved correctly
     
@@ -599,7 +616,6 @@
     
             // Show the modal with the response message
             $('#APIResponse').modal('show');
-    
         } catch (error) {
             console.log("Error occurred:", error);
             messageElement.textContent = "An error occurred while uploading the file.";
@@ -609,24 +625,6 @@
             // Show the modal
             $('#APIResponse').modal('show');
         }
-      });
-
-      document.addEventListener("DOMContentLoaded", function () {
-        const token = localStorage.getItem("authToken");
-        
-    
-        // Check if the token exists
-        if (!token) {
-            // Show unauthorized modal and redirect to login
-            $('#unauthorizedModal').modal('show');
-            setTimeout(() => {
-                window.location.href = "login.html";
-            }, 3000); // Redirect after 3 seconds
-            return;
-        }
-    
-        fetchProfileData(token);
-        fetchDataChangeRequestCount(token);
       });
 
       function fetchDataChangeRequestCount(token) {

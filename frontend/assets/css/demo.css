@@ -59,7 +59,7 @@
     box-shadow: -5px 5px 20px rgba(69, 65, 78, 0.21); }
     .custom-template .custom-toggle i {
       font-size: 20px;
-      animation: 1.3s spin linear infinite; }
+      }
   .custom-template .title {
     padding: 15px;
     text-align: left;

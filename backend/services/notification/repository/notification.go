@@ -37,6 +37,7 @@ func (np *notificationRepo) GetAllAttendanceNotificationHistory(ctx context.Cont
 		userResponse := domain.UserResponse{
 			UserID:    record.User.UserID,
 			Username:  record.User.Username,
+			Name:      record.User.Name,
 			Role:      record.User.Role,
 			CreatedAt: record.User.CreatedAt,
 			UpdatedAt: record.User.UpdatedAt,

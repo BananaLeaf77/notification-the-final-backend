@@ -81,6 +81,7 @@ func autoMigrate(db *gorm.DB) error {
 	if err != nil {
 		fmt.Println("Creating default admin account....")
 		adminUsername := os.Getenv("ADMIN_USERNAME")
+		adminName := os.Getenv("ADMIN_NAME")
 		adminPassword := os.Getenv("ADMIN_PASSWORD")
 
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(adminPassword), bcrypt.DefaultCost)
@@ -91,6 +92,7 @@ func autoMigrate(db *gorm.DB) error {
 		now := time.Now()
 		admin := domain.User{
 			Username:  adminUsername,
+			Name:      adminName,
 			Password:  string(hashedPassword),
 			Role:      "admin",
 			CreatedAt: now,

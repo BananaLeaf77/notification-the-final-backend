@@ -407,7 +407,7 @@ func (uh *uHandler) CreateStaff(c *fiber.Ctx) error {
 		})
 	}
 
-	if req.Username == "" || req.Password == "" {
+	if req.Username == "" || req.Password == "" || req.Name == "" {
 		config.PrintLogInfo(&userClaims.Username, fiber.StatusBadRequest, "CreateStaff")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   "invalid data",
