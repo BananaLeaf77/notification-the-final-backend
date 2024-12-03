@@ -57,12 +57,45 @@ func NewUserHandlerDeploy(app *fiber.App, useCase domain.UserUseCase) {
 	group.Get("/subject/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.GetSubjectDetail)
 	group.Post("/rm/subjects", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteSubjectMass)
 	group.Get("/get-all/test-scores", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetAllTestScores)
+	group.Get("/get/test-scores/:subject_id", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetAllTestScoresBySubjectID)
+}
+
+func (h *uHandler) GetAllTestScoresBySubjectID(c *fiber.Ctx) error {
+	userToken := c.Locals("user").(*domain.Claims)
+	subjectID := c.Params("subject_id")
+
+	convertedSubjectID, err := strconv.Atoi(subjectID)
+	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "GetAllTestScoresBySubjectID")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   err.Error(),
+			"message": "Converter failure on subject id",
+			"success": false,
+		})
+	}
+
+	data, err := h.uc.GetAllTestScoresBySubjectID(c.Context(), convertedSubjectID)
+	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "GetAllTestScoresBySubjectID")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   err.Error(),
+			"message": "Failed to get all test score by subject id",
+			"success": false,
+		})
+	}
+
+	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "GetAllTestScoresBySubjectID")
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data":    data,
+		"success": true,
+		"message": "Test score retrieved successfully",
+	})
 }
 
 func (h *uHandler) GetAllTestScores(c *fiber.Ctx) error {
 	userToken := c.Locals("user").(*domain.Claims)
 
-	datas, err := h.uc.GetAllTestScores(c.Context(), userToken.UserID)
+	datas, err := h.uc.GetAllTestScores(c.Context())
 	if err != nil {
 		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "GetAllTestScores")
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
@@ -198,14 +231,14 @@ func (h *uHandler) InputTestScores(c *fiber.Ctx) error {
 	userClaims, _ := c.Locals("user").(*domain.Claims)
 
 	teacherID := userClaims.UserID
-
-	var testScores []domain.TestScore
-	if err := c.BodyParser(&testScores); err != nil {
+	// var testScores []domain.TestScore
+	var thePayload domain.InputTestScorePayload
+	if err := c.BodyParser(&thePayload); err != nil {
 		config.PrintLogInfo(&userClaims.Username, fiber.StatusBadRequest, "InputTestScores")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request payload"})
 	}
 
-	err := h.uc.InputTestScores(c.Context(), teacherID, &testScores)
+	err := h.uc.InputTestScores(c.Context(), teacherID, &thePayload)
 	if err != nil {
 		config.PrintLogInfo(&userClaims.Username, fiber.StatusBadRequest, "InputTestScores")
 

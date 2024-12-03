@@ -47,8 +47,8 @@ type UserRepo interface {
 	GetSubjectDetail(ctx context.Context, subjectID int) (*Subject, error)
 
 	// TestScore
-	InputTestScores(ctx context.Context, teacherID int, testScores *[]TestScore) error
-	GetAllTestScores(ctx context.Context, teacherID int) (*[]TestScore, error)
+	InputTestScores(ctx context.Context, teacherID int, testScores *InputTestScorePayload) error
+	GetAllTestScores(ctx context.Context) (*[]TestScore, error)
 	GetAllTestScoresBySubjectID(ctx context.Context, subjectID int) (*[]TestScore, error)
 }
 
@@ -73,7 +73,7 @@ type UserUseCase interface {
 	GetSubjectDetail(ctx context.Context, subjectID int) (*Subject, error)
 
 	// TestScore
-	InputTestScores(ctx context.Context, teacherID int, testScores *[]TestScore) error
-	GetAllTestScores(ctx context.Context, teacherID int) (*[]TestScore, error)
+	InputTestScores(ctx context.Context, teacherID int, testScores *InputTestScorePayload) error
+	GetAllTestScores(ctx context.Context) (*[]TestScore, error)
 	GetAllTestScoresBySubjectID(ctx context.Context, subjectID int) (*[]TestScore, error)
 }

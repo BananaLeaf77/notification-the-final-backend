@@ -115,3 +115,13 @@ type AttendanceNotificationHistoryResponse struct {
 	EmailStatus    bool         `json:"email_status"`
 	CreatedAt      time.Time    `json:"created_at"`
 }
+
+type StudentTestScore struct {
+	StudentID int      `json:"student_id"`
+	TestScore *float64 `json:"test_score"`
+}
+
+type InputTestScorePayload struct {
+	StudentTestScore []StudentTestScore `json:"students_test_score"`
+	SubjectID        int                `json:"subject_id"`
+}
