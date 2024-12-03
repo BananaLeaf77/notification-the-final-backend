@@ -274,10 +274,8 @@ func (m *senderRepository) sendEmail(payload *domain.StudentAndParent) error {
 }
 
 func (m *senderRepository) sendEmailTestScore(idv *domain.IndividualExamScore) error {
-	var msg string
-
-	msg = bodyTestScore
-	err := smtp.SendMail(m.smtpAdress, m.client, m.emailSender, []string{*idv.Student.Parent.Email}, []byte(msg))
+	msgg := bodyTestScore
+	err := smtp.SendMail(m.smtpAdress, m.client, m.emailSender, []string{*idv.Student.Parent.Email}, []byte(msgg))
 	if err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
