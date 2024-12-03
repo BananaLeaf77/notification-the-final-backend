@@ -23,6 +23,9 @@ var (
 	JID             types.JID
 	bodyMaleEmail   string
 	bodyFemaleEmail string
+
+	bodyTestScoreMale   string
+	bodyTestScoreFemale string
 )
 
 type senderRepository struct {
@@ -45,7 +48,106 @@ func NewSenderRepository(db *gorm.DB, client smtp.Auth, smtpAddress, schoolPhone
 	}
 }
 
+func (m *senderRepository) createTestScoreEmail(individual domain.IndividualExamScore, schoolPhone string, examType string) string {
+	// Start with a general introduction
+	body := fmt.Sprintf(`
+SINOAN Service 🔔
+
+Kepada Yth. Bapak/Ibu %s,
+
+Kami ingin memberikan informasi mengenai hasil ujian %s anak Anda, %s Kelas %s. Berikut adalah detail hasil ujian pada beberapa mata pelajaran:
+`, examType, fmt.Sprintf("%d%s", individual.Student.Grade, individual.Student.GradeLabel), individual.Student.Parent.Name, individual.Student.Name)
+
+	// Add the subject and score details
+	for _, result := range individual.SubjectAndScoreResult {
+		subjectName := result.Subject.Name
+		score := "Belum Ada Nilai"
+		if result.Score != nil {
+			score = fmt.Sprintf("%.2f", *result.Score)
+		}
+
+		body += fmt.Sprintf("- Mata Pelajaran: %s | Nilai: %s\n", subjectName, score)
+	}
+
+	// Close the email with contact details
+	body += fmt.Sprintf(`
+
+Jika terdapat pertanyaan atau memerlukan informasi lebih lanjut, Bapak/Ibu dapat menghubungi kami di %s.
+
+Terima kasih atas perhatian dan kerjasamanya.
+
+Hormat kami,
+Tim SINOAN`, m.schoolPhone)
+
+	return body
+}
+
 func (m *senderRepository) SendTestScores(ctx context.Context, examType string) error {
+	var testScores []domain.TestScore
+	var students []domain.Student
+	var results []domain.IndividualExamScore
+
+	// Fetch all test scores
+	err := m.db.WithContext(ctx).
+		Preload("Student").
+		Preload("Subject").
+		Preload("User", func(db *gorm.DB) *gorm.DB {
+			return db.Select("user_id", "username", "name", "role", "created_at", "updated_at", "deleted_at")
+		}).
+		Where("deleted_at IS NULL").Find(&testScores).Error
+	if err != nil {
+		return err
+	}
+
+	// Fetch all students
+	err = m.db.WithContext(ctx).Preload("Parent").Where("deleted_at IS NULL").Find(&students).Error
+	if err != nil {
+		return err
+	}
+
+	// Create a map for quick student lookup
+	studentMap := make(map[int]domain.Student)
+	for _, student := range students {
+		studentMap[student.StudentID] = student
+	}
+
+	// Build results
+	for _, ts := range testScores {
+		// Find the student
+		student, exists := studentMap[ts.StudentID]
+		if !exists {
+			continue // Skip if student not found (shouldn't happen in normal cases)
+		}
+
+		// Check if this student is already in the results
+		var individual *domain.IndividualExamScore
+		for i := range results {
+			if results[i].StudentID == ts.StudentID {
+				individual = &results[i]
+				break
+			}
+		}
+
+		// If the student doesn't exist, create a new entry
+		if individual == nil {
+			individual = &domain.IndividualExamScore{
+				StudentID:             ts.StudentID,
+				Student:               student,
+				SubjectAndScoreResult: []domain.SubjectAndScoreResult{},
+			}
+			results = append(results, *individual)
+		}
+
+		// Add the subject and score to the student's results
+		individual.SubjectAndScoreResult = append(individual.SubjectAndScoreResult, domain.SubjectAndScoreResult{
+			SubjectID: ts.SubjectID,
+			Subject:   ts.Subject,
+			Score:     ts.Score,
+		})
+	}
+
+	fmt.Println(results)
+
 	return nil
 }
 

@@ -125,3 +125,15 @@ type InputTestScorePayload struct {
 	StudentTestScore []StudentTestScore `json:"students_test_score"`
 	SubjectID        int                `json:"subject_id"`
 }
+
+type SubjectAndScoreResult struct {
+	SubjectID int      `json:"subject_id"`
+	Subject   Subject  `json:"subject"`
+	Score     *float64 `json:"score"`
+}
+
+type IndividualExamScore struct {
+	StudentID             int                     `json:"student_id"`
+	Student               Student                 `json:"student"`
+	SubjectAndScoreResult []SubjectAndScoreResult `json:"subject_and_score_result"`
+}
