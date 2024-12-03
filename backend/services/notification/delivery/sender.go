@@ -28,6 +28,41 @@ func NewSenderDeliveryDeploy(app *fiber.App, uc domain.SenderUseCase) {
 
 	route := app.Group("/sender")
 	route.Post("/send-mass", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.sendMassHandler)
+	route.Post("/send-mass/exam-result", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.SendTestScores)
+}
+
+func (h *senderHandler) SendTestScores(c *fiber.Ctx) error {
+	userToken := c.Locals("user").(*domain.Claims)
+
+	var payload struct {
+		ExamType string `json:"exam_type"`
+	}
+
+	err := c.BodyParser(&payload)
+	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "SendTestScores")
+		return c.Status(fiber.StatusBadRequest).JSON((fiber.Map{
+			"error":   err.Error(),
+			"success": false,
+			"message": "Failed to announce test scores",
+		}))
+	}
+
+	err = h.suc.SendTestScores(c.Context(), payload.ExamType)
+	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "SendTestScores")
+		return c.Status(fiber.StatusInternalServerError).JSON((fiber.Map{
+			"error":   err.Error(),
+			"success": false,
+			"message": "Failed to announce test scores",
+		}))
+	}
+
+	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "SendTestScores")
+	return c.Status(fiber.StatusOK).JSON((fiber.Map{
+		"success": false,
+		"message": "Successfully announce test scores",
+	}))
 }
 
 func (h *senderHandler) sendMassHandler(c *fiber.Ctx) error {
@@ -44,6 +79,7 @@ func (h *senderHandler) sendMassHandler(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   "invalid request body",
 			"success": false,
+			"message": "Failed to announce attendance",
 		})
 	}
 

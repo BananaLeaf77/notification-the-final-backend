@@ -24,8 +24,7 @@ var (
 	bodyMaleEmail   string
 	bodyFemaleEmail string
 
-	bodyTestScoreMale   string
-	bodyTestScoreFemale string
+	bodyTestScore string
 )
 
 type senderRepository struct {
@@ -48,15 +47,16 @@ func NewSenderRepository(db *gorm.DB, client smtp.Auth, smtpAddress, schoolPhone
 	}
 }
 
-func (m *senderRepository) createTestScoreEmail(individual domain.IndividualExamScore, schoolPhone string, examType string) string {
+func (m *senderRepository) createTestScoreEmail(individual domain.IndividualExamScore, examType string) {
 	// Start with a general introduction
+
 	body := fmt.Sprintf(`
 SINOAN Service 🔔
 
 Kepada Yth. Bapak/Ibu %s,
 
 Kami ingin memberikan informasi mengenai hasil ujian %s anak Anda, %s Kelas %s. Berikut adalah detail hasil ujian pada beberapa mata pelajaran:
-`, examType, fmt.Sprintf("%d%s", individual.Student.Grade, individual.Student.GradeLabel), individual.Student.Parent.Name, individual.Student.Name)
+`, individual.Student.Parent.Name, examType, individual.Student.Name, fmt.Sprintf("%d%s", individual.Student.Grade, individual.Student.GradeLabel))
 
 	// Add the subject and score details
 	for _, result := range individual.SubjectAndScoreResult {
@@ -79,14 +79,14 @@ Terima kasih atas perhatian dan kerjasamanya.
 Hormat kami,
 Tim SINOAN`, m.schoolPhone)
 
-	return body
+	bodyTestScore = body
 }
 
 func (m *senderRepository) SendTestScores(ctx context.Context, examType string) error {
 	var testScores []domain.TestScore
 	var students []domain.Student
 	var results []domain.IndividualExamScore
-
+	// tNow := time.Now()
 	// Fetch all test scores
 	err := m.db.WithContext(ctx).
 		Preload("Student").
@@ -146,7 +146,30 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 		})
 	}
 
-	fmt.Println(results)
+	for _, idv := range results {
+		var testScoreWAStatus, testScoreEmailStatus bool
+		testScoreWAStatus, testScoreEmailStatus = false, false
+
+		m.createTestScoreEmail(idv, examType)
+
+		// send via mail
+		if idv.Student.Parent.Email != nil && *idv.Student.Parent.Email != "" {
+			if err := m.sendEmailTestScore(&idv); err != nil {
+				fmt.Printf("Failed to send email to: %s\n", *idv.Student.Parent.Email)
+				continue
+			}
+			testScoreEmailStatus = true
+		}
+
+		// send via wa
+		err = m.sendWATestScore(ctx, &idv)
+		if err != nil {
+			testScoreWAStatus = false
+		}
+		testScoreWAStatus = true
+
+		fmt.Println(testScoreWAStatus, testScoreEmailStatus)
+	}
 
 	return nil
 }
@@ -250,6 +273,17 @@ func (m *senderRepository) sendEmail(payload *domain.StudentAndParent) error {
 	return nil
 }
 
+func (m *senderRepository) sendEmailTestScore(idv *domain.IndividualExamScore) error {
+	var msg string
+
+	msg = bodyTestScore
+	err := smtp.SendMail(m.smtpAdress, m.client, m.emailSender, []string{*idv.Student.Parent.Email}, []byte(msg))
+	if err != nil {
+		return fmt.Errorf("failed to send email: %w", err)
+	}
+	return nil
+}
+
 func (m *senderRepository) sendWA(ctx context.Context, payload *domain.StudentAndParent) error {
 	var msg string
 	completeFormat := fmt.Sprintf("%s%s", "62", payload.Parent.Telephone[1:])
@@ -261,6 +295,26 @@ func (m *senderRepository) sendWA(ctx context.Context, payload *domain.StudentAn
 	} else if payload.Parent.Gender == "male" {
 		msg = bodyMale
 	}
+
+	conversationMessage := &waE2E.Message{
+		Conversation: &msg,
+	}
+
+	_, err := m.meowClient.SendMessage(ctx, jid, conversationMessage)
+	if err != nil {
+		fmt.Println("error cuk")
+		return err
+	}
+	return nil
+}
+
+func (m *senderRepository) sendWATestScore(ctx context.Context, idv *domain.IndividualExamScore) error {
+	var msg string
+	completeFormat := fmt.Sprintf("%s%s", "62", idv.Student.Parent.Telephone[1:])
+
+	jid := types.NewJID(completeFormat, types.DefaultUserServer)
+
+	msg = bodyTestScore
 
 	conversationMessage := &waE2E.Message{
 		Conversation: &msg,
