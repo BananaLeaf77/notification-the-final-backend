@@ -27,6 +27,7 @@ type Profile struct {
 }
 
 type UserRepo interface {
+	// Staff
 	GetAllStaff(ctx context.Context) (*[]SafeStaffData, error)
 	GetStaffDetail(ctx context.Context, id int) (*SafeStaffData, error)
 	FindUserByUsername(ctx context.Context, username string) (*User, error)
@@ -35,25 +36,24 @@ type UserRepo interface {
 	DeleteStaff(ctx context.Context, id int) error
 	DeleteStaffMass(ctx context.Context, ids *[]int) error
 
+	// Subject
 	CreateSubject(ctx context.Context, subject *Subject) error
 	CreateSubjectBulk(ctx context.Context, subjects *[]Subject) (*[]string, error)
 	GetAllSubject(ctx context.Context, userID int) (*[]Subject, error)
 	UpdateSubject(ctx context.Context, id int, newSubjectData *Subject) error
 	DeleteSubject(ctx context.Context, id int) error
 	DeleteSubjectMass(ctx context.Context, ids *[]int) error
-
 	GetSubjectsForTeacher(ctx context.Context, userID int) (*[]Subject, error)
 	GetSubjectDetail(ctx context.Context, subjectID int) (*Subject, error)
+
+	// TestScore
 	InputTestScores(ctx context.Context, teacherID int, testScores *[]TestScore) error
-
-	// GetAllAssignedSubject(ctx context.Context, userID int) (*[]Subject, error)
-
-	// GetlAllClass(ctx context.Context) (*[]Class, error)
-	// CreateClass(ctx context.Context, classData *Class) error
-	// DeleteClass(ctx context.Context, id int) error
+	GetAllTestScores(ctx context.Context, teacherID int) (*[]TestScore, error)
+	GetAllTestScoresBySubjectID(ctx context.Context, subjectID int) (*[]TestScore, error)
 }
 
 type UserUseCase interface {
+	// Staff
 	GetAllStaff(ctx context.Context) (*[]SafeStaffData, error)
 	GetStaffDetail(ctx context.Context, id int) (*SafeStaffData, error)
 	FindUserByUsername(ctx context.Context, username string) (*User, error)
@@ -62,20 +62,18 @@ type UserUseCase interface {
 	DeleteStaff(ctx context.Context, id int) error
 	DeleteStaffMass(ctx context.Context, ids *[]int) error
 
+	// Subject
 	CreateSubject(ctx context.Context, subject *Subject) error
 	CreateSubjectBulk(ctx context.Context, subjects *[]Subject) (*[]string, error)
 	GetAllSubject(ctx context.Context, userID int) (*[]Subject, error)
 	UpdateSubject(ctx context.Context, id int, newSubjectData *Subject) error
 	DeleteSubject(ctx context.Context, id int) error
 	DeleteSubjectMass(ctx context.Context, ids *[]int) error
-
 	GetSubjectsForTeacher(ctx context.Context, userID int) (*[]Subject, error)
 	GetSubjectDetail(ctx context.Context, subjectID int) (*Subject, error)
+
+	// TestScore
 	InputTestScores(ctx context.Context, teacherID int, testScores *[]TestScore) error
-
-	// GetAllAssignedSubject(ctx context.Context, userID int) (*[]Subject, error)
-
-	// GetlAllClass(ctx context.Context) (*[]Class, error)
-	// CreateClass(ctx context.Context, classData *Class) error
-	// DeleteClass(ctx context.Context, id int) error
+	GetAllTestScores(ctx context.Context, teacherID int) (*[]TestScore, error)
+	GetAllTestScoresBySubjectID(ctx context.Context, subjectID int) (*[]TestScore, error)
 }

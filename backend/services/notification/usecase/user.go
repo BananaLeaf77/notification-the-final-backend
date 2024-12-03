@@ -168,6 +168,24 @@ func (u *userUC) DeleteSubjectMass(ctx context.Context, ids *[]int) error {
 	return nil
 }
 
+func (u *userUC) GetAllTestScores(ctx context.Context, teacherID int) (*[]domain.TestScore, error) {
+	v, err := u.userRepo.GetAllTestScores(ctx, teacherID)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
+func (u *userUC) GetAllTestScoresBySubjectID(ctx context.Context, subjectID int) (*[]domain.TestScore, error) {
+	v, err := u.userRepo.GetAllTestScoresBySubjectID(ctx, subjectID)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
 // func (u *userUC) GetAllAssignedSubject(ctx context.Context, userID int) (*[]domain.Subject, error) {
 // 	v, err := u.userRepo.GetAllAssignedSubject(ctx, userID)
 // 	if err != nil {

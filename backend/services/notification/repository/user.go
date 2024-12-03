@@ -23,6 +23,21 @@ func NewUserRepository(database *gorm.DB) domain.UserRepo {
 	}
 }
 
+func (ur *userRepository) GetAllTestScoresBySubjectID(ctx context.Context, subjectID int) (*[]domain.TestScore, error) {
+	// get the subject first
+	var subject domain.Subject
+}
+
+func (ur *userRepository) GetAllTestScores(ctx context.Context, teacherID int) (*[]domain.TestScore, error) {
+	var testScores []domain.TestScore
+	err := ur.db.WithContext(ctx).Where("deleted_at IS NULL").Find(testScores).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &testScores, nil
+}
+
 func (ur *userRepository) FindUserByUsername(ctx context.Context, username string) (*domain.User, error) {
 	var user domain.User
 	usernameLowered := strings.ToLower(username)

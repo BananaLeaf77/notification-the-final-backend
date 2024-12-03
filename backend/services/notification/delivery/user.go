@@ -56,6 +56,28 @@ func NewUserHandlerDeploy(app *fiber.App, useCase domain.UserUseCase) {
 	group.Post("/rm/users", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteStaffMass)
 	group.Get("/subject/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.GetSubjectDetail)
 	group.Post("/rm/subjects", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteSubjectMass)
+	group.Get("/get-all/test-scores", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetAllTestScores)
+}
+
+func (h *uHandler) GetAllTestScores(c *fiber.Ctx) error {
+	userToken := c.Locals("user").(*domain.Claims)
+
+	datas, err := h.uc.GetAllTestScores(c.Context(), userToken.UserID)
+	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "GetAllTestScores")
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"success": true,
+			"message": "Get all Test Scores fail to deliver data",
+			"data":    nil,
+		})
+	}
+
+	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "GetAllTestScores")
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Test Score successsfully retrieved",
+		"data":    datas,
+	})
 }
 
 func (h *uHandler) DeleteSubjectMass(c *fiber.Ctx) error {
