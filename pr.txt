@@ -13,3 +13,4 @@ modal loading error, refreshed form import,
 
 
 pr =  user punya name , go routine send wa and email.
+pr = kita cuma send yang benar benar gak ada kabar / bolos, kalau izin / kirim surat klo ndk ada notif berarti surat tersampaikan sekolah sudah tau
