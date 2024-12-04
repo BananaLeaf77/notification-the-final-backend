@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>SINOAN Attendance History</title>
+    <title>SINOAN Test Score</title>
     <meta
       content="width=device-width, initial-scale=1.0, shrink-to-fit=no"
       name="viewport"
@@ -35,33 +35,17 @@
 
     <!-- CSS Files -->
     <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="assets/css/kaiadmin.min.css" />
     <link rel="stylesheet" href="assets/css/plugins.min.css" />
+    <link rel="stylesheet" href="assets/css/kaiadmin.min.css" />
+    <link rel="stylesheet" href="assets/css/xheckbox.css" />
+
 
     <!-- CSS Just for demo purpose, don't include it in your project -->
     <link rel="stylesheet" href="assets/css/demo.css" />
   </head>
   <body>
-    <!-- The Modal -->
-    <!-- API Response Modal -->
-    <div class="modal fade" id="APIResponse" tabindex="-1" aria-labelledby="APIResponseLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content" style="border: 2px solid #ccc !important; border-radius: 5px;">
-              <div class="modal-header">
-                  <h5 class="modal-title" id="APIResponseLabel">Message</h5>
-                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                      <span aria-hidden="true">&times;</span>
-                  </button>
-              </div>
-              <div class="modal-body">
-                  <span id="msgs"></span>
-              </div>
-              <div class="modal-footer">
-                  <button type="button" class="btn btn-info" id="confirmAPIResponse">Ok</button>              </div>
-          </div>
-      </div>
-    </div>
 
+    <!-- The Modal -->
     <!-- Unauthorized -->
     <div class="modal fade" id="unauthorizedModal" tabindex="-1" aria-labelledby="unauthorizedModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
@@ -102,6 +86,57 @@
       </div>
     </div>
 
+    <div class="modal fade" id="sendMassModal" tabindex="-1" aria-labelledby="sendMassModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+              <div class="modal-header">
+                  <h5 class="modal-title" id="sendMassModalLabel">Exam Notification Sender</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                  </button>
+              </div>
+              <div class="modal-body">
+                Are you sure you want to notify exams / test scores? (all student test score would be reset to 0/none)?
+              </div>
+              <div class="form-group">
+                <label>Choose on what type of exam you want to send!</label>
+                <div id="examType" class="subject-container d-flex flex-wrap gap-2">
+                    <!-- Subjects will be dynamically populated here -->
+                </div>
+            </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="sendIt">Send</button>
+              </div>
+          </div>
+      </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loadingIndicator" class="spinner-border text-primary" role="status" style="display: none;">
+      <span class="sr-only">Loading...</span>
+    </div>
+    
+    <!-- API Response Modal -->
+    <div class="modal fade" id="APIResponse" tabindex="-1" aria-labelledby="APIResponseLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content" style="border: 2px solid #ccc !important; border-radius: 5px;">
+              <div class="modal-header">
+                  <h5 class="modal-title" id="APIResponseLabel">Message</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                  </button>
+              </div>
+              <div class="modal-body">
+                  <span id="msgs"></span>
+              </div>
+              <div class="modal-footer">
+                  <button type="button" class="btn btn-info" id="confirmAPIResponse">Ok</button>              </div>
+          </div>
+      </div>
+    </div>
+
+
     <div class="wrapper">
       <!-- Sidebar -->
       <div class="sidebar" data-background-color="light">
@@ -136,6 +171,7 @@
               <li class="nav-item">
                 <a
                   href="index.html"
+                  aria-expanded="false"
                 >
                   <i class="fas fa-home"></i>
                   <p>Dashboard</p>
@@ -147,7 +183,7 @@
                 </span>
                 <h4 class="text-section">Components</h4>
               </li>
-              <li class="nav-item">
+              <li class="nav-item active">
                 <a href="testScoreInput.html">
                   <i class="fas fa-pen"></i>
                   <p>Test Score Input</p>
@@ -165,7 +201,7 @@
                   <p>Registered Subject</p>
                 </a>               
               </li>  
-              <li class="nav-item active">
+              <li class="nav-item">
                 <a href="attendanceHistory.html">
                   <i class="fas fa-user-clock"></i>
                   <p>Attendance History</p>
@@ -212,7 +248,6 @@
               <nav
                 class="navbar navbar-header-left navbar-expand-lg navbar-form nav-search p-0 d-none d-lg-flex"
               >
-               
               </nav>
 
               <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
@@ -220,12 +255,8 @@
                   class="nav-item topbar-icon dropdown hidden-caret d-flex d-lg-none"
                 >
                   <a
-                    class="nav-link dropdown-toggle"
-                    data-bs-toggle="dropdown"
-                    href="#"
+                    href="dataChangeRequest.html"
                     role="button"
-                    aria-expanded="false"
-                    aria-haspopup="true"
                   >
                     <i class="fa fa-search"></i>
                   </a>
@@ -324,16 +355,34 @@
               class="d-flex align-items-left align-items-md-center flex-column flex-md-row pt-2 pb-4"
             >
               <div>
-                <h3 class="fw-bold mb-3">Attendance History</h3>
+                <h3 class="fw-bold mb-3">Test Score Input</h3>
               </div>
               
+            </div>
+            <div class="row" id="teachingSubjectsRow">
+              <!-- Cards will be dynamically inserted here -->
             </div>
             <div class="row">
               <div class="col-md-12">
                 <div class="card card-round">
                   <div class="card-header">
+                    <div class="card-head-row card-tools-still-right">
+                      <h4 class="card-title">Student List</h4>
+                      <div class="card-tools d-flex justify-content-between align-items-center">
+                        <div>
+                          <a class="btn btn-success btn-round">
+                            <i class="fas fa-save"></i> Save Changes
+                          </a>
+                        </div>
+                        <div class="timeline-badge">
+                          <a href="#" class="btn btn-primary btn-round" onclick="showSendMassInfo()">
+                            <i class="far fa-paper-plane"></i> Send
+                          </a>
+                        </div>
+                      </div>
+                    </div>
                     <p class="card-category">
-                      History of students that who doesnt attend the class.
+                      Student list complete with class, name and score input 
                     </p>
                   </div>
                   <div class="card-body">
@@ -341,22 +390,16 @@
                       <div class="col-md-13">
                         <div class="table-responsive table-hover table-sales">
                           <table class="table table-striped">
-                              <thead>
-                                  <tr>
-                                      <th>Date</th>
-                                      <th>Time</th>
-                                      <th>Class</th>
-                                      <th>Student Name</th>
-                                      <th>Parent Name</th>
-                                      <th>Sender</th>
-                                      <th>On Subject</th>
-                                      <th>Whatsapp Sent</th>
-                                      <th>Email Sent</th>
-                                  </tr>
-                              </thead>
-                              <tbody id="attendanceHistoryTable">
-                                  <!-- Dynamic rows will be populated here -->
-                              </tbody>
+                            <thead>
+                                <tr>
+                                    <th>Class</th>
+                                    <th>Name</th>
+                                    <th>Input Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentTable">
+                                <!-- Dynamic rows will be populated here -->
+                            </tbody>
                           </table>
                         </div>
                       </div>
@@ -456,15 +499,12 @@
     </script>
     <!-- API HIT -->
     <script>
-      document.getElementById("confirmAPIResponse").addEventListener("click", function() {
-        $('#APIResponse').modal('hide');
-      });
-      
+
       function logout() {
         // Show the confirmation modal
         $('#logoutConfirmationModal').modal('show');
       }
-      
+    
       // Event listener for confirming logout
       document.getElementById("confirmLogoutButton").addEventListener("click", function () {
           // Remove the token from local storage
@@ -475,6 +515,11 @@
           
           // Hide the modal
           $('#logoutConfirmationModal').modal('hide');
+      });
+
+      document.getElementById("confirmAPIResponse").addEventListener("click", function () {
+        // Hide the modal
+        $('#APIResponse').modal('hide');
       });
       
       // Event listener for confirming logout
@@ -500,81 +545,14 @@
             $('#unauthorizedModal').modal('show');
             setTimeout(() => {
                 window.location.href = "login.html";
-            }, 3000); // Redirect after 5 seconds
+            }, 3000); // Redirect after 3 seconds
             return;
         }
     
         // If the token exists, run the functions without waiting for backend verification
         fetchProfileData(token);
         fetchDataChangeRequestCount(token);
-        fetchTruancyHistory(token);
       });
-      
-      function fetchTruancyHistory(token) {
-        fetch("http://127.0.0.1:8000/notification/truancy-history", {
-            method: "GET",
-            headers: {
-                "Authorization": `${token}`,
-                "Content-Type": "application/json",
-            },
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    let truancyData = data.data;
-    
-                    // Sort truancy data by created_at in descending order (most recent first)
-                    truancyData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    
-                    const tableBody = document.getElementById("attendanceHistoryTable");
-    
-                    // Clear existing rows
-                    tableBody.innerHTML = "";
-    
-                    // Populate rows dynamically
-                    truancyData.forEach(record => {
-                        const createdAt = new Date(record.created_at);
-                        const date = createdAt.toLocaleDateString(); // Extract the date
-                        const time = createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); // Extract hour and minute
-    
-                        const row = document.createElement("tr");
-    
-                        row.innerHTML = `
-                            <td>${date}</td>
-                            <td>${time}</td>
-                            <td>Grade ${record.student.grade}${record.student.grade_label}</td>
-                            <td>${record.student.name}</td>
-                            <td>${record.parent.name}</td>
-                            <td>${record.user.name} (${record.user.role})</td>
-                            <td>${record.subject.name}</td>
-                            <td>${record.whatsapp_status ? "✅" : "❌"}</td>
-                            <td>${record.email_status ? "✅" : "❌"}</td>
-                        `;
-    
-                        // Add click event to navigate to detailStudent.html with the student ID
-                        row.addEventListener("click", () => {
-                            window.location.href = `detailStudent.html?student_id=${record.student.student_id}`;
-                        });
-    
-                        // Add cursor pointer for better UX
-                        row.style.cursor = "pointer";
-    
-                        tableBody.appendChild(row);
-                    });
-                } else {
-                    console.error("Error fetching truancy history:", data.message);
-                    const tableBody = document.getElementById("attendanceHistoryTable");
-                    tableBody.innerHTML = `<tr><td colspan="9" class="text-center text-danger">No data available</td></tr>`;
-                }
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                const tableBody = document.getElementById("attendanceHistoryTable");
-                tableBody.innerHTML = `<tr><td colspan="9" class="text-center text-danger">Failed to load data</td></tr>`;
-            });
-      }
-    
-    
 
       function fetchDataChangeRequestCount(token) {
         fetch("http://127.0.0.1:8000/student-and-parent/get-all-data-change-request", {
@@ -596,8 +574,6 @@
         .catch(error => console.error("Error:", error));
       }
 
-      // Show an error message with Bootstrap alert (or custom UI)
-
       function fetchProfileData(token) {
         fetch("http://127.0.0.1:8000/user/profile-dashboard", {
             method: "GET",
@@ -610,6 +586,8 @@
         .then(data => {
             if (data.success) {
                 userRole = data.data.role
+                loggedID = data.data.user_id
+                loggedRole = data.data.role
                 const profileName = document.getElementById("profileName");
                 profileName.textContent = `${data.data.name} (${data.data.role})`;
 
@@ -618,13 +596,180 @@
 
                 const pRole = document.getElementById("clickedProfileRole");
                 pRole.textContent = `Role : ${data.data.role}`;
+                fetchTeachingSubjects(token);
+
             } else {
+                const messageElement = document.getElementById("msgs");
+                messageElement.innerHTML = data.error; 
+                messageElement.classList.remove("text-success");
+                messageElement.classList.add("text-danger");
+            
+                const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+                apiResponseModal.show();
+                return
             }
         })
         .catch(error => {
             console.error("Error fetching profile data:", error);
+            const messageElement = document.getElementById("msgs");
+            messageElement.innerHTML = data.error; 
+            messageElement.classList.remove("text-success");
+            messageElement.classList.add("text-danger");
+        
+            const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+            apiResponseModal.show();
+            return
         });
       }
+
+      let loggedID
+      let loggedRole 
+      
+      let selectedSubjectId = null; 
+
+      function fetchTeachingSubjects(token) {
+        const endpoint = `http://127.0.0.1:8000/user/details/${loggedID}`;
+        const teachingSubjectsRow = document.getElementById("teachingSubjectsRow");
+
+        fetch(endpoint, {
+          headers: {
+            Authorization: `${token}`,
+          },
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              const teachingSubjects = data.data.teaching;
+
+              teachingSubjects.forEach((subject) => {
+                // Create smaller card HTML dynamically
+                const cardHTML = `
+                  <div class="col-6 col-md-2">
+                    <div class="card card-stats card-round subject-card" data-id="${subject.subject_id}">
+                      <div class="card-body p-2 text-center">
+                        <div class="icon-small text-center icon-info bubble-shadow-small mb-2">
+                          <i class="fas fa-book"></i>
+                        </div>
+                        <p class="card-category mb-1">${subject.name}</p>
+                        <h5 class="card-title">Grade ${subject.grade}</h5>
+                      </div>
+                    </div>
+                  </div>
+                `;
+
+                // Append the card to the row
+                teachingSubjectsRow.insertAdjacentHTML("beforeend", cardHTML);
+              });
+
+              // Add click listeners for radio-like behavior
+              const cards = document.querySelectorAll(".subject-card");
+              cards.forEach((card) => {
+                card.addEventListener("click", function () {
+                  // Deselect all other cards
+                  cards.forEach((c) => c.classList.remove("selected"));
+                  // Select the clicked card
+                  this.classList.add("selected");
+
+                  // Update the selectedSubjectId variable
+                  selectedSubjectId = this.getAttribute("data-id");
+                  console.log(`Selected Subject ID: ${selectedSubjectId}`);
+                });
+              });
+              } else {
+                teachingSubjectsRow.innerHTML =
+                  "<p>No teaching subjects available.</p>";
+              }
+              })
+              .catch((error) => {
+                console.error("Error:", error);
+                teachingSubjectsRow.innerHTML =
+                  "<p>Failed to load teaching subjects.</p>";
+              });
+      }
+      
+      function fetchTestScores(token) {
+        fetch(`http://127.0.0.1:8000/user/get/test-scores/${selectedSubjectId}`,{
+                method: "GET",
+                headers: {
+                    "Authorization": `${token}`,
+                    "Content-Type": "application/json"
+                }
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              // Sort students by grade and grade_label
+              let sortedStudents = data.data.sort((a, b) => {
+                if (a.student.grade !== b.student.grade) {
+                  return a.student.grade - b.student.grade; // Sort by grade
+                }
+                // If grades are the same, sort by grade label alphabetically
+                return a.student.grade_label.localeCompare(b.student.grade_label);
+              });
+
+              // Populate the table with sorted student data
+              let studentTable = document.getElementById("studentTable");
+              studentTable.innerHTML = ''; // Clear previous rows
+              
+              sortedStudents.forEach(studentData => {
+                let student = studentData.student;
+                let score = studentData.score;
+                
+                // Create the row for each student
+                let row = document.createElement('tr');
+                row.innerHTML = `
+                  <td>${student.grade}${student.grade_label}</td>
+                  <td>${student.name}</td>
+                  <td>${score !== null ? score : 'N/A'}</td>
+                `;
+                
+                studentTable.appendChild(row);
+              });
+            }
+          })
+          .catch(error => console.error('Error fetching data:', error));
+      }
+
+
+      function populateStudentScores(testScores) {
+        const studentTable = document.getElementById("studentTable");
+        studentTable.innerHTML = "";  // Clear any existing data in the table
+      
+        // Loop through the test scores and populate the table rows
+        testScores.forEach(testScore => {
+          const student = testScore.student;
+          const subjectName = testScore.subject.name;
+          const score = testScore.score !== null ? testScore.score : "Not Available";
+      
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${subjectName}</td>
+            <td>${student.name}</td>
+            <td>${score}</td>
+          `;
+          
+          studentTable.appendChild(row);
+        });
+      }
+
+      // Sort helper function for class format
+      function sortStudentsByClass(classA, classB) {
+        const [aClassNum, aClassLetter] = parseClass(classA);
+        const [bClassNum, bClassLetter] = parseClass(classB);
+
+        if (aClassNum !== bClassNum) return aClassNum - bClassNum;
+        return aClassLetter.localeCompare(bClassLetter);
+      }
+    
+      // Helper function to parse class strings (e.g., "2A" to [2, "A"])
+      function parseClass(classStr) {
+          const match = classStr.match(/^(\d+)([A-Z])$/);
+          return match ? [parseInt(match[1], 10), match[2]] : [0, ''];
+      }
+
+      
+
+      
 
       $(document).ready(function() {
         // Ensure both buttons trigger modal hiding
@@ -637,6 +782,20 @@
         // Ensure both buttons trigger modal hiding
         $('.close, .btn-secondary').on('click', function() {
             $('#unauthorizedModal').modal('hide');
+        });
+      });
+
+      $(document).ready(function() {
+        // Ensure both buttons trigger modal hiding
+        $('.close, .btn-secondary').on('click', function() {
+            $('#APIResponse').modal('hide');
+        });
+      });
+
+      $(document).ready(function() {
+        // Ensure both buttons trigger modal hiding
+        $('.close, .btn-secondary').on('click', function() {
+            $('#sendMassModal').modal('hide');
         });
       });
 

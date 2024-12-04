@@ -280,7 +280,7 @@
         .then(data => {
             if (data.success) {
                 const profileName = document.getElementById("profileName");
-                profileName.textContent = `${data.data.username} (${data.data.role})`;
+                profileName.textContent = `${data.data.name} (${data.data.role})`;
             } else {
                 alert("Failed to load profile information.");
             }
@@ -315,7 +315,7 @@
         .then(data => {
             if (data.success) {
                 const profileName = document.getElementById("profileName");
-                profileName.textContent = `${data.data.username} (${data.data.role})`;
+                profileName.textContent = `${data.data.name} (${data.data.role})`;
             } else {
                 alert("Failed to load profile information.");
             }

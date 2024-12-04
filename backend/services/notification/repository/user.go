@@ -389,6 +389,44 @@ func (ur *userRepository) UpdateStaff(ctx context.Context, id int, payload *doma
 	return nil
 }
 
+func (ur *userRepository) ShowProfile(ctx context.Context, uID int) (*domain.SafeStaffData, error) {
+	var user domain.User
+	var safeUser domain.SafeStaffData
+
+	err := ur.db.WithContext(ctx).Where("user_id = ? AND deleted_at IS NULL", uID).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	safeUser.Username = user.Username
+	safeUser.UserID = user.UserID
+	safeUser.Name = user.Name
+	safeUser.Role = user.Role
+
+	return &safeUser, nil
+}
+
+func (ur *userRepository) GetAdminByAdmin(ctx context.Context) (*domain.SafeStaffData, error) {
+	var subjects []domain.Subject
+	var admin domain.User
+	var adminSafeData domain.SafeStaffData
+
+	err := ur.db.WithContext(ctx).Where("user_id = 1 AND deleted_at IS NULL").First(&admin).Error
+	if err != nil {
+		return nil, err
+	}
+
+	adminSafeData.Name = admin.Name
+	adminSafeData.Role = admin.Role
+
+	if err := ur.db.WithContext(ctx).Where("deleted_at IS NULL").Find(&subjects).Error; err != nil {
+		return nil, fmt.Errorf("could not fetch subjects for admin: %w", err)
+	}
+
+	adminSafeData.Teaching = subjects
+
+	return &adminSafeData, nil
+}
+
 func (ur *userRepository) GetStaffDetail(ctx context.Context, id int) (*domain.SafeStaffData, error) {
 	var user domain.User
 	err := ur.db.WithContext(ctx).Where("user_id = ? AND deleted_at IS NULL", id).First(&user).Error

@@ -27,6 +27,8 @@ type Profile struct {
 }
 
 type UserRepo interface {
+	GetAdminByAdmin(ctx context.Context) (*SafeStaffData, error)
+	ShowProfile(ctx context.Context, uID int) (*SafeStaffData, error)
 	// Staff
 	GetAllStaff(ctx context.Context) (*[]SafeStaffData, error)
 	GetStaffDetail(ctx context.Context, id int) (*SafeStaffData, error)
@@ -53,6 +55,9 @@ type UserRepo interface {
 }
 
 type UserUseCase interface {
+	GetAdminByAdmin(ctx context.Context) (*SafeStaffData, error)
+	ShowProfile(ctx context.Context, uID int) (*SafeStaffData, error)
+
 	// Staff
 	GetAllStaff(ctx context.Context) (*[]SafeStaffData, error)
 	GetStaffDetail(ctx context.Context, id int) (*SafeStaffData, error)

@@ -186,6 +186,24 @@ func (u *userUC) GetAllTestScoresBySubjectID(ctx context.Context, subjectID int)
 	return v, nil
 }
 
+func (u *userUC) GetAdminByAdmin(ctx context.Context) (*domain.SafeStaffData, error) {
+	v, err := u.userRepo.GetAdminByAdmin(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
+func (u *userUC) ShowProfile(ctx context.Context, uID int) (*domain.SafeStaffData, error) {
+	v, err := u.userRepo.ShowProfile(ctx, uID)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
 // func (u *userUC) GetAllAssignedSubject(ctx context.Context, userID int) (*[]domain.Subject, error) {
 // 	v, err := u.userRepo.GetAllAssignedSubject(ctx, userID)
 // 	if err != nil {

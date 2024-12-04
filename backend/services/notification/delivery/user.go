@@ -218,12 +218,22 @@ func (h *uHandler) DeleteStaffMass(c *fiber.Ctx) error {
 
 func (h *uHandler) ShowProfile(c *fiber.Ctx) error {
 	userToken := c.Locals("user").(*domain.Claims)
-	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "ShowProfile")
+	v, err := h.uc.ShowProfile(c.Context(), userToken.UserID)
+	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "ShowProfile")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"error":   err.Error(),
+			"message": "Failed to retrieved profile data",
+			"data":    nil,
+		})
+	}
 
+	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "ShowProfile")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
 		"message": "Profile data loaded",
-		"data":    userToken,
+		"data":    v,
 	})
 }
 
@@ -538,14 +548,32 @@ func (uh *uHandler) DeleteStaff(c *fiber.Ctx) error {
 
 func (uh *uHandler) GetStaffDetail(c *fiber.Ctx) error {
 	userClaims := c.Locals("user").(*domain.Claims)
-
 	id, err := strconv.Atoi(c.Params("id"))
+	if userClaims.UserID == 1 && id == 1 && userClaims.Role == "admin" {
+		v, err := uh.uc.GetAdminByAdmin(c.Context())
+		if err != nil {
+			config.PrintLogInfo(&userClaims.Username, fiber.StatusInternalServerError, "GetStaffDetail")
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error":   err.Error(),
+				"success": false,
+				"message": "Failed to retrieved staff data",
+			})
+		}
+
+		config.PrintLogInfo(&userClaims.Username, fiber.StatusOK, "GetStaffDetail")
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"success": true,
+			"data":    v,
+		})
+	}
+
 	if err != nil {
 		config.PrintLogInfo(&userClaims.Username, fiber.StatusBadRequest, "GetStaffDetail")
 
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   "converter failure",
 			"success": false,
+			"message": "Failed to retrieved staff data",
 		})
 	}
 
@@ -556,6 +584,7 @@ func (uh *uHandler) GetStaffDetail(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":   err.Error(),
 			"success": false,
+			"message": "Failed to retrieved staff data",
 		})
 	}
 

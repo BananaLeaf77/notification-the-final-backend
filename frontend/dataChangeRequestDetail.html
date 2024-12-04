@@ -710,7 +710,7 @@
             if (data.success) {
                 userRole = data.data.role
                 const profileName = document.getElementById("profileName");
-                profileName.textContent = `${data.data.username} (${data.data.role})`;
+                profileName.textContent = `${data.data.name} (${data.data.role})`;
 
                 const pName = document.getElementById("clickedProfileName");
                 pName.textContent = `${data.data.username}`;
