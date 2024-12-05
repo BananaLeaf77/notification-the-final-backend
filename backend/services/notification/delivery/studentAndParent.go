@@ -172,7 +172,7 @@ func (sph *studentParentHandler) SPMassDelete(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON((fiber.Map{
 			"success": false,
 			"error":   err.Error(),
-			"message": "Failed to delete users",
+			"message": "Failed to delete students",
 		}))
 	}
 
@@ -182,14 +182,14 @@ func (sph *studentParentHandler) SPMassDelete(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON((fiber.Map{
 			"success": false,
 			"error":   err.Error(),
-			"message": "Failed to delete users",
+			"message": "Failed to delete students",
 		}))
 	}
 
 	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "SPMassDelete")
 	return c.Status(fiber.StatusOK).JSON((fiber.Map{
 		"success": true,
-		"message": "Users deleted successfully",
+		"message": "Students deleted successfully",
 	}))
 }
 
