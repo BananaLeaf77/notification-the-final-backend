@@ -49,37 +49,70 @@ func NewSenderRepository(db *gorm.DB, client smtp.Auth, smtpAddress, schoolPhone
 
 func (m *senderRepository) createTestScoreEmail(individual domain.IndividualExamScore, examType string) {
 	// Start with a general introduction
+	if individual.Student.Parent.Gender != "male" {
+		body := fmt.Sprintf(`
+		SINOAN Service 🔔
+		
+		Kepada Yth. Ibu %s,
+		
+		Kami ingin memberikan informasi mengenai hasil ujian %s anak Anda, %s Kelas %s. Berikut adalah detail hasil ujian pada beberapa mata pelajaran:
+		`, individual.Student.Parent.Name, examType, individual.Student.Name, fmt.Sprintf("%d%s", individual.Student.Grade, individual.Student.GradeLabel))
 
-	body := fmt.Sprintf(`
-SINOAN Service 🔔
+		// Add the subject and score details
+		for _, result := range individual.SubjectAndScoreResult {
+			subjectName := result.Subject.Name
+			score := "Belum Ada Nilai"
+			if result.Score != nil {
+				score = fmt.Sprintf("%.2f", *result.Score)
+			}
 
-Kepada Yth. Bapak/Ibu %s,
-
-Kami ingin memberikan informasi mengenai hasil ujian %s anak Anda, %s Kelas %s. Berikut adalah detail hasil ujian pada beberapa mata pelajaran:
-`, individual.Student.Parent.Name, examType, individual.Student.Name, fmt.Sprintf("%d%s", individual.Student.Grade, individual.Student.GradeLabel))
-
-	// Add the subject and score details
-	for _, result := range individual.SubjectAndScoreResult {
-		subjectName := result.Subject.Name
-		score := "Belum Ada Nilai"
-		if result.Score != nil {
-			score = fmt.Sprintf("%.2f", *result.Score)
+			body += fmt.Sprintf("- Mata Pelajaran: %s | Nilai: %s\n", subjectName, score)
 		}
 
-		body += fmt.Sprintf("- Mata Pelajaran: %s | Nilai: %s\n", subjectName, score)
+		// Close the email with contact details
+		body += fmt.Sprintf(`
+		
+		Jika terdapat pertanyaan atau memerlukan informasi lebih lanjut, Bapak/Ibu dapat menghubungi kami di %s.
+		
+		Terima kasih atas perhatian dan kerjasamanya.
+		
+		Hormat kami,
+		Tim SINOAN`, m.schoolPhone)
+
+		bodyTestScore = body
+	} else {
+		body := fmt.Sprintf(`
+		SINOAN Service 🔔
+		
+		Kepada Yth. Bapak %s,
+		
+		Kami ingin memberikan informasi mengenai hasil ujian %s anak Anda, %s Kelas %s. Berikut adalah detail hasil ujian pada beberapa mata pelajaran:
+		`, individual.Student.Parent.Name, examType, individual.Student.Name, fmt.Sprintf("%d%s", individual.Student.Grade, individual.Student.GradeLabel))
+
+		// Add the subject and score details
+		for _, result := range individual.SubjectAndScoreResult {
+			subjectName := result.Subject.Name
+			score := "Belum Ada Nilai"
+			if result.Score != nil {
+				score = fmt.Sprintf("%.2f", *result.Score)
+			}
+
+			body += fmt.Sprintf("- Mata Pelajaran: %s | Nilai: %s\n", subjectName, score)
+		}
+
+		// Close the email with contact details
+		body += fmt.Sprintf(`
+		
+		Jika terdapat pertanyaan atau memerlukan informasi lebih lanjut, Bapak/Ibu dapat menghubungi kami di %s.
+		
+		Terima kasih atas perhatian dan kerjasamanya.
+		
+		Hormat kami,
+		Tim SINOAN`, m.schoolPhone)
+
+		bodyTestScore = body
 	}
 
-	// Close the email with contact details
-	body += fmt.Sprintf(`
-
-Jika terdapat pertanyaan atau memerlukan informasi lebih lanjut, Bapak/Ibu dapat menghubungi kami di %s.
-
-Terima kasih atas perhatian dan kerjasamanya.
-
-Hormat kami,
-Tim SINOAN`, m.schoolPhone)
-
-	bodyTestScore = body
 }
 
 func (m *senderRepository) SendTestScores(ctx context.Context, examType string) error {
