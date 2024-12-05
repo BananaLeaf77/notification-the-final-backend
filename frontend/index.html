@@ -801,13 +801,13 @@
             .then(data => {
                 console.log(data)
                 if (data.success) {
-                    messageElement.innerHTML = data.message;
-                    messageElement.classList.remove("text-danger");
-                    messageElement.classList.add("text-success");
+                  messageElement.innerHTML = data.message;
+                  messageElement.classList.remove("text-danger");
+                  messageElement.classList.add("text-success");
                 } else {
-                    messageElement.innerHTML = data.error;
-                    messageElement.classList.remove("text-success");
-                    messageElement.classList.add("text-danger");
+                  messageElement.innerHTML = data.error;
+                  messageElement.classList.remove("text-success");
+                  messageElement.classList.add("text-danger");
                 }
     
                 // Show the response modal

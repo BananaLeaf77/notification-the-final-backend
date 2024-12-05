@@ -229,7 +229,7 @@
                     <i class="fa fa-search"></i>
                   </a>
                   <ul class="dropdown-menu dropdown-search animated fadeIn">
-                    <form class="navbar-left navbar-form nav-search">
+                    <!-- <form class="navbar-left navbar-form nav-search">
                       <div class="input-group">
                         <input
                           type="text"
@@ -237,7 +237,8 @@
                           class="form-control"
                         />
                       </div>
-                    </form>
+
+                    </form> -->
                   </ul>
                 </li>            
                 <li class="nav-item topbar-icon dropdown hidden-caret">
@@ -344,7 +345,7 @@
                         <div class="col-md-6">
                           <div class="card shadow-sm">
                             <div class="card-body">
-                              <form id="sp-form">
+                              <form id="sp-form" enctype="multipart/form-data">
                                 <div class="row">
                                     <div class="form-group mb-4">
                                         <label for="exampleFormControlFile1" class="form-label fw-bold">
@@ -581,41 +582,25 @@
         formData.append("file", fileInput.files[0]);
     
         try {
-            const response = await fetch('http://127.0.0.1:8000/student-and-parent/import', {
-                method: 'POST',
-                headers: {
-                    'Authorization': token,
-                },
-                body: formData,
-            });
-    
-            const responseData = await response.json();
-    
-            if (responseData.success) {
-                messageElement.textContent = responseData.message || "File uploaded successfully!";
-                messageElement.classList.remove("text-danger");
-                messageElement.classList.add("text-success");
-    
-                // Reset the form fields
-                document.getElementById('sp-form').reset();
-                fileInput.value = ""; // Clear the file input
-    
-            } else {
-                let errorMessage = responseData.message + ":";
-                if (responseData.error && responseData.error.length > 0) {
-                    errorMessage += "<ul>";
-                    responseData.error.forEach(err => {
-                        errorMessage += `<li>${err}</li>`;
-                    });
-                    errorMessage += "</ul>";
-                }
-                messageElement.innerHTML = errorMessage;
-                messageElement.classList.remove("text-success");
-                messageElement.classList.add("text-danger");
-            }
-    
+          const response = fetch('http://127.0.0.1:8000/student-and-parent/import', {
+            method: 'POST',
+            headers: {
+                'Authorization': token,
+            },
+            body: formData,
+          }).then((res) => {
+          }).then((res) => {
+            console.log("success")
+          $('#APIResponse').modal('show');
+          })
+          .catch((err) => {
+            messageElement.textContent = "An error occurred while uploading the file.";
+          $('#APIResponse').modal('show');
+
+          })
+
+        
             // Show the modal with the response message
-            $('#APIResponse').modal('show');
         } catch (error) {
             console.log("Error occurred:", error);
             messageElement.textContent = "An error occurred while uploading the file.";
@@ -624,6 +609,8 @@
     
             // Show the modal
             $('#APIResponse').modal('show');
+        }finally{
+          console.log("test")
         }
       });
 
