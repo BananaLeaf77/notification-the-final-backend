@@ -60,7 +60,7 @@ func (h *senderHandler) SendTestScores(c *fiber.Ctx) error {
 
 	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "SendTestScores")
 	return c.Status(fiber.StatusOK).JSON((fiber.Map{
-		"success": false,
+		"success": true,
 		"message": "Successfully announce test scores",
 	}))
 }
