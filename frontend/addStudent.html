@@ -695,6 +695,10 @@
 
                 const pRole = document.getElementById("clickedProfileRole");
                 pRole.textContent = `Role : ${data.data.role}`;
+
+                if (userRole != "admin"){
+                  window.location.href = "staffIndex.html";
+                }
             } else {
             }
         })
