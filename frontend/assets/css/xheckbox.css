@@ -82,3 +82,45 @@ margin-bottom: 0.5rem; /* Less spacing */
 font-size: 1rem; /* Smaller title text */
 margin: 0;
 }
+
+/* radio subject */
+.subject-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* Auto-adjust the columns */
+    gap: 15px;
+    max-height: 300px; /* Limit container height */
+    overflow-y: auto;
+}
+
+.subject-card {
+    display: flex;
+    flex-direction: column;  /* Stack the grade and subject name vertically */
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    text-align: left;
+    word-wrap: break-word;
+    white-space: normal;
+    height: 100%;
+}
+
+.subject-card input[type="radio"] {
+    margin-bottom: 5px;  /* Space between radio button and text */
+    transform: scale(1.2); /* Optional: Slightly increase the size of radio button */
+}
+
+.subject-grade {
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.subject-name {
+    font-size: 14px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    text-overflow: ellipsis;
+    display: block;
+}
