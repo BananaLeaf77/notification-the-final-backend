@@ -13,3 +13,4 @@ modal loading error, refreshed form import,
 pr =  user punya name , go routine send wa and email.
 pr = kita cuma send yang benar benar gak ada kabar / bolos, kalau izin / kirim surat klo ndk ada notif berarti surat tersampaikan sekolah sudah tau / possibility spam itu ada ketika dia izin sampai 5 hari ngk mungkin guru terus ngirim notifikasi bahwa surat izin sudah tersampaikan berkali kali right
 pr = check role tiap page admin jika role staff/guru redirect ke page staff/guru
+pr = fix lagi repo sendmass test score jika sama sekali gaada nilai di semua subject jangan kirim pesan

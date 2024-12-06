@@ -542,7 +542,6 @@
           subject_id: parseInt(subjectId, 10),
         };
       
-        console.log("Payload to send:", payload); // Debugging
         const messageElement = document.getElementById("msgs");
       
         // Send the POST request
@@ -565,6 +564,7 @@
                 messageElement.innerHTML = data.message; 
                 messageElement.classList.remove("text-danger");
                 messageElement.classList.add("text-success");
+                fetchTestScores(token, subjectId)
             } else {
                 messageElement.innerHTML = data.error; 
                 messageElement.classList.remove("text-success");
@@ -754,9 +754,10 @@
         }
     
         const payload = {
-            examType: selectedExamType.value, // Get the value of the selected radio button
+            exam_type: selectedExamType.value, // Get the value of the selected radio button
         };
-    
+        
+        console.log(payload)
         // Send the notification
         fetch("http://127.0.0.1:8000/sender/send-mass/exam-result", {
             method: "POST",
@@ -882,9 +883,8 @@
       
                   // Call fetchTestScores with the correct subject_id
                   const selectedSubjectId = this.getAttribute("data-id");
-                  console.log(`Selected Subject ID: ${selectedSubjectId}`);
                   currentSubjectID = selectedSubjectId;
-                  fetchTestScores(token, selectedSubjectId); // Ensure fetchTestScores is defined
+                  fetchTestScores(token, selectedSubjectId); 
                 });
               });
             } else {
@@ -931,7 +931,7 @@
                 row.innerHTML = `
                   <td>${student.grade}${student.grade_label}</td>
                   <td>${student.name}</td>
-                  <td>${user.name}</td>
+                  <td>${user.name} (${user.role})</td>
                   <td>
                     <input 
                       type="number" 
@@ -955,7 +955,6 @@
                 input.addEventListener("input", (event) => {
                   const studentId = input.getAttribute("data-student-id");
                   const updatedScore = parseFloat(input.value);
-                  console.log(`Student ID: ${studentId}, Updated Score: ${updatedScore}`);
                   // Add your logic to handle the updated score here
                   // e.g., send the updated score to the server
                 });

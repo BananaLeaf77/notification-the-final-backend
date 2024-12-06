@@ -7,6 +7,7 @@ import (
 	"notification/domain"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"go.mau.fi/whatsmeow"
@@ -16,17 +17,6 @@ import (
 )
 
 // init var
-var (
-	bodyMale        string
-	bodyFemale      string
-	subject         string
-	JID             types.JID
-	bodyMaleEmail   string
-	bodyFemaleEmail string
-
-	bodyTestScore string
-)
-
 type senderRepository struct {
 	db          *gorm.DB
 	client      smtp.Auth
@@ -47,16 +37,16 @@ func NewSenderRepository(db *gorm.DB, client smtp.Auth, smtpAddress, schoolPhone
 	}
 }
 
-func (m *senderRepository) createTestScoreEmail(individual domain.IndividualExamScore, examType string) {
+func (m *senderRepository) createTestScoreEmail(individual domain.IndividualExamScore, examType string) string {
 	// Start with a general introduction
 	if individual.Student.Parent.Gender != "male" {
 		body := fmt.Sprintf(`
-		SINOAN Service 🔔
-		
-		Kepada Yth. Ibu %s,
-		
-		Kami ingin memberikan informasi mengenai hasil ujian %s anak Anda, %s Kelas %s. Berikut adalah detail hasil ujian pada beberapa mata pelajaran:
-		`, individual.Student.Parent.Name, examType, individual.Student.Name, fmt.Sprintf("%d%s", individual.Student.Grade, individual.Student.GradeLabel))
+SINOAN Service 🔔
+
+Kepada Yth. Ibu %s,
+
+Kami ingin memberikan informasi mengenai hasil %s anak Anda, %s Kelas %s. Berikut adalah detail hasil ulangan pada beberapa mata pelajaran:
+`, individual.Student.Parent.Name, examType, individual.Student.Name, fmt.Sprintf("%d%s", individual.Student.Grade, individual.Student.GradeLabel))
 
 		// Add the subject and score details
 		for _, result := range individual.SubjectAndScoreResult {
@@ -71,23 +61,24 @@ func (m *senderRepository) createTestScoreEmail(individual domain.IndividualExam
 
 		// Close the email with contact details
 		body += fmt.Sprintf(`
-		
-		Jika terdapat pertanyaan atau memerlukan informasi lebih lanjut, Bapak/Ibu dapat menghubungi kami di %s.
-		
-		Terima kasih atas perhatian dan kerjasamanya.
-		
-		Hormat kami,
-		Tim SINOAN`, m.schoolPhone)
 
-		bodyTestScore = body
+Jika terdapat pertanyaan atau memerlukan informasi lebih lanjut, Ibu dapat menghubungi kami di %s.
+
+Terima kasih atas perhatian dan kerjasamanya.
+
+Hormat kami,
+Tim SINOAN`, m.schoolPhone)
+
+		bodyTestScore := body
+		return bodyTestScore
 	} else {
 		body := fmt.Sprintf(`
-		SINOAN Service 🔔
-		
-		Kepada Yth. Bapak %s,
-		
-		Kami ingin memberikan informasi mengenai hasil ujian %s anak Anda, %s Kelas %s. Berikut adalah detail hasil ujian pada beberapa mata pelajaran:
-		`, individual.Student.Parent.Name, examType, individual.Student.Name, fmt.Sprintf("%d%s", individual.Student.Grade, individual.Student.GradeLabel))
+SINOAN Service 🔔
+
+Kepada Yth. Bapak %s,
+
+Kami ingin memberikan informasi mengenai hasil %s anak Anda, %s Kelas %s. Berikut adalah detail hasil ulangan pada beberapa mata pelajaran:
+`, individual.Student.Parent.Name, examType, individual.Student.Name, fmt.Sprintf("%d%s", individual.Student.Grade, individual.Student.GradeLabel))
 
 		// Add the subject and score details
 		for _, result := range individual.SubjectAndScoreResult {
@@ -102,15 +93,16 @@ func (m *senderRepository) createTestScoreEmail(individual domain.IndividualExam
 
 		// Close the email with contact details
 		body += fmt.Sprintf(`
-		
-		Jika terdapat pertanyaan atau memerlukan informasi lebih lanjut, Bapak/Ibu dapat menghubungi kami di %s.
-		
-		Terima kasih atas perhatian dan kerjasamanya.
-		
-		Hormat kami,
-		Tim SINOAN`, m.schoolPhone)
 
-		bodyTestScore = body
+Jika terdapat pertanyaan atau memerlukan informasi lebih lanjut, Bapak dapat menghubungi kami di %s.
+
+Terima kasih atas perhatian dan kerjasamanya.
+
+Hormat kami,
+Tim SINOAN`, m.schoolPhone)
+
+		bodyTestScore := body
+		return bodyTestScore
 	}
 
 }
@@ -119,40 +111,50 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 	var testScores []domain.TestScore
 	var students []domain.Student
 	var results []domain.IndividualExamScore
-	// tNow := time.Now()
-	// Fetch all test scores
+	studentMap := make(map[int]domain.Student)
+	tNow := time.Now()
+
+	// Fetch all test scores with related data
 	err := m.db.WithContext(ctx).
 		Preload("Student").
 		Preload("Subject").
 		Preload("User", func(db *gorm.DB) *gorm.DB {
 			return db.Select("user_id", "username", "name", "role", "created_at", "updated_at", "deleted_at")
 		}).
-		Where("deleted_at IS NULL").Find(&testScores).Error
+		Where("deleted_at IS NULL").
+		Find(&testScores).Error
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to fetch test scores: %w", err)
 	}
 
-	// Fetch all students
-	err = m.db.WithContext(ctx).Preload("Parent").Where("deleted_at IS NULL").Find(&students).Error
-	if err != nil {
-		return err
+	// Extract student IDs from test scores
+	studentIDs := make([]int, 0, len(testScores))
+	for _, score := range testScores {
+		studentIDs = append(studentIDs, score.StudentID)
 	}
 
-	// Create a map for quick student lookup
-	studentMap := make(map[int]domain.Student)
+	// Fetch all students associated with the test scores
+	err = m.db.WithContext(ctx).
+		Preload("Parent").
+		Where("student_id IN (?) AND deleted_at IS NULL", studentIDs).
+		Find(&students).Error
+	if err != nil {
+		return fmt.Errorf("failed to fetch students: %w", err)
+	}
+
+	// Build a map of students for quick lookup
 	for _, student := range students {
 		studentMap[student.StudentID] = student
 	}
 
-	// Build results
+	// Build results for each test score
 	for _, ts := range testScores {
-		// Find the student
 		student, exists := studentMap[ts.StudentID]
 		if !exists {
-			continue // Skip if student not found (shouldn't happen in normal cases)
+			continue // Skip if student not found
 		}
 
-		// Check if this student is already in the results
+		// Find or create an individual exam score entry for the student
 		var individual *domain.IndividualExamScore
 		for i := range results {
 			if results[i].StudentID == ts.StudentID {
@@ -161,14 +163,15 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 			}
 		}
 
-		// If the student doesn't exist, create a new entry
+		// Create a new entry if one doesn't exist
 		if individual == nil {
-			individual = &domain.IndividualExamScore{
+			newEntry := domain.IndividualExamScore{
 				StudentID:             ts.StudentID,
 				Student:               student,
 				SubjectAndScoreResult: []domain.SubjectAndScoreResult{},
 			}
-			results = append(results, *individual)
+			results = append(results, newEntry)
+			individual = &results[len(results)-1]
 		}
 
 		// Add the subject and score to the student's results
@@ -179,29 +182,52 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 		})
 	}
 
+	// Use WaitGroup to manage Go routines
+	var wg sync.WaitGroup
+	errorChan := make(chan error, len(results)*2) // Buffer size for errors
+
+	// Process results concurrently
 	for _, idv := range results {
-		var testScoreWAStatus, testScoreEmailStatus bool
-		testScoreWAStatus, testScoreEmailStatus = false, false
+		wg.Add(2) // Two goroutines: one for email, one for WhatsApp
+		strBody := m.createTestScoreEmail(idv, examType)
 
-		m.createTestScoreEmail(idv, examType)
-
-		// send via mail
-		if idv.Student.Parent.Email != nil && *idv.Student.Parent.Email != "" {
-			if err := m.sendEmailTestScore(&idv); err != nil {
-				fmt.Printf("Failed to send email to: %s\n", *idv.Student.Parent.Email)
-				continue
+		// Send email
+		go func(idv domain.IndividualExamScore) {
+			defer wg.Done()
+			if idv.Student.Parent.Email != nil && *idv.Student.Parent.Email != "" {
+				if err := m.sendEmailTestScore(&idv, strBody); err != nil {
+					errorChan <- fmt.Errorf("failed to send email to: %s, error: %w", *idv.Student.Parent.Email, err)
+				}
 			}
-			testScoreEmailStatus = true
-		}
+		}(idv)
 
-		// send via wa
-		err = m.sendWATestScore(ctx, &idv)
-		if err != nil {
-			testScoreWAStatus = false
-		}
-		testScoreWAStatus = true
+		// Send WhatsApp
+		go func(idv domain.IndividualExamScore) {
+			defer wg.Done()
+			if err := m.sendWATestScore(ctx, &idv, strBody); err != nil {
+				errorChan <- fmt.Errorf("failed to send WhatsApp for student ID: %d, error: %w", idv.StudentID, err)
+			}
+		}(idv)
+	}
 
-		fmt.Println(testScoreWAStatus, testScoreEmailStatus)
+	// Wait for all Go routines to complete
+	wg.Wait()
+	close(errorChan)
+
+	// Collect and log errors
+	for err := range errorChan {
+		fmt.Println("Error:", err)
+	}
+
+	// Mark test scores as deleted
+	for i := range testScores {
+		testScores[i].DeletedAt = gorm.DeletedAt{Time: tNow, Valid: true}
+	}
+
+	// Batch update in the database
+	err = m.db.WithContext(ctx).Save(&testScores).Error
+	if err != nil {
+		return fmt.Errorf("failed to soft delete test scores: %w", err)
 	}
 
 	return nil
@@ -226,14 +252,14 @@ func (m *senderRepository) SendMass(ctx context.Context, idList *[]int, userID *
 		}
 
 		// Initialize notification text with subject name
-		err = m.initTextWithSubject(student, subject.Name)
+		subjectForEmailSender, body, err := m.initTextWithSubject(student, subject.Name)
 		if err != nil {
 			return err
 		}
 
 		// Attempt to send an email notification
 		if student.Parent.Email != nil && *student.Parent.Email != "" {
-			if err := m.sendEmail(student); err != nil {
+			if err := m.sendEmail(student, *subjectForEmailSender, *body); err != nil {
 				fmt.Printf("Failed to send email to: %s\n", *student.Parent.Email)
 				continue
 			}
@@ -241,7 +267,7 @@ func (m *senderRepository) SendMass(ctx context.Context, idList *[]int, userID *
 		}
 
 		// Attempt to send a WhatsApp notification
-		err = m.sendWA(ctx, student)
+		err = m.sendWA(ctx, student, *body)
 		if err != nil {
 			fmt.Printf("Failed to send WhatsApp message to: %s\n", student.Parent.Telephone)
 			continue
@@ -284,20 +310,11 @@ func (m *senderRepository) fetchStudentDetails(ctx context.Context, studentID in
 	}, nil
 }
 
-func (m *senderRepository) sendEmail(payload *domain.StudentAndParent) error {
-	var msg string
-
-	if payload.Parent.Gender == "female" {
-		msg = "From: " + m.emailSender + "\n" +
-			"To: " + *payload.Parent.Email + "\n" +
-			"Subject: " + subject + "\n\n" +
-			bodyFemaleEmail
-	} else if payload.Parent.Gender == "male" {
-		msg = "From: " + m.emailSender + "\n" +
-			"To: " + *payload.Parent.Email + "\n" +
-			"Subject: " + subject + "\n\n" +
-			bodyMaleEmail
-	}
+func (m *senderRepository) sendEmail(payload *domain.StudentAndParent, subjectEmail string, body string) error {
+	msg := "From: " + m.emailSender + "\n" +
+		"To: " + *payload.Parent.Email + "\n" +
+		"Subject: " + subjectEmail + "\n\n" +
+		body
 
 	err := smtp.SendMail(m.smtpAdress, m.client, m.emailSender, []string{*payload.Parent.Email}, []byte(msg))
 	if err != nil {
@@ -306,60 +323,8 @@ func (m *senderRepository) sendEmail(payload *domain.StudentAndParent) error {
 	return nil
 }
 
-func (m *senderRepository) sendEmailTestScore(idv *domain.IndividualExamScore) error {
-	msgg := bodyTestScore
-	err := smtp.SendMail(m.smtpAdress, m.client, m.emailSender, []string{*idv.Student.Parent.Email}, []byte(msgg))
-	if err != nil {
-		return fmt.Errorf("failed to send email: %w", err)
-	}
-	return nil
-}
+func (m *senderRepository) sendEmailTestScore(idv *domain.IndividualExamScore, body string) error {
 
-func (m *senderRepository) sendWA(ctx context.Context, payload *domain.StudentAndParent) error {
-	var msg string
-	completeFormat := fmt.Sprintf("%s%s", "62", payload.Parent.Telephone[1:])
-
-	jid := types.NewJID(completeFormat, types.DefaultUserServer)
-
-	if payload.Parent.Gender == "female" {
-		msg = bodyFemale
-	} else if payload.Parent.Gender == "male" {
-		msg = bodyMale
-	}
-
-	conversationMessage := &waE2E.Message{
-		Conversation: &msg,
-	}
-
-	_, err := m.meowClient.SendMessage(ctx, jid, conversationMessage)
-	if err != nil {
-		fmt.Println("error cuk")
-		return err
-	}
-	return nil
-}
-
-func (m *senderRepository) sendWATestScore(ctx context.Context, idv *domain.IndividualExamScore) error {
-	var msg string
-	completeFormat := fmt.Sprintf("%s%s", "62", idv.Student.Parent.Telephone[1:])
-
-	jid := types.NewJID(completeFormat, types.DefaultUserServer)
-
-	msg = bodyTestScore
-
-	conversationMessage := &waE2E.Message{
-		Conversation: &msg,
-	}
-
-	_, err := m.meowClient.SendMessage(ctx, jid, conversationMessage)
-	if err != nil {
-		fmt.Println("error cuk")
-		return err
-	}
-	return nil
-}
-
-func (m *senderRepository) initTextWithSubject(payload *domain.StudentAndParent, subjectName string) error {
 	tNow := time.Now()
 
 	// Format the date and time
@@ -377,63 +342,103 @@ func (m *senderRepository) initTextWithSubject(payload *domain.StudentAndParent,
 		isAM = "PM"
 	}
 
-	subject = fmt.Sprintf("Pemberitahuan Ketidakhadiran %s pada %s %s, tanggal %s", payload.Student.Name, hourAndMinute, isAM, formattedDate)
+	subjectTestScoreEmail := fmt.Sprintf("Pemberitahuan Hasil Penilaian %s pada %s %s, tanggal %s", idv.Student.Name, hourAndMinute, isAM, formattedDate)
 
-	bodyMale = fmt.Sprintf(`
-SINOAN Service 🔔
+	msg := "From: " + m.emailSender + "\n" +
+		"To: " + *idv.Student.Parent.Email + "\n" +
+		"Subject: " + subjectTestScoreEmail + "\n\n" +
+		body
 
-Kepada Yth. Bapak %s,
-
-Kami ingin memberitahukan bahwa anak Bapak, %s, tidak hadir di pelajaran "%s" pada tanggal %s pukul %s %s.
-
-Alasan ketidakhadiran belum kami terima hingga saat ini. Kami berharap Bapak dapat memberikan konfirmasi atau informasi lebih lanjut mengenai kondisi anak Bapak.
-
-Jika terdapat pertanyaan atau memerlukan bantuan lebih lanjut, Bapak dapat menghubungi kami di %s.
-
-Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Student.Name, strings.ToUpper(subjectName), formattedDate, hourAndMinute, isAM, m.schoolPhone)
-
-	bodyFemale = fmt.Sprintf(`
-SINOAN Service 🔔
-
-Kepada Yth. Ibu %s,
-
-Kami ingin memberitahukan bahwa anak Ibu, %s, tidak hadir di pelajaran "%s" pada tanggal %s pukul %s %s.
-
-Alasan ketidakhadiran belum kami terima hingga saat ini. Kami berharap Ibu dapat memberikan konfirmasi atau informasi lebih lanjut mengenai kondisi anak Ibu.
-
-Jika terdapat pertanyaan atau memerlukan bantuan lebih lanjut, Ibu dapat menghubungi kami di %s.
-
-Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Student.Name, strings.ToUpper(subjectName), formattedDate, hourAndMinute, isAM, m.schoolPhone)
-
-	// email
-
-	bodyMaleEmail = fmt.Sprintf(`
-SINOAN Service 🔔
-
-Kepada Yth. Bapak %s,
-
-Kami ingin memberitahukan bahwa anak Bapak, %s, tidak hadir di pelajaran "%s" pada tanggal %s pukul %s %s.
-
-Alasan ketidakhadiran belum kami terima hingga saat ini. Kami berharap Bapak dapat memberikan konfirmasi atau informasi lebih lanjut mengenai kondisi anak Bapak.
-
-Jika terdapat pertanyaan atau memerlukan bantuan lebih lanjut, Bapak dapat menghubungi kami di %s.
-
-Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Student.Name, strings.ToUpper(subjectName), formattedDate, hourAndMinute, isAM, m.schoolPhone)
-
-	bodyFemaleEmail = fmt.Sprintf(`
-SINOAN Service 🔔
-
-Kepada Yth. Ibu %s,
-
-Kami ingin memberitahukan bahwa anak Ibu, %s, tidak hadir di pelajaran "%s" pada tanggal %s pukul %s %s.
-
-Alasan ketidakhadiran belum kami terima hingga saat ini. Kami berharap Ibu dapat memberikan konfirmasi atau informasi lebih lanjut mengenai kondisi anak Ibu.
-
-Jika terdapat pertanyaan atau memerlukan bantuan lebih lanjut, Ibu dapat menghubungi kami di %s.
-
-Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Student.Name, strings.ToUpper(subjectName), formattedDate, hourAndMinute, isAM, m.schoolPhone)
-
+	err = smtp.SendMail(m.smtpAdress, m.client, m.emailSender, []string{*idv.Student.Parent.Email}, []byte(msg))
+	if err != nil {
+		return fmt.Errorf("failed to send email: %w", err)
+	}
 	return nil
+}
+
+func (m *senderRepository) sendWA(ctx context.Context, payload *domain.StudentAndParent, body string) error {
+	completeFormat := fmt.Sprintf("%s%s", "62", payload.Parent.Telephone[1:])
+
+	jid := types.NewJID(completeFormat, types.DefaultUserServer)
+
+	conversationMessage := &waE2E.Message{
+		Conversation: &body,
+	}
+
+	_, err := m.meowClient.SendMessage(ctx, jid, conversationMessage)
+	if err != nil {
+		fmt.Println("meow client error")
+		return err
+	}
+	return nil
+}
+
+func (m *senderRepository) sendWATestScore(ctx context.Context, idv *domain.IndividualExamScore, strBody string) error {
+	completeFormat := fmt.Sprintf("%s%s", "62", idv.Student.Parent.Telephone[1:])
+
+	jid := types.NewJID(completeFormat, types.DefaultUserServer)
+
+	conversationMessage := &waE2E.Message{
+		Conversation: &strBody,
+	}
+
+	_, err := m.meowClient.SendMessage(ctx, jid, conversationMessage)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *senderRepository) initTextWithSubject(payload *domain.StudentAndParent, subjectName string) (*string, *string, error) {
+	tNow := time.Now()
+
+	// Format the date and time
+	formattedDate := tNow.Format("02/01/2006")
+	hourOnly := tNow.Format("15")
+	hourAndMinute := tNow.Format("15:04")
+
+	intHourOnly, err := strconv.Atoi(hourOnly)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	isAM := "AM"
+	if intHourOnly >= 12 {
+		isAM = "PM"
+	}
+
+	subject := fmt.Sprintf("Pemberitahuan Ketidakhadiran %s pada %s %s, tanggal %s", payload.Student.Name, hourAndMinute, isAM, formattedDate)
+
+	if payload.Parent.Gender == "male" {
+		bodyMale := fmt.Sprintf(`
+SINOAN Service 🔔
+
+Kepada Yth. Bapak %s,
+
+Kami ingin memberitahukan bahwa anak Bapak, %s kelas %d%s tidak hadir di pelajaran "%s" pada tanggal %s pukul %s %s.
+
+Alasan ketidakhadiran belum kami terima hingga saat ini. Kami berharap Bapak dapat memberikan konfirmasi atau informasi lebih lanjut mengenai kondisi anak Bapak.
+
+Jika terdapat pertanyaan atau memerlukan bantuan lebih lanjut, Bapak dapat menghubungi kami di %s.
+
+Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Student.Name, payload.Student.Grade, payload.Student.GradeLabel, strings.ToUpper(subjectName), formattedDate, hourAndMinute, isAM, m.schoolPhone)
+
+		return &subject, &bodyMale, nil
+	} else {
+		bodyFemale := fmt.Sprintf(`
+SINOAN Service 🔔
+
+Kepada Yth. Ibu %s,
+
+Kami ingin memberitahukan bahwa anak Ibu, %s kelas %d%s tidak hadir di pelajaran "%s" pada tanggal %s pukul %s %s.
+
+Alasan ketidakhadiran belum kami terima hingga saat ini. Kami berharap Ibu dapat memberikan konfirmasi atau informasi lebih lanjut mengenai kondisi anak Ibu.
+
+Jika terdapat pertanyaan atau memerlukan bantuan lebih lanjut, Ibu dapat menghubungi kami di %s.
+
+Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Student.Name, payload.Student.Grade, payload.Student.GradeLabel, strings.ToUpper(subjectName), formattedDate, hourAndMinute, isAM, m.schoolPhone)
+		return &subject, &bodyFemale, nil
+	}
 }
 
 func (m *senderRepository) logNotificationHistory(studentID, parentID, userID, subjectID int, whatsappSuccess, emailSuccess bool) error {
