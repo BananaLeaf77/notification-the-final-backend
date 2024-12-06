@@ -15,3 +15,4 @@ pr = kita cuma send yang benar benar gak ada kabar / bolos, kalau izin / kirim s
 pr = check role tiap page admin jika role staff/guru redirect ke page staff/guru
 pr = fix lagi repo sendmass test score jika sama sekali gaada nilai di semua subject jangan kirim pesan
 import csv (loading, check di exel/csv ne ade ne patuh sing data e)
+sort radio send notif subject
