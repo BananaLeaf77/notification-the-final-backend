@@ -45,7 +45,7 @@ type UserRepo interface {
 	UpdateSubject(ctx context.Context, id int, newSubjectData *Subject) error
 	DeleteSubject(ctx context.Context, id int) error
 	DeleteSubjectMass(ctx context.Context, ids *[]int) error
-	GetSubjectsForTeacher(ctx context.Context, userID int) (*[]Subject, error)
+	GetSubjectsForTeacher(ctx context.Context, userID int) (*SafeStaffData, error)
 	GetSubjectDetail(ctx context.Context, subjectID int) (*Subject, error)
 
 	// TestScore
@@ -74,7 +74,7 @@ type UserUseCase interface {
 	UpdateSubject(ctx context.Context, id int, newSubjectData *Subject) error
 	DeleteSubject(ctx context.Context, id int) error
 	DeleteSubjectMass(ctx context.Context, ids *[]int) error
-	GetSubjectsForTeacher(ctx context.Context, userID int) (*[]Subject, error)
+	GetSubjectsForTeacher(ctx context.Context, userID int) (*SafeStaffData, error)
 	GetSubjectDetail(ctx context.Context, subjectID int) (*Subject, error)
 
 	// TestScore

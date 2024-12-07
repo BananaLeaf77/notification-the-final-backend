@@ -27,7 +27,7 @@ func NewNotificationHandlerDeploy(app *fiber.App, uc domain.NotificationUseCase)
 	}
 
 	group := app.Group("/notification")
-	group.Get("/truancy-history", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.GetAllAttendanceNotificationHistory)
+	group.Get("/truancy-history", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetAllAttendanceNotificationHistory)
 }
 
 func (nh *notifHandler) GetAllAttendanceNotificationHistory(c *fiber.Ctx) error {

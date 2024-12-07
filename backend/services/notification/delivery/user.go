@@ -50,7 +50,7 @@ func NewUserHandlerDeploy(app *fiber.App, useCase domain.UserUseCase) {
 	group.Get("/subject/all", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetAllSubject)
 	group.Put("/subject/modify/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.UpdateSubject)
 	group.Delete("/subject/rm/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteSubject)
-	group.Get("/show-students-subjects", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetSubjectsForTeacher)
+	group.Get("/show-user-assigned-subject", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetSubjectsForTeacher)
 	group.Post("/input-test-scores", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.InputTestScores)
 	group.Get("/profile-dashboard", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.ShowProfile)
 	group.Post("/rm/users", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteStaffMass)
@@ -552,7 +552,7 @@ func (uh *uHandler) GetStaffDetail(c *fiber.Ctx) error {
 	if userClaims.UserID == 1 && id == 1 && userClaims.Role == "admin" {
 		v, err := uh.uc.GetAdminByAdmin(c.Context())
 		if err != nil {
-			config.PrintLogInfo(&userClaims.Username, fiber.StatusInternalServerError, "GetStaffDetail")
+			config.PrintLogInfo(&userClaims.Username, fiber.StatusInternalServerError, "GetAdminByAdmin")
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error":   err.Error(),
 				"success": false,
@@ -560,7 +560,7 @@ func (uh *uHandler) GetStaffDetail(c *fiber.Ctx) error {
 			})
 		}
 
-		config.PrintLogInfo(&userClaims.Username, fiber.StatusOK, "GetStaffDetail")
+		config.PrintLogInfo(&userClaims.Username, fiber.StatusOK, "GetAdminByAdmin")
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"success": true,
 			"data":    v,

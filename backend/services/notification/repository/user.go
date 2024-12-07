@@ -171,34 +171,47 @@ func (r *userRepository) InputTestScores(ctx context.Context, teacherID int, tes
 	return tx.Commit().Error
 }
 
-func (r *userRepository) GetSubjectsForTeacher(ctx context.Context, userID int) (*[]domain.Subject, error) {
+func (r *userRepository) GetSubjectsForTeacher(ctx context.Context, userID int) (*domain.SafeStaffData, error) {
 	var subjects []domain.Subject
 	var user domain.User
+	var safeData domain.SafeStaffData
 
-	err := r.db.WithContext(ctx).Where("user_id = ?", userID).First(&user).Error
+	// Retrieve the user and preload their teaching subjects
+	err := r.db.WithContext(ctx).Preload("Teaching").Where("user_id = ?", userID).First(&user).Error
 	if err != nil {
 		return nil, fmt.Errorf("user with id %d not found", userID)
 	}
 
-	if user.Role != "admin" {
-		err = r.db.WithContext(ctx).
-			Table("subjects").
-			Joins("JOIN user_subjects ON user_subjects.subject_subject_id = subjects.subject_id").
-			Where("user_subjects.user_user_id = ?", userID).
-			Find(&subjects).Error
-
+	// If the user is an admin, retrieve all subjects
+	if user.Role == "admin" {
+		err = r.db.WithContext(ctx).Where("deleted_at IS NULL").Find(&subjects).Error
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to get all subjects: %v", err)
 		}
-		return &subjects, nil
+
+		// Initialize Teaching slice in safeData
+		safeData.Teaching = make([]domain.Subject, len(subjects))
+
+		// Use copy instead of the loop to copy the subjects into safeData.Teaching
+		copy(safeData.Teaching, subjects)
+
+		safeData.UserID = user.UserID
+		safeData.Name = user.Name
+		safeData.Role = user.Role
+
+		return &safeData, nil
 	}
 
-	err = r.db.WithContext(ctx).Where("deleted_at IS NULL").Find(&subjects).Error
-	if err != nil {
-		return nil, fmt.Errorf("failed to get all subject %v", err)
+	safeData.UserID = user.UserID
+	safeData.Name = user.Name
+	safeData.Role = user.Role
+
+	safeData.Teaching = make([]domain.Subject, len(user.Teaching))
+	for i, subject := range user.Teaching {
+		safeData.Teaching[i] = *subject
 	}
 
-	return &subjects, nil
+	return &safeData, nil
 }
 
 func (ur *userRepository) CreateStaff(ctx context.Context, payload *domain.User) (*domain.User, error) {
@@ -414,7 +427,7 @@ func (ur *userRepository) GetAdminByAdmin(ctx context.Context) (*domain.SafeStaf
 	if err != nil {
 		return nil, err
 	}
-
+	adminSafeData.UserID = admin.UserID
 	adminSafeData.Name = admin.Name
 	adminSafeData.Role = admin.Role
 

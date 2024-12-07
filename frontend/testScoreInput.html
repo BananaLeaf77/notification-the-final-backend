@@ -37,8 +37,7 @@
     <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
     <link rel="stylesheet" href="assets/css/plugins.min.css" />
     <link rel="stylesheet" href="assets/css/kaiadmin.min.css" />
-    <link rel="stylesheet" href="assets/css/xheckbox.css" />
-
+    <link rel="stylesheet" href="assets/css/fortestscore.css" />
 
     <!-- CSS Just for demo purpose, don't include it in your project -->
     <link rel="stylesheet" href="assets/css/demo.css" />
@@ -106,6 +105,20 @@
       </div>
     </div>
 
+    <!-- Loading Spinner -->
+    <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="loadingModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content text-center">
+              <div class="modal-body">
+                  <div class="spinner-border text-primary" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                  </div>
+                  <p class="mt-3">Loading, please wait...</p>
+              </div>
+          </div>
+      </div>
+    </div>
+
     <div class="modal fade" id="sendMassModal" tabindex="-1" aria-labelledby="sendMassModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
           <div class="modal-content">
@@ -116,7 +129,7 @@
                   </button>
               </div>
               <div class="modal-body">
-                Are you sure you want to notify exams / test scores? (all student test score would be reset to 0/none)?
+                Are you sure you want to notify exam/test scores? (All student test scores will be reset to 0/none.)
               </div>
               <div class="form-group">
                 <label>Choose on what type of exam you want to send</label>
@@ -403,7 +416,7 @@
                       </div>
                     </div>
                     <p class="card-category">
-                      Student list complete with class, name and score input 
+                      Student list complete with class, name, latest setter and score input 
                     </p>
                   </div>
                   <div class="card-body">
@@ -757,7 +770,13 @@
             exam_type: selectedExamType.value, // Get the value of the selected radio button
         };
         
-        console.log(payload)
+        // Reference the loading modal and the spinner element
+        const loadingModal = new bootstrap.Modal(document.getElementById("loadingModal"));
+    
+        // Show the loading spinner modal before sending the request
+        $('#sendMassModal').modal('hide');
+        loadingModal.show();
+    
         // Send the notification
         fetch("http://127.0.0.1:8000/sender/send-mass/exam-result", {
             method: "POST",
@@ -767,35 +786,44 @@
             },
             body: JSON.stringify(payload),
         })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    messageElement.innerHTML = data.message;
-                    messageElement.classList.remove("text-danger");
-                    messageElement.classList.add("text-success");
-                } else {
-                    messageElement.innerHTML = data.error;
-                    messageElement.classList.remove("text-success");
-                    messageElement.classList.add("text-danger");
-                }
-                $('#sendMassModal').modal('hide');
+        .then(response => response.json())
+        .then(data => {
+            // Hide the loading spinner modal after receiving a response
+            loadingModal.hide();
     
-                // Show the response modal
-                const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
-                apiResponseModal.show();
-            })
-            .catch(error => {
-                console.error("Error sending notification:", error);
-    
-                messageElement.innerHTML = "An error occurred while sending notifications.";
+            if (data.success) {
+                messageElement.innerHTML = data.message;
+                messageElement.classList.remove("text-danger");
+                messageElement.classList.add("text-success");
+            } else {
+                messageElement.innerHTML = data.error;
                 messageElement.classList.remove("text-success");
                 messageElement.classList.add("text-danger");
+            }
     
-                // Show the response modal
-                const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
-                apiResponseModal.show();
-            });
-      }); 
+            // Hide the send mass modal
+            $('#sendMassModal').modal('hide');
+        
+            // Show the response modal
+            const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+            apiResponseModal.show();
+        })
+        .catch(error => {
+            console.error("Error sending notification:", error);
+    
+            // Hide the loading spinner modal on error
+            loadingModal.hide();
+    
+            messageElement.innerHTML = "An error occurred while sending notifications.";
+            messageElement.classList.remove("text-success");
+            messageElement.classList.add("text-danger");
+    
+            // Show the response modal
+            const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+            apiResponseModal.show();
+        });
+      });
+    
 
       let loggedID
       let loggedRole 
@@ -818,7 +846,7 @@
 
 
       function fetchTeachingSubjects(token) {
-        const endpoint = `http://127.0.0.1:8000/user/details/${loggedID}`;
+        const endpoint = `http://127.0.0.1:8000/user/show-user-assigned-subject`;
         const teachingSubjectsRow = document.getElementById("teachingSubjectsRow");
       
         fetch(endpoint, {
@@ -850,18 +878,21 @@
               teachingSubjects.forEach((subject) => {
                 // Create smaller card HTML dynamically
                 const cardHTML = `
-                  <div class="col-6 col-md-2">
-                    <div class="card card-stats card-round subject-card" data-id="${subject.subject_id}">
-                      <div class="card-body p-2 text-center">
-                        <div class="icon-small text-center icon-info bubble-shadow-small mb-2">
-                          <i class="fas fa-book"></i>
-                        </div>
-                        <p class="card-category mb-1">${subject.name}</p>
-                        <h5 class="card-title">Grade ${subject.grade}</h5>
+                <div class="col-6 col-md-2">
+                  <div class="card card-stats subject-card text-center" data-id="${subject.subject_id}">
+                    <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                      <div class="icon-container mb-2">
+                        <i class="fas fa-book fa-2x"></i>
                       </div>
+                      <p class="subject-name text-truncate mb-1" title="${subject.name}">
+                        ${subject.name}
+                      </p>
+                      <span class="subject-grade">Grade ${subject.grade}</span>
                     </div>
                   </div>
-                `;
+                </div>
+              `;
+              
       
                 // Append the card to the row
                 teachingSubjectsRow.insertAdjacentHTML("beforeend", cardHTML);

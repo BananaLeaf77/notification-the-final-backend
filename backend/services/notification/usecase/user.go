@@ -123,7 +123,7 @@ func (u *userUC) DeleteSubject(ctx context.Context, id int) error {
 	return nil
 }
 
-func (u *userUC) GetSubjectsForTeacher(ctx context.Context, userID int) (*[]domain.Subject, error) {
+func (u *userUC) GetSubjectsForTeacher(ctx context.Context, userID int) (*domain.SafeStaffData, error) {
 	v, err := u.userRepo.GetSubjectsForTeacher(ctx, userID)
 	if err != nil {
 		return nil, err

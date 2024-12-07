@@ -86,30 +86,36 @@ margin: 0;
 /* radio subject */
 .subject-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* Auto-adjust the columns */
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 15px;
-    max-height: 300px; /* Limit container height */
+    max-height: 300px;
     overflow-y: auto;
 }
 
 .subject-card {
     display: flex;
-    flex-direction: column;  /* Stack the grade and subject name vertically */
+    flex-direction: column;
     align-items: flex-start;
-    justify-content: flex-start;
+    justify-content: center;
     padding: 10px;
     border: 1px solid #ddd;
     border-radius: 5px;
     text-align: left;
-    word-wrap: break-word;
-    white-space: normal;
-    height: 100%;
+    cursor: pointer;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    margin-bottom: 10px;
 }
 
-.subject-card input[type="radio"] {
-    margin-bottom: 5px;  /* Space between radio button and text */
-    transform: scale(1.2); /* Optional: Slightly increase the size of radio button */
+.subject-card:hover {
+    background-color: #f7f7f7;
 }
+
+.subject-card.selected {
+    background-color: #6886a4;
+    border: 2px solid #0044cc;
+    box-shadow: 0 0 5px rgba(0, 68, 204, 0.5);
+}
+
 
 .subject-grade {
     font-weight: bold;
@@ -124,3 +130,4 @@ margin: 0;
     text-overflow: ellipsis;
     display: block;
 }
+
