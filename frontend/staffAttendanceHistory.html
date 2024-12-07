@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>SINOAN Add User</title>
+    <title>SINOAN Attendance History</title>
     <meta
       content="width=device-width, initial-scale=1.0, shrink-to-fit=no"
       name="viewport"
@@ -35,8 +35,8 @@
 
     <!-- CSS Files -->
     <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="assets/css/plugins.min.css" />
     <link rel="stylesheet" href="assets/css/kaiadmin.min.css" />
+    <link rel="stylesheet" href="assets/css/plugins.min.css" />
 
     <!-- CSS Just for demo purpose, don't include it in your project -->
     <link rel="stylesheet" href="assets/css/demo.css" />
@@ -61,6 +61,7 @@
           </div>
       </div>
     </div>
+
     <!-- Unauthorized -->
     <div class="modal fade" id="unauthorizedModal" tabindex="-1" aria-labelledby="unauthorizedModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
@@ -134,8 +135,7 @@
             <ul class="nav nav-secondary">
               <li class="nav-item">
                 <a
-                  href="index.html"
-                  class="collapsed"
+                  href="staffIndex.html"
                   aria-expanded="false"
                 >
                   <i class="fas fa-home"></i>
@@ -149,25 +149,13 @@
                 <h4 class="text-section">Components</h4>
               </li>
               <li class="nav-item">
-                <a href="testScoreInput.html">
+                <a href="staffTestScoreInput.html">
                   <i class="fas fa-pen"></i>
                   <p>Test Score Input</p>
                 </a>               
               </li>
-              <li class="nav-item">
-                <a href="registeredTeacher.html">
-                  <i class="fas fa-users"></i>
-                  <p>Registered Teacher</p>
-                </a>               
-              </li>  
-              <li class="nav-item">
-                <a href="registeredSubject.html">
-                  <i class="fas fa-book"></i>
-                  <p>Registered Subject</p>
-                </a>               
-              </li>  
-              <li class="nav-item">
-                <a href="attendanceHistory.html">
+              <li class="nav-item active">
+                <a href="staffAttendanceHistory.html">
                   <i class="fas fa-user-clock"></i>
                   <p>Attendance History</p>
                 </a>               
@@ -177,7 +165,7 @@
         </div>
       </div>
       <!-- End Sidebar -->
-      
+
       <div class="main-panel">
         <div class="main-header">
           <div class="main-header-logo">
@@ -241,29 +229,6 @@
                     </form>
                   </ul>
                 </li>            
-                <li class="nav-item topbar-icon dropdown hidden-caret">
-                  <a
-                    class="nav-link dropdown-toggle"
-                    href="dataChangeRequest.html"
-                    id="notifDropdown"
-                    role="button"
-                    aria-haspopup="true"
-                    aria-expanded="false"
-                  >
-                    <i class="fa fa-bell"></i>
-                    <span class="notification text-dark" id="dataChangeRequestCount">0</span>                  </a>
-                  <ul
-                    class="dropdown-menu notif-box animated fadeIn"
-                    aria-labelledby="notifDropdown"
-                  >
-                    <li>
-                      <div class="notif-scroll scrollbar-outer">
-                        <div class="notif-center">                          
-                        </div>
-                      </div>
-                    </li>                    
-                  </ul>
-                </li>              
                 <li class="nav-item topbar-user dropdown hidden-caret">
                   <a
                     class="dropdown-toggle profile-pic"
@@ -296,7 +261,11 @@
                           <div class="u-text">
                             <h4 id="clickedProfileName">Loading...</h4>
                             <p class="text-muted" id="clickedProfileRole">Loading...</p>
-                            
+                            <a
+                              href="staffDetailProfile.html"
+                              class="btn btn-xs btn-secondary btn-sm"
+                              >View Profile</a
+                            >
                           </div>
                         </div>
                       </li>
@@ -315,51 +284,54 @@
 
         <div class="container">
           <div class="page-inner">
-            <div class="page-header">
-              <h3 class="fw-bold mb-3">Input Data</h3>     
+            <div
+              class="d-flex align-items-left align-items-md-center flex-column flex-md-row pt-2 pb-4"
+            >
+              <div>
+                <h3 class="fw-bold mb-3">Attendance History</h3>
+              </div>
+              
             </div>
             <div class="row">
               <div class="col-md-12">
-                <div class="card">
+                <div class="card card-round">
                   <div class="card-header">
-                    <div class="card-title">User Form</div>
+                    <p class="card-category">
+                      History of students that who doesnt attend the class.
+                    </p>
                   </div>
                   <div class="card-body">
-                    <form id="user-form">
-                      <div class="row">
-                        <!-- Student Section -->
-                        <div class="col-md-6 col-lg-4">
-                          <div class="form-group">
-                            <label for="username">Username</label>
-                            <div class="input-icon">
-                              <span class="input-icon-addon">
-                                <i class="fa fa-user"></i>
-                              </span>
-                              <input type="text" class="form-control" id="username" placeholder="Enter username" required />
-                            </div>
-                          </div>
-                          <div class="form-group">
-                            <label for="name">Name</label>
-                            <div class="input-icon">
-                              <input type="text" class="form-control" id="name" placeholder="Enter name" required />
-                            </div>
-                          </div>
-                          <div class="form-group">
-                            <label for="password">Password</label>
-                            <input type="password" class="form-control" id="password" placeholder="Enter password" required />
-                          </div>
+                    <div class="row">
+                      <div class="col-md-13">
+                        <div class="table-responsive table-hover table-sales">
+                          <table class="table table-striped">
+                              <thead>
+                                  <tr>
+                                      <th>Date</th>
+                                      <th>Time</th>
+                                      <th>Class</th>
+                                      <th>Student Name</th>
+                                      <th>Parent Name</th>
+                                      <th>Sender</th>
+                                      <th>On Subject</th>
+                                      <th>Whatsapp Sent</th>
+                                      <th>Email Sent</th>
+                                  </tr>
+                              </thead>
+                              <tbody id="attendanceHistoryTable">
+                                  <!-- Dynamic rows will be populated here -->
+                              </tbody>
+                          </table>
                         </div>
-                      <div class="card-action">
-                        <button type="submit" class="btn btn-success">Submit</button>
-                        <a href="registeredTeacher.html" class="btn btn-danger">Cancel</a>
                       </div>
-                    </form>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
         <footer class="footer">
           <div class="container-fluid d-flex justify-content-between">
             <nav class="pull-left">
@@ -381,7 +353,6 @@
           </div>
         </footer>
       </div>
-
     </div>
     <!--   Core JS Files   -->
     <script src="assets/js/core/jquery-3.7.1.min.js"></script>
@@ -449,84 +420,15 @@
     </script>
     <!-- API HIT -->
     <script>
-
-      document.getElementById("username").addEventListener("input", function (e) {
-        this.value = this.value.toLowerCase().replace(/\s/g, "");
-      });
-    
-      // Restrict spaces in the password field
-      document.getElementById("password").addEventListener("input", function (e) {
-        this.value = this.value.replace(/\s/g, "");
-      });
-
       document.getElementById("confirmAPIResponse").addEventListener("click", function() {
         $('#APIResponse').modal('hide');
       });
-
+      
       function logout() {
         // Show the confirmation modal
         $('#logoutConfirmationModal').modal('show');
       }
       
-      document.getElementById('user-form').addEventListener('submit', async (e) => {
-        const token = localStorage.getItem("authToken");
-        e.preventDefault();
-        
-        const data = {
-          username: document.getElementById('username').value, 
-          name: document.getElementById('name').value, 
-          password: document.getElementById('password').value, 
-        };
-        
-        console.log(data)
-        try {
-          const response = await fetch('http://127.0.0.1:8000/user/create-staff', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': token,
-            },
-            body: JSON.stringify(data),
-          });
-      
-          const responseData = await response.json();
-          const messageElement = document.getElementById("msgs");
-      
-          if (responseData.success) {
-            // Success message and form reset
-            messageElement.textContent = responseData.message;
-            messageElement.classList.remove("text-danger");
-            messageElement.classList.add("text-success");
-      
-            // Reset form fields
-            document.getElementById('user-form').reset();
-          } else {
-            errorMessage = responseData.error
-            messageElement.innerHTML = errorMessage;
-            messageElement.classList.remove("text-success");
-            messageElement.classList.add("text-danger");
-          }
-      
-          // Show the modal with the response message
-          $('#APIResponse').modal('show');
-      
-        } catch (error) {
-          console.error('Error:', error);
-          // Display error message in modal
-          const messageElement = document.getElementById("msgs");
-          messageElement.textContent = errorMessage;
-          messageElement.classList.remove("text-success");
-          messageElement.classList.add("text-danger");
-      
-          $('#APIResponse').modal('show');
-        }
-      
-        // Event listener to close the modal when "Ok" button is clicked
-        document.getElementById("confirmAPIResponse").addEventListener("click", function() {
-          $('#APIResponse').modal('hide');
-        });
-      });
-
       // Event listener for confirming logout
       document.getElementById("confirmLogoutButton").addEventListener("click", function () {
           // Remove the token from local storage
@@ -553,13 +455,6 @@
 
       userRole = ""
 
-      function parseClass(classStr) {
-        // Assuming classStr is in the format "7A", "8B", etc.
-        const classNum = parseInt(classStr.slice(0, -1)); // Gets the number part, e.g., "7" from "7A"
-        const classLetter = classStr.slice(-1); // Gets the last character, e.g., "A" from "7A"
-        return [classNum, classLetter];
-      }
-
       document.addEventListener("DOMContentLoaded", function () {
         const token = localStorage.getItem("authToken");
     
@@ -569,14 +464,81 @@
             $('#unauthorizedModal').modal('show');
             setTimeout(() => {
                 window.location.href = "login.html";
-            }, 3000); // Redirect after 3 seconds
+            }, 3000); // Redirect after 5 seconds
             return;
         }
     
         // If the token exists, run the functions without waiting for backend verification
         fetchProfileData(token);
         fetchDataChangeRequestCount(token);
+        fetchTruancyHistory(token);
       });
+      
+      function fetchTruancyHistory(token) {
+        fetch("http://127.0.0.1:8000/notification/truancy-history", {
+            method: "GET",
+            headers: {
+                "Authorization": `${token}`,
+                "Content-Type": "application/json",
+            },
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    let truancyData = data.data;
+    
+                    // Sort truancy data by created_at in descending order (most recent first)
+                    truancyData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    
+                    const tableBody = document.getElementById("attendanceHistoryTable");
+    
+                    // Clear existing rows
+                    tableBody.innerHTML = "";
+    
+                    // Populate rows dynamically
+                    truancyData.forEach(record => {
+                        const createdAt = new Date(record.created_at);
+                        const date = createdAt.toLocaleDateString(); // Extract the date
+                        const time = createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); // Extract hour and minute
+    
+                        const row = document.createElement("tr");
+    
+                        row.innerHTML = `
+                            <td>${date}</td>
+                            <td>${time}</td>
+                            <td>Grade ${record.student.grade}${record.student.grade_label}</td>
+                            <td>${record.student.name}</td>
+                            <td>${record.parent.name}</td>
+                            <td>${record.user.name} (${record.user.role})</td>
+                            <td>${record.subject.name}</td>
+                            <td>${record.whatsapp_status ? "✅" : "❌"}</td>
+                            <td>${record.email_status ? "✅" : "❌"}</td>
+                        `;
+    
+                        // Add click event to navigate to detailStudent.html with the student ID
+                        row.addEventListener("click", () => {
+                            window.location.href = `staffDetailStudent.html?student_id=${record.student.student_id}`;
+                        });
+    
+                        // Add cursor pointer for better UX
+                        row.style.cursor = "pointer";
+    
+                        tableBody.appendChild(row);
+                    });
+                } else {
+                    console.error("Error fetching truancy history:", data.message);
+                    const tableBody = document.getElementById("attendanceHistoryTable");
+                    tableBody.innerHTML = `<tr><td colspan="9" class="text-center text-danger">No data available</td></tr>`;
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                const tableBody = document.getElementById("attendanceHistoryTable");
+                tableBody.innerHTML = `<tr><td colspan="9" class="text-center text-danger">Failed to load data</td></tr>`;
+            });
+      }
+    
+    
 
       function fetchDataChangeRequestCount(token) {
         fetch("http://127.0.0.1:8000/student-and-parent/get-all-data-change-request", {
@@ -598,14 +560,7 @@
         .catch(error => console.error("Error:", error));
       }
 
-      // Helper function to parse class strings (e.g., "2A" to [2, "A"])
-      function parseClass(classStr) {
-          const match = classStr.match(/^(\d+)([A-Z])$/);
-          return match ? [parseInt(match[1], 10), match[2]] : [0, ''];
-      }
-
       // Show an error message with Bootstrap alert (or custom UI)
-
 
       function fetchProfileData(token) {
         fetch("http://127.0.0.1:8000/user/profile-dashboard", {
@@ -619,9 +574,6 @@
         .then(data => {
             if (data.success) {
                 userRole = data.data.role
-                if (userRole != "admin"){
-                  window.location.href = "staffIndex.html";
-                };
                 const profileName = document.getElementById("profileName");
                 profileName.textContent = `${data.data.name} (${data.data.role})`;
 
@@ -630,6 +582,9 @@
 
                 const pRole = document.getElementById("clickedProfileRole");
                 pRole.textContent = `Role : ${data.data.role}`;
+                if (userRole != "staff"){
+                  window.location.href = "index.html"
+                };
             } else {
             }
         })
@@ -649,13 +604,6 @@
         // Ensure both buttons trigger modal hiding
         $('.close, .btn-secondary').on('click', function() {
             $('#unauthorizedModal').modal('hide');
-        });
-      });
-
-      $(document).ready(function() {
-        // Ensure both buttons trigger modal hiding
-        $('.close, .btn-secondary').on('click', function() {
-            $('#APIResponse').modal('hide');
         });
       });
 

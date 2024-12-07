@@ -296,11 +296,7 @@
                           <div class="u-text">
                             <h4 id="clickedProfileName">Loading...</h4>
                             <p class="text-muted" id="clickedProfileRole">Loading...</p>
-                            <a
-                              href="detailProfile.html"
-                              class="btn btn-xs btn-secondary btn-sm"
-                              >View Profile</a
-                            >
+                            
                           </div>
                         </div>
                       </li>
@@ -645,6 +641,9 @@
         .then(data => {
             if (data.success) {
                 userRole = data.data.role
+                if (userRole != "admin"){
+                  window.location.href = "staffIndex.html";
+                };
                 const profileName = document.getElementById("profileName");
                 profileName.textContent = `${data.data.name} (${data.data.role})`;
 

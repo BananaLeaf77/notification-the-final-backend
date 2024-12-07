@@ -1069,7 +1069,7 @@
                 pRole.textContent = `Role : ${data.data.role}`;
                 if (userRole != "staff"){
                   window.location.href = "index.html";
-                }
+                };
             } else {
                 const messageElement = document.getElementById("msgs");
                 messageElement.innerHTML = data.error; 

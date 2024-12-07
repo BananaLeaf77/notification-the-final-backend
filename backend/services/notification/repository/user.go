@@ -204,6 +204,7 @@ func (r *userRepository) GetSubjectsForTeacher(ctx context.Context, userID int) 
 
 	safeData.UserID = user.UserID
 	safeData.Name = user.Name
+	safeData.Username = user.Username
 	safeData.Role = user.Role
 
 	safeData.Teaching = make([]domain.Subject, len(user.Teaching))

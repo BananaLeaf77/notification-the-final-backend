@@ -169,9 +169,6 @@
       </div>
     </div>
 
-    
-
-
     <div class="wrapper">
       <!-- Sidebar -->
       <div class="sidebar" data-background-color="light">
@@ -205,7 +202,7 @@
             <ul class="nav nav-secondary">
               <li class="nav-item">
                 <a
-                  href="index.html"
+                  href="staffIndex.html"
                   aria-expanded="false"
                 >
                   <i class="fas fa-home"></i>
@@ -219,25 +216,13 @@
                 <h4 class="text-section">Components</h4>
               </li>
               <li class="nav-item active">
-                <a href="testScoreInput.html">
+                <a href="staffTestScoreInput.html">
                   <i class="fas fa-pen"></i>
                   <p>Test Score Input</p>
                 </a>               
               </li>
               <li class="nav-item">
-                <a href="registeredTeacher.html">
-                  <i class="fas fa-users"></i>
-                  <p>Registered Teacher</p>
-                </a>               
-              </li>  
-              <li class="nav-item">
-                <a href="registeredSubject.html">
-                  <i class="fas fa-book"></i>
-                  <p>Registered Subject</p>
-                </a>               
-              </li>  
-              <li class="nav-item">
-                <a href="attendanceHistory.html">
+                <a href="staffAttendanceHistory.html">
                   <i class="fas fa-user-clock"></i>
                   <p>Attendance History</p>
                 </a>               
@@ -307,29 +292,6 @@
                     </form>
                   </ul>
                 </li>            
-                <li class="nav-item topbar-icon dropdown hidden-caret">
-                  <a
-                    class="nav-link dropdown-toggle"
-                    href="dataChangeRequest.html"
-                    id="notifDropdown"
-                    role="button"
-                    aria-haspopup="true"
-                    aria-expanded="false"
-                  >
-                    <i class="fa fa-bell"></i>
-                    <span class="notification text-dark" id="dataChangeRequestCount">0</span>                  </a>
-                  <ul
-                    class="dropdown-menu notif-box animated fadeIn"
-                    aria-labelledby="notifDropdown"
-                  >
-                    <li>
-                      <div class="notif-scroll scrollbar-outer">
-                        <div class="notif-center">                          
-                        </div>
-                      </div>
-                    </li>                    
-                  </ul>
-                </li>              
                 <li class="nav-item topbar-user dropdown hidden-caret">
                   <a
                     class="dropdown-toggle profile-pic"
@@ -362,7 +324,11 @@
                           <div class="u-text">
                             <h4 id="clickedProfileName">Loading...</h4>
                             <p class="text-muted" id="clickedProfileRole">Loading...</p>
-                            
+                            <a
+                              href="staffDetailProfile.html"
+                              class="btn btn-xs btn-secondary btn-sm"
+                              >View Profile</a
+                            >
                           </div>
                         </div>
                       </li>
@@ -402,11 +368,6 @@
                         <div>
                           <a class="btn btn-success btn-round" id="saveChangesBtn">
                             <i class="fas fa-save"></i> Save Changes
-                          </a>
-                        </div>
-                        <div class="timeline-badge">
-                          <a href="#" class="btn btn-primary btn-round" onclick="showSendMassExamInfo()">
-                            <i class="far fa-paper-plane"></i> Send
                           </a>
                         </div>
                       </div>
@@ -635,28 +596,7 @@
     
         // If the token exists, run the functions without waiting for backend verification
         fetchProfileData(token);
-        fetchDataChangeRequestCount(token);
       });
-
-      function fetchDataChangeRequestCount(token) {
-        fetch("http://127.0.0.1:8000/student-and-parent/get-all-data-change-request", {
-          method: "GET",
-          headers: {
-              "Authorization": `${token}`,
-              "Content-Type": "application/json"
-          }
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success && data.data) {
-              dataRequestCount = data.data.length
-              document.getElementById("dataChangeRequestCount").textContent = dataRequestCount;
-          } else {
-              console.error("Failed to fetch data or no data available.");
-          }
-        })
-        .catch(error => console.error("Error:", error));
-      }
 
       function fetchProfileData(token) {
         fetch("http://127.0.0.1:8000/user/profile-dashboard", {
@@ -670,9 +610,6 @@
         .then(data => {
             if (data.success) {
                 userRole = data.data.role
-                if (userRole != "admin"){
-                  window.location.href = "staffIndex.html";
-                };
                 loggedID = data.data.user_id
                 loggedRole = data.data.role
                 const profileName = document.getElementById("profileName");
@@ -683,6 +620,9 @@
 
                 const pRole = document.getElementById("clickedProfileRole");
                 pRole.textContent = `Role : ${data.data.role}`;
+                if (userRole != "staff"){
+                  window.location.href = "index.html";
+                };
                 fetchTeachingSubjects(token);
 
             } else {
@@ -708,121 +648,6 @@
             return
         });
       }
-
-      function showSendMassExamInfo() {
-        const messageElement = document.getElementById("msgs");
-        const examType = document.getElementById("examType");
-        examType.innerHTML = ""; // Clear existing content
-    
-        // Create UTS and UAS radio buttons
-        const examTypeRadio = `
-            <div class="form-check">
-                <input 
-                    class="form-check-input" 
-                    type="radio" 
-                    name="examType" 
-                    id="UTS" 
-                    value="Ulangan Tengah Semester (UTS)">
-                <label class="form-check-label" for="UTS">
-                    Ulangan Tengah Semester (UTS)
-                </label>
-            </div>
-            <div class="form-check">
-                <input 
-                    class="form-check-input" 
-                    type="radio" 
-                    name="examType" 
-                    id="UAS" 
-                    value="Ulangan Akhir Semester (UAS)">
-                <label class="form-check-label" for="UAS">
-                    Ulangan Akhir Semester (UAS)
-                </label>
-            </div>
-        `;
-    
-        // Add the radio buttons to the `examType` element
-        examType.innerHTML += examTypeRadio;
-    
-        // Show the modal
-        $('#sendMassModal').modal('show');
-      }
-    
-      document.getElementById("closeSendMassModal").addEventListener("click", function () {
-        $('#sendMassModal').modal('hide');
-      });
-
-      document.getElementById("sendIt").addEventListener("click", function () {
-        const token = localStorage.getItem("authToken");
-        const messageElement = document.getElementById("msgs");
-    
-        // Get the selected exam type
-        const selectedExamType = document.querySelector('input[name="examType"]:checked');
-        if (!selectedExamType) {
-            // Show error message if no exam type is selected
-            messageElement.innerHTML = "Please select an exam type.";
-            messageElement.classList.remove("text-success");
-            messageElement.classList.add("text-danger");
-            return;
-        }
-    
-        const payload = {
-            exam_type: selectedExamType.value, // Get the value of the selected radio button
-        };
-        
-        // Reference the loading modal and the spinner element
-        const loadingModal = new bootstrap.Modal(document.getElementById("loadingModal"));
-    
-        // Show the loading spinner modal before sending the request
-        $('#sendMassModal').modal('hide');
-        loadingModal.show();
-    
-        // Send the notification
-        fetch("http://127.0.0.1:8000/sender/send-mass/exam-result", {
-            method: "POST",
-            headers: {
-                "Authorization": `${token}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-        })
-        .then(response => response.json())
-        .then(data => {
-            // Hide the loading spinner modal after receiving a response
-            loadingModal.hide();
-    
-            if (data.success) {
-                messageElement.innerHTML = data.message;
-                messageElement.classList.remove("text-danger");
-                messageElement.classList.add("text-success");
-            } else {
-                messageElement.innerHTML = data.error;
-                messageElement.classList.remove("text-success");
-                messageElement.classList.add("text-danger");
-            }
-    
-            // Hide the send mass modal
-            $('#sendMassModal').modal('hide');
-        
-            // Show the response modal
-            const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
-            apiResponseModal.show();
-        })
-        .catch(error => {
-            console.error("Error sending notification:", error);
-    
-            // Hide the loading spinner modal on error
-            loadingModal.hide();
-    
-            messageElement.innerHTML = "An error occurred while sending notifications.";
-            messageElement.classList.remove("text-success");
-            messageElement.classList.add("text-danger");
-    
-            // Show the response modal
-            const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
-            apiResponseModal.show();
-        });
-      });
-    
 
       let loggedID
       let loggedRole 
@@ -1062,13 +887,6 @@
         // Ensure both buttons trigger modal hiding
         $('.close, .btn-secondary').on('click', function() {
             $('#APIResponse').modal('hide');
-        });
-      });
-
-      $(document).ready(function() {
-        // Ensure both buttons trigger modal hiding
-        $('.close, .btn-secondary').on('click', function() {
-            $('#sendMassModal').modal('hide');
         });
       });
 
