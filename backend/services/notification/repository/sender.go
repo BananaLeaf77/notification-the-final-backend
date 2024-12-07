@@ -116,7 +116,9 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 
 	// Fetch all test scores with related data
 	err := m.db.WithContext(ctx).
-		Preload("Student").
+		Preload("Student", func(db *gorm.DB) *gorm.DB {
+			return db.Where("deleted_at IS NULL")
+		}).
 		Preload("Subject").
 		Preload("User", func(db *gorm.DB) *gorm.DB {
 			return db.Select("user_id", "username", "name", "role", "created_at", "updated_at", "deleted_at")

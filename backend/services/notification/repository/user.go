@@ -29,18 +29,19 @@ func (ur *userRepository) GetAllTestScoresBySubjectID(ctx context.Context, subje
 	var testScores []domain.TestScore
 	var students []domain.Student
 
+	// Fetch the subject
 	err := ur.db.WithContext(ctx).Where("subject_id = ? AND deleted_at IS NULL", subjectID).First(&subject).Error
 	if err != nil {
 		return nil, err
 	}
 
-	// Fetch students with matching grade
+	// Fetch all students with matching grade
 	err = ur.db.WithContext(ctx).Where("grade = ? AND deleted_at IS NULL", subject.Grade).Find(&students).Error
 	if err != nil {
 		return nil, err
 	}
 
-	// Fetch test scores and preload relations, excluding sensitive fields
+	// Fetch test scores for the subject
 	err = ur.db.WithContext(ctx).
 		Preload("Student").
 		Preload("Subject").
@@ -53,16 +54,31 @@ func (ur *userRepository) GetAllTestScoresBySubjectID(ctx context.Context, subje
 		return nil, err
 	}
 
-	// Create a map of students with existing test scores
-	testScoreStudentIDs := make(map[int]domain.TestScore)
+	// Filter test scores to include only those with active students
+	var validTestScores []domain.TestScore
 	for _, testScore := range testScores {
-		testScoreStudentIDs[testScore.StudentID] = testScore
+		// Check if the associated student is active
+		var student domain.Student
+		studentCheckErr := ur.db.WithContext(ctx).
+			Where("student_id = ? AND deleted_at IS NULL", testScore.StudentID).
+			First(&student).Error
+
+		// Include the test score only if the student is active
+		if studentCheckErr == nil {
+			validTestScores = append(validTestScores, testScore)
+		}
 	}
 
-	// Add students without test scores with a default individual of 0
+	// Create a map of students with valid test scores
+	validStudentIDs := make(map[int]struct{})
+	for _, testScore := range validTestScores {
+		validStudentIDs[testScore.StudentID] = struct{}{}
+	}
+
+	// Add students without test scores if they are active
 	for _, student := range students {
-		if _, exists := testScoreStudentIDs[student.StudentID]; !exists {
-			testScores = append(testScores, domain.TestScore{
+		if _, exists := validStudentIDs[student.StudentID]; !exists {
+			validTestScores = append(validTestScores, domain.TestScore{
 				StudentID: student.StudentID,
 				Student:   student,
 				Score:     floatPointer(0), // Set Score to 0
@@ -70,8 +86,9 @@ func (ur *userRepository) GetAllTestScoresBySubjectID(ctx context.Context, subje
 		}
 	}
 
-	return &testScores, nil
+	return &validTestScores, nil
 }
+
 
 func floatPointer(f float64) *float64 {
 	return &f

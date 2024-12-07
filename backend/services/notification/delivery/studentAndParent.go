@@ -392,7 +392,7 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 		studentDataHolder = domain.Student{
 			Name:       row[0],
 			Grade:      convertedGrade,
-			GradeLabel: row[2],
+			GradeLabel: strings.ToUpper(row[2]),
 			Gender:     genderLowered,
 			Telephone:  row[4],
 			ParentID:   0,

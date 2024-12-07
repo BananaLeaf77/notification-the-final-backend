@@ -58,6 +58,7 @@ func NewUserHandlerDeploy(app *fiber.App, useCase domain.UserUseCase) {
 	group.Post("/rm/subjects", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteSubjectMass)
 	group.Get("/get-all/test-scores", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetAllTestScores)
 	group.Get("/get/test-scores/:subject_id", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetAllTestScoresBySubjectID)
+	// group.Get("/reset/test-scores", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.ResetTestScore)
 }
 
 func (h *uHandler) GetAllTestScoresBySubjectID(c *fiber.Ctx) error {

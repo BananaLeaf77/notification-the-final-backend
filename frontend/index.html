@@ -830,6 +830,7 @@
                     // Optionally, refresh any UI counters or selected count display
                     const studentCounter = document.getElementById("studentLengthSendMass");
                     if (studentCounter) studentCounter.textContent = "0";
+                    fetchStudents(token)
                 } else {
                     messageElement.innerHTML = data.error;
                     messageElement.classList.remove("text-success");
@@ -1485,6 +1486,8 @@
             messageElement.classList.add("text-success");
             $('#APIResponse').modal('show');
             fetchStudents(token)
+            selectedStudentIds = []; // Clear selection
+
           } else {
             messageElement.innerHTML = data.error;
             messageElement.classList.remove("text-success");

@@ -794,6 +794,7 @@
                 messageElement.innerHTML = data.message;
                 messageElement.classList.remove("text-danger");
                 messageElement.classList.add("text-success");
+                fetchTeachingSubjects(token)
             } else {
                 messageElement.innerHTML = data.error;
                 messageElement.classList.remove("text-success");

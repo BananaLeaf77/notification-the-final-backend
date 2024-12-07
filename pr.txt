@@ -3,3 +3,7 @@ pr = check role tiap page admin jika role staff/guru redirect ke page staff/guru
 pr = fix lagi repo sendmass test score jika sama sekali gaada nilai di semua subject jangan kirim pesan
 import csv (loading, check di exel/csv ne ade ne patuh sing data e)
 sort radio send notif subject
+
+attendance history check student id if its deleted jngn tampilin
+same with send mass test score / jika nilai 0 kirim masihh ape sing?
+tipe data nilai float or int 
