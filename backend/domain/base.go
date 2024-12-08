@@ -2,8 +2,6 @@ package domain
 
 import (
 	"time"
-
-	"gorm.io/gorm"
 )
 
 type SafeStaffData struct {
@@ -97,13 +95,13 @@ type StudentNoGorm struct {
 }
 
 type UserResponse struct {
-	UserID    int            `json:"user_id"`
-	Username  string         `json:"username"`
-	Name      string         `json:"name"`
-	Role      string         `json:"role"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `json:"deleted_at,omitempty"`
+	UserID    int        `json:"user_id"`
+	Username  string     `json:"username"`
+	Name      string     `json:"name"`
+	Role      string     `json:"role"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
+	DeletedAt *time.Time `json:"deleted_at,omitempty"`
 }
 
 type AttendanceNotificationHistoryResponse struct {

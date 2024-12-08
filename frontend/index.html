@@ -777,9 +777,9 @@
             messageElement.classList.remove("text-success");
             messageElement.classList.add("text-danger");
     
-            loadingModal.hide(); // Hide the loading modal on validation failure
             const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
             apiResponseModal.show();
+            loadingModal.hide();
             return;
         }
     

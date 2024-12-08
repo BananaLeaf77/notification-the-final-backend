@@ -3,20 +3,18 @@ package domain
 import (
 	"context"
 	"time"
-
-	"gorm.io/gorm"
 )
 
 type User struct {
-	UserID    int            `gorm:"primaryKey;autoIncrement" json:"user_id"`
-	Username  string         `gorm:"type:varchar(100);not null;" json:"username"`
-	Name      string         `gorm:"type:varchar(100);not null;" json:"name"`
-	Password  string         `gorm:"type:varchar(100);not null" json:"password"`
-	Role      string         `gorm:"type:varchar(10);not null" json:"role"`
-	Teaching  []*Subject     `gorm:"many2many:user_subjects" json:"teaching"`
-	CreatedAt time.Time      `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+	UserID    int        `gorm:"primaryKey;autoIncrement" json:"user_id"`
+	Username  string     `gorm:"type:varchar(100);not null;" json:"username"`
+	Name      string     `gorm:"type:varchar(100);not null;" json:"name"`
+	Password  string     `gorm:"type:varchar(100);not null" json:"password"`
+	Role      string     `gorm:"type:varchar(10);not null" json:"role"`
+	Teaching  []*Subject `gorm:"many2many:user_subjects" json:"teaching"`
+	CreatedAt time.Time  `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
+	DeletedAt *time.Time `gorm:"index" json:"deleted_at"`
 }
 
 type Profile struct {

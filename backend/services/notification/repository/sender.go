@@ -225,7 +225,7 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 
 	// Mark test scores as deleted
 	for i := range testScores {
-		testScores[i].DeletedAt = gorm.DeletedAt{Time: tNow, Valid: true}
+		testScores[i].DeletedAt = &tNow
 	}
 
 	// Batch update in the database

@@ -89,7 +89,6 @@ func (ur *userRepository) GetAllTestScoresBySubjectID(ctx context.Context, subje
 	return &validTestScores, nil
 }
 
-
 func floatPointer(f float64) *float64 {
 	return &f
 }
@@ -287,13 +286,6 @@ func (ur *userRepository) GetAllStaff(ctx context.Context) (*[]domain.SafeStaffD
 			return nil, fmt.Errorf("could not get subjects for user %d: %v", user.UserID, err)
 		}
 
-		// Convert gorm.DeletedAt to *time.Time
-		var deletedAt *time.Time
-		if user.DeletedAt.Valid {
-			deletedAt = &user.DeletedAt.Time
-		}
-
-		// Create SafeStaffData instance
 		safeStaffData = append(safeStaffData, domain.SafeStaffData{
 			UserID:    user.UserID,
 			Username:  user.Username,
@@ -301,7 +293,7 @@ func (ur *userRepository) GetAllStaff(ctx context.Context) (*[]domain.SafeStaffD
 			Role:      user.Role,
 			CreatedAt: user.CreatedAt,
 			UpdatedAt: user.UpdatedAt,
-			DeletedAt: deletedAt,
+			DeletedAt: user.DeletedAt,
 			Teaching:  subjects,
 		})
 	}
@@ -321,12 +313,12 @@ func (ur *userRepository) DeleteStaff(ctx context.Context, id int) error {
 
 	// Ensure the user is not an admin
 	if user.Role == "admin" {
-		return fmt.Errorf("could not delete staff")
+		return fmt.Errorf("could not delete staff: user is an admin")
 	}
 
 	// Soft delete the staff
 	now := time.Now()
-	user.DeletedAt = gorm.DeletedAt{Time: now, Valid: true}
+	user.DeletedAt = &now // Assign the current time to mark as deleted
 	err = ur.db.WithContext(ctx).Save(&user).Error
 	if err != nil {
 		return fmt.Errorf("could not delete staff: %v", err)
@@ -486,7 +478,7 @@ func (ur *userRepository) GetStaffDetail(ctx context.Context, id int) (*domain.S
 		Teaching:  subjects,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
-		DeletedAt: &user.DeletedAt.Time,
+		DeletedAt: user.DeletedAt,
 	}
 
 	return &safeData, nil
@@ -616,7 +608,7 @@ func (ur *userRepository) DeleteSubject(ctx context.Context, id int) error {
 	}
 
 	now := time.Now()
-	subject.DeletedAt = gorm.DeletedAt{Time: now, Valid: true}
+	subject.DeletedAt = &now
 	err = ur.db.WithContext(ctx).Save(&subject).Error
 	if err != nil {
 		return fmt.Errorf("could not delete subject: %v", err)
