@@ -131,3 +131,38 @@ margin: 0;
     display: block;
 }
 
+/* menu bar */
+.nav-toggle .btn {
+    background-color: #007bff; /* Change to a more visible color like blue */
+    border: none;
+    color: white; /* Make the icon white to ensure it's visible */
+    padding: 10px;
+    font-size: 18px; /* Increase font size for better visibility */
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.nav-toggle .btn:hover {
+background-color: #0056b3; /* Darker shade for hover effect */
+}
+
+.nav-toggle .btn i {
+font-size: 20px; /* Increase icon size for visibility */
+}
+
+.nav-toggle .btn.toggle-sidebar {
+background-color: #28a745; /* Green button for toggle-sidebar */
+}
+
+.nav-toggle .btn.toggle-sidebar:hover {
+background-color: #218838; /* Darker green on hover */
+}
+
+.nav-toggle .btn.sidenav-toggler {
+background-color: #dc3545; /* Red button for sidenav-toggler */
+}
+
+.nav-toggle .btn.sidenav-toggler:hover {
+background-color: #c82333; /* Darker red on hover */
+}
