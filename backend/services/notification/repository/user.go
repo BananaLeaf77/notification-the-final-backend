@@ -485,15 +485,12 @@ func (ur *userRepository) GetStaffDetail(ctx context.Context, id int) (*domain.S
 }
 
 func (ur *userRepository) CreateSubject(ctx context.Context, subject *domain.Subject) error {
-	nameLowered := strings.ToLower(subject.Name)
-
 	var existingUser domain.Subject
-	err := ur.db.WithContext(ctx).Where("name = ? AND deleted_at IS NULL", nameLowered).First(&existingUser).Error
+	err := ur.db.WithContext(ctx).Where("name = ? AND deleted_at IS NULL", subject.Name).First(&existingUser).Error
 	if err == nil {
-		return fmt.Errorf("subject with %s name already exists", nameLowered)
+		return fmt.Errorf("subject with %s name already exists", subject.Name)
 	}
 
-	subject.Name = nameLowered
 	err = ur.db.WithContext(ctx).Create(subject).Error
 	if err != nil {
 		return fmt.Errorf("could not create subject: %v", err)
