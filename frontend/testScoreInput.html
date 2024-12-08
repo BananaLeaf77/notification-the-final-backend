@@ -169,8 +169,24 @@
       </div>
     </div>
 
-    
-
+    <!-- API Response Modal REfresh -->
+    <div class="modal fade" id="APIResponseRefresh" tabindex="-1" aria-labelledby="APIResponseRefreshLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content" style="border: 2px solid #ccc !important; border-radius: 5px;">
+              <div class="modal-header">
+                  <h5 class="modal-title" id="APIResponseRefreshPIResponseLabel">Message</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                  </button>
+              </div>
+              <div class="modal-body">
+                  <span id="msgss"></span>
+              </div>
+              <div class="modal-footer">
+                  <button type="button" class="btn btn-info" id="confirmAPIResponseRefresh">Ok</button>              </div>
+          </div>
+      </div>
+    </div>
 
     <div class="wrapper">
       <!-- Sidebar -->
@@ -537,19 +553,34 @@
       }
       
       function saveTestScores(token, subjectId) {
-        // Get all score inputs
         const scoreInputs = document.querySelectorAll(".score-input");
       
-        // Build the payload
-        const studentsTestScore = Array.from(scoreInputs).map((input) => ({
-          student_id: parseInt(input.getAttribute("data-student-id"), 10),
-          test_score: parseFloat(input.value) || 0, // Default to 0 if empty or invalid
-        }));
+        const studentsTestScore = Array.from(scoreInputs)
+          .map((input) => {
+            const studentId = parseInt(input.getAttribute("data-student-id"), 10);
+            const newScore = parseFloat(input.value);
+            const originalScore = parseFloat(input.getAttribute("data-original-score"));
+      
+            // Only include students with modified scores (different from the original)
+            if (!isNaN(newScore) && newScore !== originalScore) {
+              return { student_id: studentId, test_score: newScore };
+            }
+      
+            return null;
+          })
+          .filter((entry) => entry !== null); // Remove null entries
+      
+        // If no scores have been updated, return early
+        if (studentsTestScore.length === 0) {
+          console.log("No scores to update.");
+          return;
+        }
       
         const payload = {
           students_test_score: studentsTestScore,
           subject_id: parseInt(subjectId, 10),
         };
+        console.log(payload)
       
         const messageElement = document.getElementById("msgs");
       
@@ -570,23 +601,24 @@
           })
           .then((data) => {
             if (data.success) {
-                messageElement.innerHTML = data.message; 
-                messageElement.classList.remove("text-danger");
-                messageElement.classList.add("text-success");
-                fetchTestScores(token, subjectId)
+              messageElement.innerHTML = data.message;
+              messageElement.classList.remove("text-danger");
+              messageElement.classList.add("text-success");
+              fetchTestScores(token, subjectId); // Refresh scores
             } else {
-                messageElement.innerHTML = data.error; 
-                messageElement.classList.remove("text-success");
-                messageElement.classList.add("text-danger");
+              messageElement.innerHTML = data.error;
+              messageElement.classList.remove("text-success");
+              messageElement.classList.add("text-danger");
             }
             $('#saveChangesModal').modal('hide');
             const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
-                apiResponseModal.show();
+            apiResponseModal.show();
           })
           .catch((error) => {
             console.error("Error saving test scores:", error);
           });
       }
+      
 
       // Event listener for confirming logout
       document.getElementById("confirmLogoutButton").addEventListener("click", function () {
@@ -603,6 +635,11 @@
       document.getElementById("confirmAPIResponse").addEventListener("click", function () {
         // Hide the modal
         $('#APIResponse').modal('hide');
+      });
+
+      document.getElementById("confirmAPIResponseRefresh").addEventListener("click", function () {
+        // Hide the modal
+        window.location.reload()
       });
       
       // Event listener for confirming logout
@@ -753,7 +790,7 @@
 
       document.getElementById("sendIt").addEventListener("click", function () {
         const token = localStorage.getItem("authToken");
-        const messageElement = document.getElementById("msgs");
+        const messageElement = document.getElementById("msgss");
     
         // Get the selected exam type
         const selectedExamType = document.querySelector('input[name="examType"]:checked');
@@ -794,7 +831,6 @@
                 messageElement.innerHTML = data.message;
                 messageElement.classList.remove("text-danger");
                 messageElement.classList.add("text-success");
-                fetchTeachingSubjects(token)
             } else {
                 messageElement.innerHTML = data.error;
                 messageElement.classList.remove("text-success");
@@ -805,7 +841,7 @@
             $('#sendMassModal').modal('hide');
         
             // Show the response modal
-            const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+            const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponseRefresh"));
             apiResponseModal.show();
         })
         .catch(error => {
@@ -819,7 +855,7 @@
             messageElement.classList.add("text-danger");
     
             // Show the response modal
-            const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
+            const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponseRefresh"));
             apiResponseModal.show();
         });
       });
@@ -957,37 +993,53 @@
                 let student = studentData.student;
                 let user = studentData.user;
                 let score = studentData.score;
-      
+              
                 let row = document.createElement("tr");
                 row.innerHTML = `
                   <td>${student.grade}${student.grade_label}</td>
                   <td>${student.name}</td>
                   <td>${user.name} (${user.role})</td>
                   <td>
-                    <input 
-                      type="number" 
-                      class="form-control score-input" 
-                      value="${score !== null ? score : ''}" 
-                      placeholder="${score !== null ? score : 0}" 
-                      step="any" 
-                      min="0" 
-                      max="100"
-                      oninput="validateInput(this)" 
+                    <label for="floatInput-${student.student_id}">Positive float value (0 to 100):</label>
+                    <input
+                      class="form-control score-input"
                       data-student-id="${student.student_id}" 
-                    />
+                      data-original-score="${score !== null ? score : 0}" 
+                      type="text" 
+                      id="floatInput-${student.student_id}" 
+                      value="${score !== null ? score.toFixed(1) : ''}" 
+                      placeholder="0.0"
+                    >
                   </td>
                 `;
+              
                 studentTable.appendChild(row);
-              });
-      
-              // Add event listeners to inputs for handling score changes
-              const scoreInputs = studentTable.querySelectorAll(".score-input");
-              scoreInputs.forEach((input) => {
-                input.addEventListener("input", (event) => {
-                  const studentId = input.getAttribute("data-student-id");
-                  const updatedScore = parseFloat(input.value);
-                  // Add your logic to handle the updated score here
-                  // e.g., send the updated score to the server
+              
+                // Add validation event listener for the specific input
+                const scoreInput = row.querySelector(`#floatInput-${student.student_id}`);
+                scoreInput.addEventListener("input", (event) => {
+                  let value = event.target.value;
+              
+                  // Regular expression to validate positive floats up to one decimal place
+                  const validFloatRegex = /^(100(\.0{0,1})?|[0-9]{1,2}(\.[0-9]?)?)$/;
+              
+                  // Check validity and reset invalid input
+                  if (!validFloatRegex.test(value)) {
+                    event.target.value = value.slice(0, -1); // Remove the last invalid character
+                  }
+                });
+              
+                // Add blur event to clean up extra decimals
+                scoreInput.addEventListener("blur", (event) => {
+                  let value = parseFloat(event.target.value);
+              
+                  if (!isNaN(value)) {
+                    // Ensure value is rounded to one decimal place
+                    event.target.value = value.toFixed(1);
+                  } else {
+                    // Reset invalid values
+                    event.target.value = "";
+                  }
                 });
               });
             } else {
@@ -996,6 +1048,8 @@
           })
           .catch((error) => console.error("Error fetching data:", error));
       }
+      
+      
 
       function populateStudentScores(testScores) {
         const studentTable = document.getElementById("studentTable");

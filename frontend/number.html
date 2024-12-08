@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Float Input</title>
+</head>
+<body>
+<form>
+<label for="floatInput">Enter a positive float value (0 to 100):</label>
+<input 
+    type="number" 
+    id="floatInput" 
+    step="0.1" 
+    min="0" 
+    max="100.0" 
+    placeholder="e.g., 78.5" 
+    required 
+>
+<button type="submit">Submit</button>
+</form>
+
+<script>
+// Add JavaScript validation to further ensure valid input
+const floatInput = document.getElementById('floatInput');
+
+floatInput.addEventListener('input', (event) => {
+    const value = parseFloat(event.target.value);
+    // Prevent invalid input (e.g., negative numbers or numbers greater than 100)
+    if (value < 0 || value > 100) {
+    event.target.value = '';
+    }
+});
+</script>
+</body>
+</html>

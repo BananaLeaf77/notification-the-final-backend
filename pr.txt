@@ -5,5 +5,5 @@ import csv (loading, check di exel/csv ne ade ne patuh sing data e)
 sort radio send notif subject
 
 attendance history check student id if its deleted jngn tampilin
-same with send mass test score / jika nilai 0 kirim masihh ape sing?
+same with send mass test score / jika nilai 0 kirim masihh ape sing? / jika subject deleted jangan dikirim
 tipe data nilai float or int 

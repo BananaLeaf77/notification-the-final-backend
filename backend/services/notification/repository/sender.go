@@ -40,12 +40,13 @@ func NewSenderRepository(db *gorm.DB, client smtp.Auth, smtpAddress, schoolPhone
 func (m *senderRepository) createTestScoreEmail(individual domain.IndividualExamScore, examType string) string {
 	// Start with a general introduction
 	if individual.Student.Parent.Gender != "male" {
-		body := fmt.Sprintf(`
-SINOAN Service 🔔
+		body := fmt.Sprintf(`SINOAN Service 🔔
 
 Kepada Yth. Ibu %s,
-
-Kami ingin memberikan informasi mengenai hasil %s anak Anda, %s Kelas %s. Berikut adalah detail hasil ulangan pada beberapa mata pelajaran:
+Kami ingin menyampaikan informasi mengenai hasil %s untuk siswa berikut:
+Nama: %s,
+Kelas: %s.
+Berikut adalah detail hasil ulangan pada beberapa mata pelajaran:
 `, individual.Student.Parent.Name, examType, individual.Student.Name, fmt.Sprintf("%d%s", individual.Student.Grade, individual.Student.GradeLabel))
 
 		// Add the subject and score details
@@ -72,20 +73,21 @@ Tim SINOAN`, m.schoolPhone)
 		bodyTestScore := body
 		return bodyTestScore
 	} else {
-		body := fmt.Sprintf(`
-SINOAN Service 🔔
+		body := fmt.Sprintf(`SINOAN Service 🔔
 
 Kepada Yth. Bapak %s,
-
-Kami ingin memberikan informasi mengenai hasil %s anak Anda, %s Kelas %s. Berikut adalah detail hasil ulangan pada beberapa mata pelajaran:
+Kami ingin menyampaikan informasi mengenai hasil %s untuk siswa berikut:
+Nama: %s,
+Kelas: %s. 
+Berikut adalah detail hasil ulangan pada beberapa mata pelajaran:
 `, individual.Student.Parent.Name, examType, individual.Student.Name, fmt.Sprintf("%d%s", individual.Student.Grade, individual.Student.GradeLabel))
 
 		// Add the subject and score details
 		for _, result := range individual.SubjectAndScoreResult {
 			subjectName := result.Subject.Name
-			score := "Belum Ada Nilai"
+			score := "Belum Ada Nilai | 0"
 			if result.Score != nil {
-				score = fmt.Sprintf("%.2f", *result.Score)
+				score = fmt.Sprintf("%.1f", *result.Score)
 			}
 
 			body += fmt.Sprintf("- Mata Pelajaran: %s | Nilai: %s\n", subjectName, score)
