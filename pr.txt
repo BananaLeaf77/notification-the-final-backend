@@ -4,3 +4,7 @@ sort radio send notif subject
 
 same with send mass test score / jika nilai 0 kirim masihh ape sing? / jika subject deleted jangan dikirim
 tipe data nilai float or int 
+
+
+loading import
+logic 1 to many

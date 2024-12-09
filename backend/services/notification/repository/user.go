@@ -265,7 +265,9 @@ func (ur *userRepository) CreateStaff(ctx context.Context, payload *domain.User)
 
 func (ur *userRepository) GetAllStaff(ctx context.Context) (*[]domain.SafeStaffData, error) {
 	var users []domain.User
-	err := ur.db.WithContext(ctx).Where("deleted_at IS NULL").Find(&users).Error
+	err := ur.db.WithContext(ctx).Preload("Teaching", func(db *gorm.DB) *gorm.DB {
+		return db.Where("deleted_at IS NULL")
+	}).Where("deleted_at IS NULL").Find(&users).Error
 	if err != nil {
 		return nil, fmt.Errorf("could not get all staff: %v", err)
 	}
@@ -279,11 +281,10 @@ func (ur *userRepository) GetAllStaff(ctx context.Context) (*[]domain.SafeStaffD
 			continue
 		}
 
-		// Fetch subjects associated with the user
-		var subjects []domain.Subject
-		if err := ur.db.WithContext(ctx).Model(&user).
-			Association("Teaching").Find(&subjects); err != nil {
-			return nil, fmt.Errorf("could not get subjects for user %d: %v", user.UserID, err)
+		// Convert []*domain.Subject to []domain.Subject
+		teaching := make([]domain.Subject, len(user.Teaching))
+		for i, subject := range user.Teaching {
+			teaching[i] = *subject
 		}
 
 		safeStaffData = append(safeStaffData, domain.SafeStaffData{
@@ -294,7 +295,7 @@ func (ur *userRepository) GetAllStaff(ctx context.Context) (*[]domain.SafeStaffD
 			CreatedAt: user.CreatedAt,
 			UpdatedAt: user.UpdatedAt,
 			DeletedAt: user.DeletedAt,
-			Teaching:  subjects,
+			Teaching:  teaching,
 		})
 	}
 
