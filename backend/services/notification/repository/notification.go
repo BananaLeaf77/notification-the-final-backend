@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"notification/domain"
 
@@ -25,7 +24,9 @@ func (np *notificationRepo) GetAllAttendanceNotificationHistory(ctx context.Cont
 
 	// Query the attendance notification history
 	if err := np.db.WithContext(ctx).
-		Preload("Student").
+		Preload("Student", func(db *gorm.DB) *gorm.DB {
+			return db.Where("deleted_at IS NULL")
+		}).
 		Preload("Parent").
 		Preload("User").
 		Preload("Subject", func(db *gorm.DB) *gorm.DB {
@@ -34,9 +35,6 @@ func (np *notificationRepo) GetAllAttendanceNotificationHistory(ctx context.Cont
 		Find(&dataHolder).Error; err != nil {
 		return nil, fmt.Errorf("could not get all attendance notification history, error: %v", err)
 	}
-
-	data, _ := json.MarshalIndent(dataHolder, "", "  ")
-	fmt.Println(string(data))
 
 	// Iterate over the fetched records to prepare the response
 	for _, record := range dataHolder {

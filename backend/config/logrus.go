@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -48,4 +49,16 @@ func PrintLogInfo(username *string, statusCode int, functionName string) {
 
 	logMsg := fmt.Sprintf("\nUser: %s, (%s) => Status: %s[%d] - %s%s\n\n\n", user, functionName, logColor, statusCode, http.StatusText(statusCode), reset)
 	log.Info(logMsg)
+}
+
+func PrintStruct(strck interface{}) {
+	// Marshal the struct into JSON
+	jsonData, err := json.Marshal(strck)
+	if err != nil {
+		fmt.Println("Error marshaling struct:", err)
+		return
+	}
+
+	// Print the JSON string representation of the struct
+	fmt.Println(string(jsonData))
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"notification/config"
 	"notification/domain"
 	"strings"
 	"time"
@@ -126,14 +127,14 @@ func (r *userRepository) InputTestScores(ctx context.Context, teacherID int, tes
 	}
 
 	var subject domain.Subject
-	if err := tx.Where("subject_id = ?", testScores.SubjectID).First(&subject).Error; err != nil {
+	if err := tx.Where("subject_id = ? AND deleted_at IS NULL", testScores.SubjectID).First(&subject).Error; err != nil {
 		tx.Rollback()
 		return fmt.Errorf("subject ID %d does not exist", testScores.SubjectID)
 	}
 
 	for _, individual := range testScores.StudentTestScore {
 		var student domain.Student
-		if err := tx.Where("student_id = ?", individual.StudentID).First(&student).Error; err != nil {
+		if err := tx.Where("student_id = ? AND deleted_at IS NULL", individual.StudentID).First(&student).Error; err != nil {
 			tx.Rollback()
 			return fmt.Errorf("student ID %d does not exist", individual.StudentID)
 		}
@@ -142,7 +143,7 @@ func (r *userRepository) InputTestScores(ctx context.Context, teacherID int, tes
 		if userDetail.Role != "admin" {
 			var count int64
 			err := tx.Table("user_subjects").
-				Where("user_user_id = ? AND subject_subject_id = ?", teacherID, testScores.SubjectID).
+				Where("user_user_id = ? AND subject_subject_id = ? AND deleted_at IS NULL", teacherID, testScores.SubjectID).
 				Count(&count).Error
 
 			if err != nil || count == 0 {
@@ -153,7 +154,7 @@ func (r *userRepository) InputTestScores(ctx context.Context, teacherID int, tes
 
 		// Check if a test individual already exists for this student and subject (ignore teacher)
 		var existingScore domain.TestScore
-		err := tx.Where("student_id = ? AND subject_id = ?", individual.StudentID, testScores.SubjectID).
+		err := tx.Where("student_id = ? AND subject_id = ? AND deleted_at IS NULL", individual.StudentID, testScores.SubjectID).
 			First(&existingScore).Error
 
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -177,6 +178,7 @@ func (r *userRepository) InputTestScores(ctx context.Context, teacherID int, tes
 				UserID:    teacherID,
 				Score:     individual.TestScore,
 			}
+			config.PrintStruct(newScore)
 			if err := tx.Create(&newScore).Error; err != nil {
 				tx.Rollback()
 				return err

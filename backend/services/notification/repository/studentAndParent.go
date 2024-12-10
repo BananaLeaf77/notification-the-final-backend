@@ -22,19 +22,111 @@ func NewStudentParentRepository(database *gorm.DB) domain.StudentParentRepo {
 	}
 }
 
+// func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, req *domain.StudentAndParent) *[]string {
+// 	var errList []string
+
+// 	if req.Parent.Email != nil {
+// 		emailLowered := strings.ToLower(strings.TrimSpace(*req.Parent.Email))
+// 		req.Parent.Email = &emailLowered
+// 	}
+
+// 	match, _ := regexp.MatchString("^[A-Za-z]+$", req.Student.GradeLabel)
+// 	if !match {
+// 		errList = append(errList, fmt.Sprintf("Invalid Grade Label: %s. Only letters (A-Z, a-z) are allowed.", req.Student.GradeLabel))
+// 	}
+
+// 	var studentCount int64
+// 	err := spr.db.WithContext(ctx).Model(&domain.Student{}).Where("telephone = ? AND deleted_at IS NULL", req.Student.Telephone).Count(&studentCount).Error
+// 	if err != nil {
+// 		errList = append(errList, fmt.Sprintf("Error checking for student telephone: %v", err))
+// 	} else if studentCount > 0 {
+// 		errList = append(errList, fmt.Sprintf("Student with telephone %s already exists", req.Student.Telephone))
+// 	}
+
+// 	var parentCount int64
+// 	err = spr.db.WithContext(ctx).Model(&domain.Parent{}).Where("telephone = ? AND deleted_at IS NULL", req.Parent.Telephone).Count(&parentCount).Error
+// 	if err != nil {
+// 		errList = append(errList, fmt.Sprintf("Error checking for parent telephone: %v", err))
+// 	} else if parentCount > 0 {
+// 		errList = append(errList, fmt.Sprintf("Parent with telephone %s already exists", req.Parent.Telephone))
+// 	}
+
+// 	if req.Parent.Email != nil && *req.Parent.Email != "" {
+// 		err = spr.db.WithContext(ctx).Model(&domain.Parent{}).Where("email = ? AND deleted_at IS NULL", *req.Parent.Email).Count(&parentCount).Error
+// 		if err != nil {
+// 			errList = append(errList, fmt.Sprintf("Error checking for parent email: %v", err))
+// 		} else if parentCount > 0 {
+// 			errList = append(errList, fmt.Sprintf("Parent with email %s already exists", *req.Parent.Email))
+// 		}
+// 	}
+
+// 	err = spr.db.WithContext(ctx).Model(&domain.Student{}).Where("name = ? AND deleted_at IS NULL", req.Student.Name).Count(&studentCount).Error
+// 	if err != nil {
+// 		errList = append(errList, fmt.Sprintf("Error checking for student name: %v", err))
+// 	} else if studentCount > 0 {
+// 		errList = append(errList, fmt.Sprintf("Student with name %s already exists", req.Student.Name))
+// 	}
+
+// 	err = spr.db.WithContext(ctx).Model(&domain.Parent{}).Where("name = ? AND deleted_at IS NULL", req.Parent.Name).Count(&parentCount).Error
+// 	if err != nil {
+// 		errList = append(errList, fmt.Sprintf("Error checking for parent name: %v", err))
+// 	} else if parentCount > 0 {
+// 		errList = append(errList, fmt.Sprintf("Parent with name %s already exists", req.Parent.Name))
+// 	}
+
+// 	if len(errList) > 0 {
+// 		return &errList
+// 	}
+
+// 	tx := spr.db.Begin()
+// 	if tx.Error != nil {
+// 		return &[]string{fmt.Sprintf("Could not begin transaction: %v", tx.Error)}
+// 	}
+
+// 	// Insert Parent
+// 	req.Parent.CreatedAt = time.Now()
+// 	req.Parent.UpdatedAt = req.Parent.CreatedAt
+// 	if err := tx.WithContext(ctx).Create(&req.Parent).Error; err != nil {
+// 		tx.Rollback()
+// 		return &[]string{fmt.Sprintf("Could not insert parent: %v", err)}
+// 	}
+
+// 	// Set ParentID for Student
+// 	req.Student.ParentID = req.Parent.ParentID
+// 	req.Student.CreatedAt = time.Now()
+// 	req.Student.UpdatedAt = req.Student.CreatedAt
+
+// 	// Insert Student
+// 	req.Student.GradeLabel = strings.ToUpper(req.Student.GradeLabel)
+// 	if err := tx.WithContext(ctx).Create(&req.Student).Error; err != nil {
+// 		tx.Rollback()
+// 		return &[]string{fmt.Sprintf("Could not insert student: %v", err)}
+// 	}
+
+// 	// Commit Transaction
+// 	if err := tx.Commit().Error; err != nil {
+// 		return &[]string{fmt.Sprintf("Could not commit transaction: %v", err)}
+// 	}
+
+// 	return nil
+// }
+
 func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, req *domain.StudentAndParent) *[]string {
 	var errList []string
 
+	// Normalize email if provided
 	if req.Parent.Email != nil {
 		emailLowered := strings.ToLower(strings.TrimSpace(*req.Parent.Email))
 		req.Parent.Email = &emailLowered
 	}
 
+	// Validate GradeLabel
 	match, _ := regexp.MatchString("^[A-Za-z]+$", req.Student.GradeLabel)
 	if !match {
 		errList = append(errList, fmt.Sprintf("Invalid Grade Label: %s. Only letters (A-Z, a-z) are allowed.", req.Student.GradeLabel))
 	}
 
+	// Check for duplicate student telephone
 	var studentCount int64
 	err := spr.db.WithContext(ctx).Model(&domain.Student{}).Where("telephone = ? AND deleted_at IS NULL", req.Student.Telephone).Count(&studentCount).Error
 	if err != nil {
@@ -43,23 +135,7 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 		errList = append(errList, fmt.Sprintf("Student with telephone %s already exists", req.Student.Telephone))
 	}
 
-	var parentCount int64
-	err = spr.db.WithContext(ctx).Model(&domain.Parent{}).Where("telephone = ? AND deleted_at IS NULL", req.Parent.Telephone).Count(&parentCount).Error
-	if err != nil {
-		errList = append(errList, fmt.Sprintf("Error checking for parent telephone: %v", err))
-	} else if parentCount > 0 {
-		errList = append(errList, fmt.Sprintf("Parent with telephone %s already exists", req.Parent.Telephone))
-	}
-
-	if req.Parent.Email != nil && *req.Parent.Email != "" {
-		err = spr.db.WithContext(ctx).Model(&domain.Parent{}).Where("email = ? AND deleted_at IS NULL", *req.Parent.Email).Count(&parentCount).Error
-		if err != nil {
-			errList = append(errList, fmt.Sprintf("Error checking for parent email: %v", err))
-		} else if parentCount > 0 {
-			errList = append(errList, fmt.Sprintf("Parent with email %s already exists", *req.Parent.Email))
-		}
-	}
-
+	// Check for duplicate student name
 	err = spr.db.WithContext(ctx).Model(&domain.Student{}).Where("name = ? AND deleted_at IS NULL", req.Student.Name).Count(&studentCount).Error
 	if err != nil {
 		errList = append(errList, fmt.Sprintf("Error checking for student name: %v", err))
@@ -67,43 +143,67 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 		errList = append(errList, fmt.Sprintf("Student with name %s already exists", req.Student.Name))
 	}
 
-	err = spr.db.WithContext(ctx).Model(&domain.Parent{}).Where("name = ? AND deleted_at IS NULL", req.Parent.Name).Count(&parentCount).Error
-	if err != nil {
-		errList = append(errList, fmt.Sprintf("Error checking for parent name: %v", err))
-	} else if parentCount > 0 {
-		errList = append(errList, fmt.Sprintf("Parent with name %s already exists", req.Parent.Name))
-	}
-
+	// If student errors exist, return immediately
 	if len(errList) > 0 {
 		return &errList
 	}
 
+	// Find existing parent with matching attributes
+	var existingParent domain.Parent
+	err = spr.db.WithContext(ctx).Where(
+		"(name = ? OR telephone = ? OR email = ?) AND deleted_at IS NULL",
+		req.Parent.Name, req.Parent.Telephone, req.Parent.Email,
+	).First(&existingParent).Error
+
+	// Check if parent condition matches
+	oneToManyCondition := err == nil
+
+	// Start transaction
 	tx := spr.db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
 	if tx.Error != nil {
 		return &[]string{fmt.Sprintf("Could not begin transaction: %v", tx.Error)}
 	}
 
-	// Insert Parent
-	req.Parent.CreatedAt = time.Now()
-	req.Parent.UpdatedAt = req.Parent.CreatedAt
-	if err := tx.WithContext(ctx).Create(&req.Parent).Error; err != nil {
-		tx.Rollback()
-		return &[]string{fmt.Sprintf("Could not insert parent: %v", err)}
+	if oneToManyCondition {
+		// Parent exists, create student with reference
+		req.Student.ParentID = existingParent.ParentID
+		req.Student.CreatedAt = time.Now()
+		req.Student.UpdatedAt = req.Student.CreatedAt
+		req.Student.GradeLabel = strings.ToUpper(req.Student.GradeLabel)
+
+		if err := tx.WithContext(ctx).Create(&req.Student).Error; err != nil {
+			tx.Rollback()
+			return &[]string{fmt.Sprintf("Could not insert student: %v", err)}
+		}
+	} else {
+		// Create new parent
+		req.Parent.CreatedAt = time.Now()
+		req.Parent.UpdatedAt = req.Parent.CreatedAt
+
+		if err := tx.WithContext(ctx).Create(&req.Parent).Error; err != nil {
+			tx.Rollback()
+			return &[]string{fmt.Sprintf("Could not insert parent: %v", err)}
+		}
+
+		// Create new student
+		req.Student.ParentID = req.Parent.ParentID
+		req.Student.CreatedAt = time.Now()
+		req.Student.UpdatedAt = req.Student.CreatedAt
+		req.Student.GradeLabel = strings.ToUpper(req.Student.GradeLabel)
+
+		if err := tx.WithContext(ctx).Create(&req.Student).Error; err != nil {
+			tx.Rollback()
+			return &[]string{fmt.Sprintf("Could not insert student: %v", err)}
+		}
 	}
 
-	// Set ParentID for Student
-	req.Student.ParentID = req.Parent.ParentID
-	req.Student.CreatedAt = time.Now()
-	req.Student.UpdatedAt = req.Student.CreatedAt
-
-	// Insert Student
-	req.Student.GradeLabel = strings.ToUpper(req.Student.GradeLabel)
-	if err := tx.WithContext(ctx).Create(&req.Student).Error; err != nil {
-		tx.Rollback()
-		return &[]string{fmt.Sprintf("Could not insert student: %v", err)}
-	}
-
-	// Commit Transaction
+	// Commit transaction
 	if err := tx.Commit().Error; err != nil {
 		return &[]string{fmt.Sprintf("Could not commit transaction: %v", err)}
 	}
@@ -210,10 +310,9 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, id int, req *domain.StudentAndParent) *[]string {
 	var student domain.Student
 	var duplicatedDataStudent domain.Student
-	var duplicatedDataParent domain.Parent
-
 	var errList []string
 
+	// Validate GradeLabel to only contain letters
 	match, _ := regexp.MatchString("^[A-Za-z]+$", req.Student.GradeLabel)
 	if !match {
 		errList = append(errList, fmt.Sprintf("Invalid Grade Label: %s. Only letters (A-Z, a-z) are allowed.", req.Student.GradeLabel))
@@ -221,6 +320,7 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 
 	req.Student.GradeLabel = strings.ToUpper(req.Student.GradeLabel)
 
+	// Start a transaction
 	tx := spr.db.Begin()
 	if err := tx.Error; err != nil {
 		errList = append(errList, fmt.Sprintf("could not begin transaction: %v", err))
@@ -243,34 +343,24 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 		}
 	}
 
-	// Ensure no duplicate student fields
-	checkUniqueStudentField := func(field, value string) {
-		err := spr.db.WithContext(ctx).Where(fmt.Sprintf("%s = ? AND student_id != ? AND deleted_at IS NULL", field), value, id).First(&duplicatedDataStudent).Error
+	// Only check for duplicates if student name or telephone is passed
+	if req.Student.Name != "" {
+		err := spr.db.WithContext(ctx).
+			Where("name = ? AND student_id != ? AND deleted_at IS NULL", req.Student.Name, id).
+			First(&duplicatedDataStudent).Error
 		if err == nil {
-			errList = append(errList, fmt.Sprintf("Student with %s %s already exists", field, value))
+			errList = append(errList, fmt.Sprintf("Student with name %s already exists", req.Student.Name))
 		}
 	}
 
-	checkUniqueStudentField("name", req.Student.Name)
-	checkUniqueStudentField("telephone", req.Student.Telephone)
-
-	// Ensure no duplicate parent fields
-	checkUniqueParentField := func(field, value string) {
-		err := spr.db.WithContext(ctx).Where(fmt.Sprintf("%s = ? AND parent_id != ? AND deleted_at IS NULL", field), value, student.ParentID).First(&duplicatedDataParent).Error
+	if req.Student.Telephone != "" {
+		err := spr.db.WithContext(ctx).
+			Where("telephone = ? AND student_id != ? AND deleted_at IS NULL", req.Student.Telephone, id).
+			First(&duplicatedDataStudent).Error
 		if err == nil {
-			errList = append(errList, fmt.Sprintf("Parent with %s %s already exists", field, value))
+			errList = append(errList, fmt.Sprintf("Student with telephone %s already exists", req.Student.Telephone))
 		}
 	}
-
-	checkUniqueParentField("name", req.Parent.Name)
-
-	if req.Parent.Email != nil && *req.Parent.Email != "" {
-		loweredEmail := strings.ToLower(*req.Parent.Email)
-		req.Parent.Email = &loweredEmail
-		checkUniqueParentField("email", loweredEmail)
-	}
-
-	checkUniqueParentField("telephone", req.Parent.Telephone)
 
 	if len(errList) > 0 {
 		return &errList
@@ -307,44 +397,80 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 	return nil
 }
 
+
 func (spr *studentParentRepository) SPMassDelete(ctx context.Context, studentIDs *[]int) error {
-	// Check if students exist and are eligible for deletion
-	var students []domain.Student
-	err := spr.db.WithContext(ctx).
-		Where("student_id IN (?) AND deleted_at IS NULL", *studentIDs).
-		Find(&students).Error
-	if err != nil {
-		return fmt.Errorf("could not retrieve student details: %v", err)
+	// Start a transaction
+	tx := spr.db.Begin()
+	if err := tx.Error; err != nil {
+		return fmt.Errorf("could not begin transaction: %v", err)
 	}
 
-	if len(students) == 0 {
-		return fmt.Errorf("no students eligible for deletion")
-	}
+	currentTime := time.Now()
 
-	parentIDs := make([]int, 0)
-	for _, student := range students {
-		if student.ParentID != 0 {
-			parentIDs = append(parentIDs, student.ParentID)
-		}
-	}
-
-	now := time.Now()
-	err = spr.db.WithContext(ctx).
-		Model(&domain.Student{}).
-		Where("student_id IN (?)", *studentIDs).
-		Update("deleted_at", now).Error
-	if err != nil {
-		return fmt.Errorf("could not delete students: %v", err)
-	}
-
-	if len(parentIDs) > 0 {
-		err = spr.db.WithContext(ctx).
-			Model(&domain.Parent{}).
-			Where("parent_id IN (?)", parentIDs).
-			Update("deleted_at", now).Error
+	// Iterate over the student IDs to process each student
+	for _, studentID := range *studentIDs {
+		// Retrieve the parentID from the student record
+		var student domain.Student
+		err := tx.WithContext(ctx).
+			Where("student_id = ? AND deleted_at IS NULL", studentID).
+			First(&student).Error
 		if err != nil {
-			return fmt.Errorf("could not delete parents: %v", err)
+			tx.Rollback()
+			if err == gorm.ErrRecordNotFound {
+				return fmt.Errorf("student with ID %d not found", studentID)
+			}
+			return fmt.Errorf("error retrieving student: %v", err)
 		}
+
+		// Count remaining active students associated with the same parent
+		var remainingStudentCount int64
+		err = tx.WithContext(ctx).
+			Model(&domain.Student{}).
+			Where("parent_id = ? AND deleted_at IS NULL", student.ParentID).
+			Count(&remainingStudentCount).Error
+		if err != nil {
+			tx.Rollback()
+			return fmt.Errorf("error counting remaining students: %v", err)
+		}
+
+		if remainingStudentCount > 1 {
+			fmt.Println("masuk 1")
+			// Soft delete only the student by setting DeletedAt
+			err = tx.WithContext(ctx).
+				Model(&domain.Student{}).
+				Where("student_id = ?", studentID).
+				Update("deleted_at", currentTime).Error
+			if err != nil {
+				tx.Rollback()
+				return fmt.Errorf("error soft deleting student: %v", err)
+			}
+		} else {
+			fmt.Println("masuk 1")
+			// Soft delete both the student and the parent by setting DeletedAt
+			err = tx.WithContext(ctx).
+				Model(&domain.Student{}).
+				Where("student_id = ?", studentID).
+				Update("deleted_at", currentTime).Error
+			if err != nil {
+				tx.Rollback()
+				return fmt.Errorf("error soft deleting student: %v", err)
+			}
+
+			err = tx.WithContext(ctx).
+				Model(&domain.Parent{}).
+				Where("parent_id = ?", student.ParentID).
+				Update("deleted_at", currentTime).Error
+			if err != nil {
+				tx.Rollback()
+				return fmt.Errorf("error soft deleting parent: %v", err)
+			}
+		}
+	}
+
+	// Commit the transaction
+	err := tx.Commit().Error
+	if err != nil {
+		return fmt.Errorf("could not commit transaction: %v", err)
 	}
 
 	return nil
@@ -363,7 +489,6 @@ func (spr *studentParentRepository) DeleteStudentAndParent(ctx context.Context, 
 		Select("parent_id").
 		Where("student_id = ? AND deleted_at IS NULL", studentID).
 		First(&student).Error
-
 	if err != nil {
 		tx.Rollback()
 		if err == gorm.ErrRecordNotFound {
@@ -372,21 +497,48 @@ func (spr *studentParentRepository) DeleteStudentAndParent(ctx context.Context, 
 		return fmt.Errorf("error retrieving student: %v", err)
 	}
 
-	// Soft delete the student
-	err = tx.WithContext(ctx).Where("student_id = ?", studentID).Delete(&domain.Student{}).Error
+	// Count students associated with the same parent
+	var studentCount int64
+	err = tx.WithContext(ctx).
+		Model(&domain.Student{}).
+		Where("parent_id = ? AND deleted_at IS NULL", student.ParentID).
+		Count(&studentCount).Error
 	if err != nil {
 		tx.Rollback()
-		return fmt.Errorf("error deleting student: %v", err)
+		return fmt.Errorf("error counting students: %v", err)
 	}
 
-	// Soft delete the parent
-	err = tx.WithContext(ctx).Where("parent_id = ?", student.ParentID).Delete(&domain.Parent{}).Error
-	if err != nil {
-		tx.Rollback()
-		if err == gorm.ErrRecordNotFound {
-			return fmt.Errorf("parent with ID %d not found", student.ParentID)
+	currentTime := time.Now()
+
+	if studentCount > 1 {
+		// Soft delete only the student by setting DeletedAt
+		err = tx.WithContext(ctx).
+			Model(&domain.Student{}).
+			Where("student_id = ?", studentID).
+			Update("deleted_at", currentTime).Error
+		if err != nil {
+			tx.Rollback()
+			return fmt.Errorf("error soft deleting student: %v", err)
 		}
-		return fmt.Errorf("error deleting parent: %v", err)
+	} else {
+		// Soft delete both the student and the parent by setting DeletedAt
+		err = tx.WithContext(ctx).
+			Model(&domain.Student{}).
+			Where("student_id = ?", studentID).
+			Update("deleted_at", currentTime).Error
+		if err != nil {
+			tx.Rollback()
+			return fmt.Errorf("error soft deleting student: %v", err)
+		}
+
+		err = tx.WithContext(ctx).
+			Model(&domain.Parent{}).
+			Where("parent_id = ?", student.ParentID).
+			Update("deleted_at", currentTime).Error
+		if err != nil {
+			tx.Rollback()
+			return fmt.Errorf("error soft deleting parent: %v", err)
+		}
 	}
 
 	// Commit the transaction
@@ -398,22 +550,22 @@ func (spr *studentParentRepository) DeleteStudentAndParent(ctx context.Context, 
 	return nil
 }
 
-func (spr *studentParentRepository) DeleteStudentAndParentMass(ctx context.Context, studentIDS *[]int) error {
+func (spr *studentParentRepository) DeleteStudentAndParentMass(ctx context.Context, studentIDs *[]int) error {
 	// Start a transaction
 	tx := spr.db.Begin()
 	if err := tx.Error; err != nil {
 		return fmt.Errorf("could not begin transaction: %v", err)
 	}
 
-	// Iterate over the student IDs to delete them in bulk
-	for _, studentID := range *studentIDS {
-		var student domain.Student
+	currentTime := time.Now()
+
+	// Iterate over the student IDs to process each student
+	for _, studentID := range *studentIDs {
 		// Retrieve the parentID from the student record
+		var student domain.Student
 		err := tx.WithContext(ctx).
-			Select("parent_id").
 			Where("student_id = ? AND deleted_at IS NULL", studentID).
 			First(&student).Error
-
 		if err != nil {
 			tx.Rollback()
 			if err == gorm.ErrRecordNotFound {
@@ -422,25 +574,48 @@ func (spr *studentParentRepository) DeleteStudentAndParentMass(ctx context.Conte
 			return fmt.Errorf("error retrieving student: %v", err)
 		}
 
-		// Soft delete the student
-		err = tx.WithContext(ctx).Where("student_id = ?", studentID).Delete(&domain.Student{}).Error
+		// Count remaining active students associated with the same parent
+		var remainingStudentCount int64
+		err = tx.WithContext(ctx).
+			Model(&domain.Student{}).
+			Where("parent_id = ? AND deleted_at IS NULL", student.ParentID).
+			Count(&remainingStudentCount).Error
 		if err != nil {
 			tx.Rollback()
-			return fmt.Errorf("error deleting student with ID %d: %v", studentID, err)
+			return fmt.Errorf("error counting remaining students: %v", err)
 		}
 
-		// Soft delete the parent if no other students are linked to this parent
-		err = tx.WithContext(ctx).
-			Where("parent_id = ?", student.ParentID).
-			Where("NOT EXISTS (SELECT 1 FROM students WHERE parent_id = ? AND deleted_at IS NULL)", student.ParentID).
-			Delete(&domain.Parent{}).Error
-
-		if err != nil {
-			tx.Rollback()
-			if err == gorm.ErrRecordNotFound {
-				return fmt.Errorf("parent with ID %d not found", student.ParentID)
+		if remainingStudentCount > 1 {
+			fmt.Println("masuk 1")
+			// Soft delete only the student by setting DeletedAt
+			err = tx.WithContext(ctx).
+				Model(&domain.Student{}).
+				Where("student_id = ?", studentID).
+				Update("deleted_at", currentTime).Error
+			if err != nil {
+				tx.Rollback()
+				return fmt.Errorf("error soft deleting student: %v", err)
 			}
-			return fmt.Errorf("error deleting parent with ID %d: %v", student.ParentID, err)
+		} else {
+			fmt.Println("masuk 1")
+			// Soft delete both the student and the parent by setting DeletedAt
+			err = tx.WithContext(ctx).
+				Model(&domain.Student{}).
+				Where("student_id = ?", studentID).
+				Update("deleted_at", currentTime).Error
+			if err != nil {
+				tx.Rollback()
+				return fmt.Errorf("error soft deleting student: %v", err)
+			}
+
+			err = tx.WithContext(ctx).
+				Model(&domain.Parent{}).
+				Where("parent_id = ?", student.ParentID).
+				Update("deleted_at", currentTime).Error
+			if err != nil {
+				tx.Rollback()
+				return fmt.Errorf("error soft deleting parent: %v", err)
+			}
 		}
 	}
 
@@ -457,7 +632,10 @@ func (spr *studentParentRepository) GetStudentDetailsByID(ctx context.Context, s
 	var result domain.StudentAndParent
 
 	err := spr.db.WithContext(ctx).
-		Preload("Parent").
+		Preload("Parent", func(db *gorm.DB) *gorm.DB {
+			// Apply a filter to exclude parents with deleted_at NOT NULL
+			return db.WithContext(ctx).Where("deleted_at IS NULL")
+		}).
 		Where("students.student_id = ? AND students.deleted_at IS NULL", studentID).
 		First(&result.Student).Error
 
@@ -466,6 +644,11 @@ func (spr *studentParentRepository) GetStudentDetailsByID(ctx context.Context, s
 			return nil, fmt.Errorf("student with ID %d not found", studentID)
 		}
 		return nil, fmt.Errorf("could not fetch student details: %v", err)
+	}
+
+	// Explicitly check if the parent was not loaded
+	if result.Student.ParentID != 0 && result.Student.Parent.DeletedAt != nil {
+		result.Student.Parent = domain.Parent{} // Reset to an empty struct if deleted
 	}
 
 	return &result, nil
