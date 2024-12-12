@@ -143,7 +143,7 @@ func (r *userRepository) InputTestScores(ctx context.Context, teacherID int, tes
 		if userDetail.Role != "admin" {
 			var count int64
 			err := tx.Table("user_subjects").
-				Where("user_user_id = ? AND subject_subject_id = ? AND deleted_at IS NULL", teacherID, testScores.SubjectID).
+				Where("user_user_id = ? AND subject_subject_id = ?", teacherID, testScores.SubjectID).
 				Count(&count).Error
 
 			if err != nil || count == 0 {

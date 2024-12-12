@@ -331,6 +331,7 @@ func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
 
 func (sph *studentParentHandler) processCSVFile(c context.Context, filePath string) (*[]string, *[]string, error) {
 	var errList []string
+	var duplicateErrList []string
 	var listStudentAndParent []domain.StudentAndParent
 	var parentDataHolder domain.Parent
 	var studentDataHolder domain.Student
@@ -364,31 +365,35 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 			log.Printf("Skipping row %d due to insufficient columns", i+2)
 			continue
 		}
-		// conv row grade
+
+		// Check grade conversion
 		convertedGrade, err := strconv.Atoi(row[1])
 		if err != nil {
 			errList = append(errList, fmt.Sprintf("row %d: grade should be number: %s", i+2, row[1]))
 		}
 
+		// Validate grade label
 		match := gradeLabelRegex.MatchString(row[2])
 		if !match {
-			errList = append(errList, fmt.Sprintf("row %d: Invalid Grade Label: %s. Only letters (A-Z, a-z) are allowed", i+2, row[1]))
+			errList = append(errList, fmt.Sprintf("row %d: Invalid Grade Label: %s. Only letters (A-Z, a-z) are allowed", i+2, row[2]))
 		}
 
+		// Validate student gender
 		genderLowered := strings.ToLower(row[3])
 		if genderLowered != "male" && genderLowered != "female" {
 			errList = append(errList, fmt.Sprintf("row %d: Invalid student gender: %s, gender should be male / female", i+2, genderLowered))
 		}
 
+		// Validate student telephone
 		_, err = strconv.Atoi(row[4])
 		if err != nil {
 			errList = append(errList, fmt.Sprintf("row %d: Invalid student telephone: %s, telephone should be numeric", i+2, row[4]))
 		}
-
 		if len(row[4]) > 15 {
-			errList = append(errList, fmt.Sprintf("row %d: Invalid student telephone: %s, telephone should be 15 number max", i+2, genderLowered))
+			errList = append(errList, fmt.Sprintf("row %d: Invalid student telephone: %s, telephone should be 15 numbers max", i+2, row[4]))
 		}
 
+		// Populate student data
 		studentDataHolder = domain.Student{
 			Name:       row[0],
 			Grade:      convertedGrade,
@@ -400,20 +405,22 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 			UpdatedAt:  time.Now(),
 		}
 
+		// Validate parent gender
 		genderParentLowered := strings.ToLower(row[6])
 		if genderParentLowered != "male" && genderParentLowered != "female" {
-			errList = append(errList, fmt.Sprintf("row %d: Invalid gender: %s, gender should be male / female", i+2, genderParentLowered))
+			errList = append(errList, fmt.Sprintf("row %d: Invalid parent gender: %s, gender should be male / female", i+2, genderParentLowered))
 		}
 
+		// Validate parent telephone
 		_, err = strconv.Atoi(row[7])
 		if err != nil {
 			errList = append(errList, fmt.Sprintf("row %d: Invalid parent telephone: %s, telephone should be numeric", i+2, row[7]))
 		}
-
 		if len(row[7]) > 15 {
-			errList = append(errList, fmt.Sprintf("row %d: Invalid parent telephone: %s, telephone should be 15 number max", i+2, genderParentLowered))
+			errList = append(errList, fmt.Sprintf("row %d: Invalid parent telephone: %s, telephone should be 15 numbers max", i+2, row[7]))
 		}
 
+		// Populate parent data
 		parentDataHolder = domain.Parent{
 			Name:      row[5],
 			Gender:    row[6],
@@ -423,6 +430,7 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 			UpdatedAt: time.Now(),
 		}
 
+		// Append student and parent data
 		studNParent := domain.StudentAndParent{
 			Student: studentDataHolder,
 			Parent:  parentDataHolder,
@@ -431,8 +439,21 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 		listStudentAndParent = append(listStudentAndParent, studNParent)
 	}
 
-	if len(errList) > 0 {
-		return &errList, nil, nil
+	// Check for duplicates in listStudentAndParent
+	for i, item := range listStudentAndParent {
+		for j := i + 1; j < len(listStudentAndParent); j++ {
+			if item.Student.Name == listStudentAndParent[j].Student.Name {
+				duplicateErrList = append(duplicateErrList, fmt.Sprintf("Duplicate student name: %s found in rows %d and %d", item.Student.Name, i+2, j+2))
+			}
+			if item.Student.Telephone == listStudentAndParent[j].Student.Telephone {
+				duplicateErrList = append(duplicateErrList, fmt.Sprintf("Duplicate student telephone: %s found in rows %d and %d", item.Student.Telephone, i+2, j+2))
+			}
+		}
+	}
+
+	if len(errList) > 0 || len(duplicateErrList) > 0 {
+		combinedErrList := append(errList, duplicateErrList...)
+		return &combinedErrList, nil, nil
 	}
 
 	duplicates, _ := sph.uc.ImportCSV(c, &listStudentAndParent)

@@ -52,13 +52,13 @@ func PrintLogInfo(username *string, statusCode int, functionName string) {
 }
 
 func PrintStruct(strck interface{}) {
-	// Marshal the struct into JSON
-	jsonData, err := json.Marshal(strck)
+	// Marshal the struct into indented JSON
+	jsonData, err := json.MarshalIndent(strck, "", "  ")
 	if err != nil {
 		fmt.Println("Error marshaling struct:", err)
 		return
 	}
 
-	// Print the JSON string representation of the struct
+	// Print the formatted JSON string
 	fmt.Println(string(jsonData))
 }

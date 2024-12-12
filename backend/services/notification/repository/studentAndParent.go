@@ -218,80 +218,82 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 
 	// Validate and filter the records
 	for index, record := range *payload {
-		var parentExists domain.Parent
 		var studentExists domain.Student
-
-		// Check for errors independently for each field
 		isDuplicate := false
 
-		// Check Parent Telephone
+		// Validate Parent Telephone
 		if len(record.Parent.Telephone) > 15 {
-			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with telephone %s is too long", index+2, record.Parent.Telephone))
-			isDuplicate = true
-		} else if err := spr.db.WithContext(ctx).Where("telephone = ? AND deleted_at IS NULL", record.Parent.Telephone).First(&parentExists).Error; err == nil {
-			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with telephone %s already exists", index+2, record.Parent.Telephone))
+			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent telephone %s exceeds max length (15)", index+2, record.Parent.Telephone))
 			isDuplicate = true
 		}
 
-		// Check Parent Name
-		if err := spr.db.WithContext(ctx).Where("name = ? AND deleted_at IS NULL", record.Parent.Name).First(&parentExists).Error; err == nil {
-			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with name %s already exists", index+2, record.Parent.Name))
-			isDuplicate = true
-		}
-
-		// Check Parent Email
-		if record.Parent.Email != nil && *record.Parent.Email != "" {
-			parentEmailLowered := strings.ToLower(*record.Parent.Email)
-			if err := spr.db.WithContext(ctx).Where("email = ? AND deleted_at IS NULL", parentEmailLowered).First(&parentExists).Error; err == nil {
-				duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent with email %s already exists", index+2, parentEmailLowered))
-				isDuplicate = true
-			}
-			record.Parent.Email = &parentEmailLowered
-		}
-
-		// Check Student Telephone
+		// Validate Student Telephone
 		if len(record.Student.Telephone) > 15 {
-			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student with telephone %s is too long", index+2, record.Student.Telephone))
+			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student telephone %s exceeds max length (15)", index+2, record.Student.Telephone))
 			isDuplicate = true
 		} else if err := spr.db.WithContext(ctx).Where("telephone = ? AND deleted_at IS NULL", record.Student.Telephone).First(&studentExists).Error; err == nil {
-			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student with telephone %s already exists", index+2, record.Student.Telephone))
+			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student telephone %s already exists", index+2, record.Student.Telephone))
 			isDuplicate = true
 		}
 
-		// Check Student Name
+		// Validate Student Name
 		if err := spr.db.WithContext(ctx).Where("name = ? AND deleted_at IS NULL", record.Student.Name).First(&studentExists).Error; err == nil {
-			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student with name %s already exists", index+2, record.Student.Name))
+			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student name %s already exists", index+2, record.Student.Name))
 			isDuplicate = true
 		}
 
-		// Skip the record if any duplication was found
+		// Skip records with validation errors
 		if isDuplicate {
 			continue
 		}
+
 		record.Parent.CreatedAt = now
 		record.Parent.UpdatedAt = now
 		record.Student.CreatedAt = now
 		record.Student.UpdatedAt = now
-		// If no duplicates found, add to readyToExecute
+
+		// Add valid records to readyToExecute
 		readyToExecute = append(readyToExecute, record)
 	}
 
 	// If there are duplicate messages, return them
 	if len(duplicateMessages) > 0 {
-		fmt.Println(duplicateMessages)
 		return &duplicateMessages, nil
 	}
 
-	// Insert the valid records into the database
+	// Insert valid records into the database
 	err := spr.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		for _, record := range readyToExecute {
-			// Insert parent
-			if err := tx.Create(&record.Parent).Error; err != nil {
-				return fmt.Errorf("failed to insert parent: %w", err)
+			var parentExist domain.Parent
+
+			// Validate and handle parent
+			err := tx.Where("(name = ? OR telephone = ? OR email = ?) AND deleted_at IS NULL",
+				record.Parent.Name,
+				record.Parent.Telephone,
+				func() string {
+					if record.Parent.Email != nil {
+						return *record.Parent.Email
+					}
+					return ""
+				}(),
+			).First(&parentExist).Error
+
+			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("failed to query parent: %w", err)
 			}
 
-			// Assign the parent ID to the student
-			record.Student.ParentID = record.Parent.ParentID
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				// Parent does not exist, create new
+				if err = tx.Create(&record.Parent).Error; err != nil {
+					return fmt.Errorf("failed to insert parent: %w", err)
+				}
+			}
+
+			// Use the existing or newly created parent ID for the student
+			record.Student.ParentID = parentExist.ParentID
+			if parentExist.ParentID == 0 {
+				record.Student.ParentID = record.Parent.ParentID
+			}
 
 			// Insert student
 			if err := tx.Create(&record.Student).Error; err != nil {
@@ -397,7 +399,6 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 	return nil
 }
 
-
 func (spr *studentParentRepository) SPMassDelete(ctx context.Context, studentIDs *[]int) error {
 	// Start a transaction
 	tx := spr.db.Begin()
@@ -434,7 +435,6 @@ func (spr *studentParentRepository) SPMassDelete(ctx context.Context, studentIDs
 		}
 
 		if remainingStudentCount > 1 {
-			fmt.Println("masuk 1")
 			// Soft delete only the student by setting DeletedAt
 			err = tx.WithContext(ctx).
 				Model(&domain.Student{}).
@@ -445,7 +445,6 @@ func (spr *studentParentRepository) SPMassDelete(ctx context.Context, studentIDs
 				return fmt.Errorf("error soft deleting student: %v", err)
 			}
 		} else {
-			fmt.Println("masuk 1")
 			// Soft delete both the student and the parent by setting DeletedAt
 			err = tx.WithContext(ctx).
 				Model(&domain.Student{}).
@@ -586,7 +585,6 @@ func (spr *studentParentRepository) DeleteStudentAndParentMass(ctx context.Conte
 		}
 
 		if remainingStudentCount > 1 {
-			fmt.Println("masuk 1")
 			// Soft delete only the student by setting DeletedAt
 			err = tx.WithContext(ctx).
 				Model(&domain.Student{}).
@@ -597,7 +595,6 @@ func (spr *studentParentRepository) DeleteStudentAndParentMass(ctx context.Conte
 				return fmt.Errorf("error soft deleting student: %v", err)
 			}
 		} else {
-			fmt.Println("masuk 1")
 			// Soft delete both the student and the parent by setting DeletedAt
 			err = tx.WithContext(ctx).
 				Model(&domain.Student{}).

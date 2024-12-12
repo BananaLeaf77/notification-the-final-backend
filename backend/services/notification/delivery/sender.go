@@ -1,7 +1,6 @@
 package delivery
 
 import (
-	"fmt"
 	"notification/config"
 	"notification/domain"
 	"notification/middleware"
@@ -48,8 +47,6 @@ func (h *senderHandler) SendTestScores(c *fiber.Ctx) error {
 			"message": "Failed to announce test scores",
 		}))
 	}
-
-	fmt.Println(payload.ExamType)
 
 	err = h.suc.SendTestScores(c.Context(), payload.ExamType)
 	if err != nil {

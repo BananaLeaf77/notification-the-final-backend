@@ -1,7 +1,6 @@
 package delivery
 
 import (
-	"fmt"
 	"notification/config"
 	"notification/domain"
 	"notification/middleware"
@@ -129,8 +128,6 @@ func (h *uHandler) DeleteSubjectMass(c *fiber.Ctx) error {
 			"success": false,
 		})
 	}
-
-	fmt.Println(payload.IDS)
 
 	err = h.uc.DeleteSubjectMass(c.Context(), &payload.IDS)
 	if err != nil {
