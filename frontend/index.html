@@ -1416,6 +1416,13 @@
             
                 const apiResponseModal = new bootstrap.Modal(document.getElementById("APIResponse"));
                 apiResponseModal.show();
+                
+                localStorage.removeItem("authToken");
+
+                setTimeout(() => {
+                      window.location.href = "login.html";
+                  }, 3000); // Redirect after 3 seconds
+
                 return
             }
         })

@@ -152,7 +152,12 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 	var existingParent domain.Parent
 	err = spr.db.WithContext(ctx).Where(
 		"(name = ? OR telephone = ? OR email = ?) AND deleted_at IS NULL",
-		req.Parent.Name, req.Parent.Telephone, req.Parent.Email,
+		req.Parent.Name, req.Parent.Telephone, func() string {
+			if req.Parent.Email != nil {
+				return *req.Parent.Email
+			}
+			return ""
+		}(),
 	).First(&existingParent).Error
 
 	// Check if parent condition matches
@@ -331,7 +336,7 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 
 	now := time.Now()
 	req.Student.UpdatedAt = now
-	req.Student.Parent.UpdatedAt = now
+	req.Parent.UpdatedAt = now
 
 	// Check if the student exists
 	err := spr.db.WithContext(ctx).Where("student_id = ? AND deleted_at IS NULL", id).First(&student).Error
@@ -345,7 +350,7 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 		}
 	}
 
-	// Only check for duplicates if student name or telephone is passed
+	// Check for duplicate student data
 	if req.Student.Name != "" {
 		err := spr.db.WithContext(ctx).
 			Where("name = ? AND student_id != ? AND deleted_at IS NULL", req.Student.Name, id).
@@ -368,25 +373,41 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 		return &errList
 	}
 
-	// Update only if parent exists, or create otherwise
-	if err := tx.WithContext(ctx).
-		Where("parent_id = ?", student.ParentID).
-		Assign(req.Parent).
-		FirstOrCreate(&req.Student.Parent).
-		Error; err != nil {
+	// Check if the parent already exists
+	var existingParent domain.Parent
+	err = tx.WithContext(ctx).Where(
+		"(name = ? OR telephone = ? OR email = ?) AND deleted_at IS NULL",
+		req.Parent.Name, req.Parent.Telephone, func() string {
+			if req.Parent.Email != nil {
+				return *req.Parent.Email
+			}
+			return ""
+		}(),
+	).First(&existingParent).Error
+
+	if err == nil {
+		// Parent exists, assign student to this parent
+		req.Student.ParentID = existingParent.ParentID
+	} else if errors.Is(err, gorm.ErrRecordNotFound) {
+		// Parent does not exist, create a new parent
+		req.Parent.CreatedAt = now
+		if err := tx.Create(&req.Parent).Error; err != nil {
+			tx.Rollback()
+			errList = append(errList, fmt.Sprintf("failed to create parent: %v", err))
+			return &errList
+		}
+		req.Student.ParentID = req.Parent.ParentID
+	} else {
+		// Other database error
 		tx.Rollback()
-		errList = append(errList, fmt.Sprintf("could not update parent: %v", err))
+		errList = append(errList, fmt.Sprintf("database error while checking parent: %v", err))
 		return &errList
 	}
 
-	// Update the student
-	if err := tx.WithContext(ctx).
-		Model(&req.Student).
-		Where("student_id = ? AND parent_id = ?", id, student.ParentID).
-		Updates(req.Student).
-		Error; err != nil {
+	// Update the student with the new data
+	if err := tx.WithContext(ctx).Model(&student).Updates(req.Student).Error; err != nil {
 		tx.Rollback()
-		errList = append(errList, fmt.Sprintf("could not update student: %v", err))
+		errList = append(errList, fmt.Sprintf("failed to update student: %v", err))
 		return &errList
 	}
 
