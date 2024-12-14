@@ -135,3 +135,8 @@ type IndividualExamScore struct {
 	Student               Student                 `json:"student"`
 	SubjectAndScoreResult []SubjectAndScoreResult `json:"subject_and_score_result"`
 }
+
+type StudentsAssociateWithParent struct {
+	Parent            Parent    `json:"parent"`
+	AssociatedStudent []Student `json:"students"`
+}

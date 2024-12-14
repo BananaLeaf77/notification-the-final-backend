@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"notification/domain"
 	"os"
@@ -19,39 +20,39 @@ func NewStudentRepository(database *gorm.DB) domain.StudentRepo {
 	}
 }
 
-func (spr *studentRepository) GetStudentByParentTelephone(ctx context.Context, parTel string) (*domain.StudentAndParent, error) {
-	// Define a result struct to hold the combined data
-	var result domain.StudentAndParent
-	var res struct {
-		StudentID    int     `json:"student_id"`
-		StudentName  string  `json:"student_name"`
-		StudentGrade int     `json:"student_grade"`
-		ParentID     int     `json:"parent_id"`
-		ParentName   string  `json:"parent_name"`
-		ParentTel    string  `json:"parent_telephone"`
-		ParentEmail  *string `json:"parent_email"`
-	}
+func (spr *studentRepository) GetStudentByParentTelephone(ctx context.Context, parTel string) (*domain.StudentsAssociateWithParent, error) {
+	var result domain.StudentsAssociateWithParent
 
-	// Perform an explicit join query
+	var parent domain.Parent
 	err := spr.db.WithContext(ctx).
-		Table("students").
-		Select("students.*, parents.*").
-		Joins("JOIN parents ON parents.parent_id = students.parent_id").
-		Where("parents.telephone = ? AND parents.deleted_at IS NULL", parTel).
-		Scan(&res).Error
+		Where("telephone = ? AND deleted_at IS NULL", parTel).
+		First(&parent).Error
 
-	// Handle errors
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("no student found for parent telephone %s", parTel)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("no parent found with telephone %s", parTel)
 		}
-		return nil, fmt.Errorf("could not fetch student details: %v", err)
+		return nil, fmt.Errorf("error fetching parent details: %v", err)
 	}
 
-	err = spr.db.WithContext(ctx).Preload("Parent").Where("student_id = ? AND deleted_at IS NULL", res.StudentID).First(&result.Student).Error
+	// Assign the fetched parent to the result
+	result.Parent = parent
+
+	// Fetch students associated with the parent
+	var students []domain.Student
+	err = spr.db.WithContext(ctx).
+		Where("parent_id = ? AND deleted_at IS NULL", parent.ParentID).
+		Find(&students).Error
+
 	if err != nil {
-		return nil, err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("no students found associated with parent telephone %s", parTel)
+		}
+		return nil, fmt.Errorf("error fetching associated students: %v", err)
 	}
+
+	// Assign the fetched students to the result
+	result.AssociatedStudent = students
 
 	return &result, nil
 }

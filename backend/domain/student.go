@@ -45,11 +45,11 @@ type TestScore struct {
 type StudentRepo interface {
 	GetAllStudent(ctx context.Context, userID int) (*[]Student, error)
 	DownloadInputDataTemplate(ctx context.Context) (*string, error)
-	GetStudentByParentTelephone(ctx context.Context, parTel string) (*StudentAndParent, error)
+	GetStudentByParentTelephone(ctx context.Context, parTel string) (*StudentsAssociateWithParent, error)
 }
 
 type StudentUseCase interface {
 	GetAllStudent(ctx context.Context, userID int) (*[]Student, error)
 	DownloadInputDataTemplate(ctx context.Context) (*string, error)
-	GetStudentByParentTelephone(ctx context.Context, parTel string) (*StudentAndParent, error)
+	GetStudentByParentTelephone(ctx context.Context, parTel string) (*StudentsAssociateWithParent, error)
 }

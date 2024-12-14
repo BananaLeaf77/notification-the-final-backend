@@ -581,7 +581,7 @@
         formData.append("file", fileInput.files[0]);
     
         try {
-          const response = fetch('${apiUrl}/student-and-parent/import', {
+          const response = fetch(`${apiUrl}/student-and-parent/import`, {
             method: 'POST',
             headers: {
                 'Authorization': token,

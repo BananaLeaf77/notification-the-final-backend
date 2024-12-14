@@ -431,7 +431,6 @@
       });
     </script>
     
-
     <!-- API HIT -->
     <script src="assets/js/apiHost.js"></script>
 
@@ -474,11 +473,6 @@
                     const parent = student.parent;
     
                     oldDataContainer.innerHTML = `
-                        <p><b>Student Name:</b> ${student.name}</p>
-                        <p><b>Grade:</b> ${student.grade}${student.grade_label}</p>
-                        <p><b>Gender:</b> ${student.gender}</p>
-                        <p><b>Telephone:</b> ${student.telephone}</p>
-                        <hr>
                         <p><b>Parent Name:</b> ${parent.name}</p>
                         <p><b>Parent Gender:</b> ${parent.gender}</p>
                         <p><b>Parent Telephone:</b> ${parent.telephone}</p>
@@ -505,9 +499,6 @@
                     const request = data.data;
     
                     newDataContainer.innerHTML = `
-                        <p><b>Student Name:</b> ${request.new_student_name || "-"}</p>
-                        <p><b>Telephone:</b> ${request.new_student_telephone || "-"}</p>
-                        <hr>
                         <p><b>Parent Name:</b> ${request.new_parent_name || "-"}</p>
                         <p><b>Parent Gender:</b> ${request.new_parent_gender || "-"}</p>
                         <p><b>Parent Telephone:</b> ${request.new_parent_telephone || "-"}</p>
@@ -546,19 +537,11 @@
                   }
       
                   // Extract and combine data
-                  const studentOld = oldData.data.student;
                   const parentOld = studentOld.parent;
                   const requestNew = newData.data;
                   console.log(studentOld)
       
                   const payload = {
-                      student: {
-                          name: requestNew.new_student_name || studentOld.name,
-                          grade: requestNew.new_student_grade || studentOld.grade,
-                          grade_label: requestNew.new_student_grade_label || studentOld.grade_label,
-                          gender: requestNew.new_student_gender || studentOld.gender,
-                          telephone: requestNew.new_student_telephone || studentOld.telephone,
-                      },
                       parent: {
                           name: requestNew.new_parent_name || parentOld.name,
                           telephone: requestNew.new_parent_telephone || parentOld.telephone,

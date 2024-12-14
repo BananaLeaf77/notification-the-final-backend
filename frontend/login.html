@@ -90,7 +90,7 @@
 <body>
 <!-- DCR MODAL -->
 <div class="modal fade" id="createDCRModal" tabindex="-1" aria-labelledby="createDCRModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <!-- Modal Header -->
             <div class="modal-header">
@@ -103,20 +103,8 @@
             <!-- Modal Body -->
             <div class="modal-body">
                 <div class="row">
-                    <!-- Left Side: Student Info -->
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="modalNewStudentName">New Student Name (optional)</label>
-                            <input type="text" class="form-control" id="modalNewStudentName" placeholder="Enter new student name">
-                        </div>
-                        <div class="form-group">
-                            <label for="modalNewStudentTelephone">New Student Telephone (optional)</label>
-                            <input type="text" class="form-control" id="modalNewStudentTelephone" placeholder="08xx" maxlength="15" pattern="\d{1,15}">
-                        </div>
-                    </div>
-
                     <!-- Right Side: Parent Info -->
-                    <div class="col-md-6">
+                    <div class="col-12">
                         <div class="form-group">
                             <label for="modalNewParentName">New Parent Name (optional)</label>
                             <input type="text" class="form-control" id="modalNewParentName" placeholder="New Parent Name">
@@ -156,6 +144,7 @@
         </div>
     </div>
 </div>
+
 
     <!-- API Response Modal -->
     <div class="modal fade" id="APIResponse" tabindex="-1" aria-labelledby="APIResponseLabel" aria-hidden="true">
@@ -475,8 +464,6 @@
     document.getElementById("sendDCR").addEventListener("click", function () {
         // Get input values from the modal form
         const oldParentTelephone = document.getElementById("modalOldParentTelephone").value.trim();
-        const newStudentName = document.getElementById("modalNewStudentName").value.trim();
-        const newStudentTelephone = document.getElementById("modalNewStudentTelephone").value.trim();
         const newParentName = document.getElementById("modalNewParentName").value.trim();
         const newParentGender = document.querySelector('input[name="ParentGender"]:checked')?.value;
         const newParentTelephone = document.getElementById("modalNewParentTelephone").value.trim();
@@ -494,8 +481,6 @@
         // Construct the payload dynamically
         const payload = { old_parent_telephone: oldParentTelephone };
     
-        if (newStudentName) payload.new_student_name = newStudentName;
-        if (newStudentTelephone) payload.new_student_telephone = newStudentTelephone;
         if (newParentName) payload.new_parent_name = newParentName;
         if (newParentGender) payload.new_parent_gender = newParentGender;
         if (newParentTelephone) payload.new_parent_telephone = newParentTelephone;
