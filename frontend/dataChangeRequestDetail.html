@@ -433,6 +433,8 @@
     
 
     <!-- API HIT -->
+    <script src="assets/js/apiHost.js"></script>
+
     <script>
       document.addEventListener("DOMContentLoaded", () => {
         const token = localStorage.getItem("authToken");
@@ -460,7 +462,7 @@
         const approveBtn = document.getElementById("approveBtn");
     
         // Fetch Old Data
-        fetch(`http://127.0.0.1:8000/student/telephone/${telephone}`, {
+        fetch(`${apiUrl}/student/telephone/${telephone}`, {
             headers: {
                 "Authorization": `${token}`,
             },
@@ -492,7 +494,7 @@
             });
     
         // Fetch Data Change Request
-        fetch(`http://127.0.0.1:8000/student-and-parent/get-all-data-change-request/${requestId}`, {
+        fetch(`${apiUrl}/student-and-parent/get-all-data-change-request/${requestId}`, {
             headers: {
                 "Authorization": `${token}`,
             },
@@ -525,13 +527,13 @@
           const messageElement = document.getElementById("msgs");
           
           // Fetch old data and new data
-          const oldDataResponse = fetch(`http://127.0.0.1:8000/student/telephone/${telephone}`, {
+          const oldDataResponse = fetch(`${apiUrl}/student/telephone/${telephone}`, {
               headers: {
                   "Authorization": `${token}`,
               },
           }).then(res => res.json());
       
-          const newDataResponse = fetch(`http://127.0.0.1:8000/student-and-parent/get-all-data-change-request/${requestId}`, {
+          const newDataResponse = fetch(`${apiUrl}/student-and-parent/get-all-data-change-request/${requestId}`, {
               headers: {
                   "Authorization": `${token}`,
               },
@@ -566,7 +568,7 @@
                   };
 
                   // Hit the update endpoint
-                  return fetch(`http://127.0.0.1:8000/student-and-parent/modify/${studentOld.student_id}`, {
+                  return fetch(`${apiUrl}/student-and-parent/modify/${studentOld.student_id}`, {
                       method: "PUT",
                       headers: {
                           "Content-Type": "application/json",
@@ -582,7 +584,7 @@
                       messageElement.classList.remove("text-danger");
                       messageElement.classList.add("text-success");
                       $('#APIResponse').modal('show');
-                      fetch(`http://127.0.0.1:8000/student-and-parent/review/dcr/${requestId}`, {
+                      fetch(`${apiUrl}/student-and-parent/review/dcr/${requestId}`, {
                         method: "DELETE",
                         headers: {
                             "Content-Type": "application/json",
@@ -632,6 +634,8 @@
         // Show the confirmation modal
         $('#logoutConfirmationModal').modal('show');
       }
+
+
       
       // Event listener for confirming logout
       document.getElementById("confirmLogoutButton").addEventListener("click", function () {
@@ -667,7 +671,7 @@
       }
 
       function fetchDataChangeRequestCount(token) {
-        fetch("http://127.0.0.1:8000/student-and-parent/get-all-data-change-request", {
+        fetch(`${apiUrl}/student-and-parent/get-all-data-change-request`, {
           method: "GET",
           headers: {
               "Authorization": `${token}`,
@@ -693,7 +697,7 @@
       }
 
       function fetchProfileData(token) {
-        fetch("http://127.0.0.1:8000/user/profile-dashboard", {
+        fetch(`${apiUrl}/user/profile-dashboard`, {
             method: "GET",
             headers: {
                 "Authorization": `${token}`,

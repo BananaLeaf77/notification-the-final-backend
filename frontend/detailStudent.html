@@ -452,12 +452,16 @@
       });
     </script>
     <!-- API HIT -->
+    <script src="assets/js/apiHost.js"></script>
+
     <script>      
 
       function logout() {
         // Show the confirmation modal
         $('#logoutConfirmationModal').modal('show');
-      }      
+      }
+
+      
           
       // Event listener for confirming logout
       document.getElementById("confirmLogoutButton").addEventListener("click", function () {
@@ -512,7 +516,7 @@
       });
 
       function fetchStudentDetail(token, studentId) {
-        const url = `http://127.0.0.1:8000/student-and-parent/student/${studentId}`;
+        const url = `${apiUrl}/student-and-parent/student/${studentId}`;
       
         fetch(url, {
           method: "GET",
@@ -553,7 +557,7 @@
       }
 
       function fetchDataChangeRequestCount(token) {
-        fetch("http://127.0.0.1:8000/student-and-parent/get-all-data-change-request", {
+        fetch(`${apiUrl}/student-and-parent/get-all-data-change-request`, {
           method: "GET",
           headers: {
               "Authorization": `${token}`,
@@ -580,7 +584,7 @@
 
 
       function fetchProfileData(token) {
-        fetch("http://127.0.0.1:8000/user/profile-dashboard", {
+        fetch(`${apiUrl}/user/profile-dashboard`, {
             method: "GET",
             headers: {
                 "Authorization": `${token}`,

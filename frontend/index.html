@@ -697,8 +697,9 @@
       });
     </script>
     <!-- API HIT -->
-    <script>
+    <script src="assets/js/apiHost.js"></script>
 
+    <script>
       function validateInput(input) {
         // Remove any invalid characters (non-numeric and spaces)
         input.value = input.value.replace(/[^0-9]/g, '');
@@ -715,7 +716,7 @@
         // Show the confirmation modal
         $('#logoutConfirmationModal').modal('show');
       }
-    
+
       // Event listener for confirming logout
       document.getElementById("confirmLogoutButton").addEventListener("click", function () {
           // Remove the token from local storage
@@ -800,7 +801,7 @@
         };
     
         // Make the API request
-        fetch("http://127.0.0.1:8000/sender/send-mass", {
+        fetch(`${apiUrl}/sender/send-mass`, {
             method: "POST",
             headers: {
                 "Authorization": `${token}`,
@@ -879,7 +880,7 @@
         subjectTable.innerHTML = "";
 
         // Fetch all subjects
-        fetch("http://127.0.0.1:8000/user/subject/all", {
+        fetch(`${apiUrl}/user/subject/all`, {
             method: "GET",
             headers: {
                 "Authorization": `${token}`,
@@ -947,7 +948,7 @@
       function deleteStudentMass() {
         const token = localStorage.getItem("authToken");
         // Make the API request
-        fetch("http://127.0.0.1:8000/student-and-parent/rms", {
+        fetch(`${apiUrl}/student-and-parent/rms`, {
             method: "POST",
             headers: {
                 "Authorization": token,
@@ -1034,7 +1035,7 @@
     
 
       function fetchUserCount(token) {
-        fetch("http://127.0.0.1:8000/user/get-all", {
+        fetch(`${apiUrl}/user/get-all`, {
             method: "GET",
             headers: {
                 "Authorization": `${token}`,
@@ -1060,7 +1061,7 @@
       }
 
       function fetchStudentCount(token) {
-        fetch("http://127.0.0.1:8000/student/get-all", {
+        fetch(`${apiUrl}/student/get-all`, {
             method: "GET",
             headers: {
                 "Authorization": `${token}`,
@@ -1085,7 +1086,7 @@
     }
 
       function fetchDataChangeRequestCount(token) {
-        fetch("http://127.0.0.1:8000/student-and-parent/get-all-data-change-request", {
+        fetch(`${apiUrl}/student-and-parent/get-all-data-change-request`, {
           method: "GET",
           headers: {
               "Authorization": `${token}`,
@@ -1105,7 +1106,7 @@
       }
 
       function fetchSubjectsCount(token) {
-        fetch("http://127.0.0.1:8000/user/subject/all", {
+        fetch(`${apiUrl}/user/subject/all`, {
             method: "GET",
             headers: {
                 "Authorization": `${token}`,
@@ -1133,7 +1134,7 @@
 
       // Fetch students and populate the table
       function fetchStudents(token) {
-        fetch("http://127.0.0.1:8000/student/get-all", {
+        fetch(`${apiUrl}/student/get-all`, {
             method: "GET",
             headers: {
                 "Authorization": token,
@@ -1282,7 +1283,7 @@
       const messageElement = document.getElementById("msgs");
   
       // Make the PUT request to update student and parent data
-      fetch(`http://127.0.0.1:8000/student-and-parent/modify/${studentId}`, {
+      fetch(`${apiUrl}/student-and-parent/modify/${studentId}`, {
           method: "PUT",
           headers: {
               "Authorization": `${token}`,
@@ -1329,7 +1330,7 @@
     
     function fetchStudentDetails(studentId) {
       const token = localStorage.getItem("authToken");
-      const url = `http://127.0.0.1:8000/student-and-parent/student/${studentId}`;
+      const url = `${apiUrl}/student-and-parent/student/${studentId}`;
   
       fetch(url, {
           method: "GET",
@@ -1386,7 +1387,7 @@
     }
   
       function fetchProfileData(token) {
-        fetch("http://127.0.0.1:8000/user/profile-dashboard", {
+        fetch(`${apiUrl}/user/profile-dashboard`, {
             method: "GET",
             headers: {
                 "Authorization": `${token}`,
@@ -1476,7 +1477,7 @@
           window.location.href = "login.html";
         }
 
-        fetch(`http://127.0.0.1:8000/student-and-parent/rm/${studentId}`, {
+        fetch(`${apiUrl}/student-and-parent/rm/${studentId}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `${token}`,

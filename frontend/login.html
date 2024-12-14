@@ -461,6 +461,7 @@
     fillColor: "rgba(255, 165, 52, .14)",
     });
 </script>
+<script src="assets/js/apiHost.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const token = localStorage.getItem("authToken");
@@ -501,7 +502,7 @@
         if (newParentEmail) payload.new_parent_email = newParentEmail;
     
         // Send the request to the endpoint
-        fetch("http://127.0.0.1:8000/student-and-parent/req/data-change-request", {
+        fetch(`${apiUrl}/student-and-parent/req/data-change-request`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -547,7 +548,7 @@
         const password = document.getElementById("password").value;
         const errorMessage = document.getElementById("errorMessage");
 
-        fetch("http://127.0.0.1:8000/login", {
+        fetch(`${apiUrl}/login`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"

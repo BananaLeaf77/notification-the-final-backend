@@ -571,6 +571,8 @@
       });
     </script>
     <!-- API HIT -->
+    <script src="assets/js/apiHost.js"></script>
+
     <script>
       document.getElementById("confirmAPIResponse").addEventListener("click", function() {
         $('#APIResponse').modal('hide');
@@ -580,6 +582,8 @@
         // Show the confirmation modal
         $('#logoutConfirmationModal').modal('show');
       }
+
+
       
       function showMassDeleteModal() {
         if (selectedUserIds.length === 0) {
@@ -605,7 +609,7 @@
       function deleteMass() {
         const token = localStorage.getItem("authToken");
         // Make the API request
-        fetch("http://127.0.0.1:8000/user/rm/users", {
+        fetch(`${apiUrl}/user/rm/users`, {
             method: "POST",
             headers: {
                 "Authorization": token,
@@ -708,7 +712,7 @@
       });
     
       function fetchUserCount(token) {
-        fetch("http://127.0.0.1:8000/user/get-all", {
+        fetch(`${apiUrl}/user/get-all`, {
             method: "GET",
             headers: {
                 "Authorization": `${token}`,
@@ -734,7 +738,7 @@
       }
 
       function fetchDataChangeRequestCount(token) {
-        fetch("http://127.0.0.1:8000/student-and-parent/get-all-data-change-request", {
+        fetch(`${apiUrl}/student-and-parent/get-all-data-change-request`, {
           method: "GET",
           headers: {
               "Authorization": `${token}`,
@@ -754,7 +758,7 @@
       }
 
       function fetchSubjectsCount(token) {
-        fetch("http://127.0.0.1:8000/user/subject/all", {
+        fetch(`${apiUrl}/user/subject/all`, {
             method: "GET",
             headers: {
                 "Authorization": `${token}`,
@@ -776,7 +780,7 @@
 
       // Fetch users and populate the table
       function fetchUsers(token) {
-        fetch("http://127.0.0.1:8000/user/get-all", {
+        fetch(`${apiUrl}/user/get-all`, {
             method: "GET",
             headers: {
                 "Authorization": `${token}`,
@@ -860,7 +864,7 @@
         if (password) payload.user.password = password;
     
         // Send the data to the API
-        fetch(`http://127.0.0.1:8000/user/modify/${userId}`, {
+        fetch(`${apiUrl}/user/modify/${userId}`, {
             method: "PUT", // Use PUT for updates
             headers: {
                 "Authorization": `${token}`,
@@ -915,7 +919,7 @@
         const subjectTable = document.getElementById("subjectTable");
     
         // Fetch user details
-        fetch(`http://127.0.0.1:8000/user/details/${userId}`, {
+        fetch(`${apiUrl}/user/details/${userId}`, {
             method: "GET",
             headers: {
                 "Authorization": `${token}`,
@@ -933,7 +937,7 @@
                 modalUsername.setAttribute("data-user-id", userId); 
     
                 // Fetch all subjects to populate the checkboxes
-                fetch("http://127.0.0.1:8000/user/subject/all", {
+                fetch(`${apiUrl}/user/subject/all`, {
                     method: "GET",
                     headers: {
                         "Authorization": `${token}`,
@@ -1005,7 +1009,7 @@
       }
 
       function fetchProfileData(token) {
-        fetch("http://127.0.0.1:8000/user/profile-dashboard", {
+        fetch(`${apiUrl}/user/profile-dashboard`, {
             method: "GET",
             headers: {
                 "Authorization": `${token}`,
@@ -1071,7 +1075,7 @@
         }
     
         // Call the DELETE endpoint
-        fetch(`http://127.0.0.1:8000/user/rm/${userId}`, {
+        fetch(`${apiUrl}/user/rm/${userId}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `${token}`,
