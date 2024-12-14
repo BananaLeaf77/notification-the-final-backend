@@ -303,45 +303,66 @@
 
         <div class="container">
           <div class="page-inner">
-            <div class="page-header">
-              <h3 class="fw-bold mb-3">Data Change Request Detail</h3>
+            <div class="page-header mb-4">
+              <h3 class="fw-bold">Data Change Request Detail</h3>
             </div>
+        
             <div class="row">
+              <!-- Parent Data Section (Old and New Data Merged) -->
               <div class="col-md-12">
-                <div class="card">
+                <div class="card bg-white shadow-sm">
+                  <div class="card-header">
+                    <h5>Parent Data</h5>
+                  </div>
                   <div class="card-body">
                     <div class="row">
-                      <!-- Old Data Section -->
-                      <div class="col-md-5">
-                        <h5>Old Data</h5>
+                      <!-- Old Parent Data -->
+                      <div class="col-md-6">
+                        <h6>Old Data</h6>
                         <div id="oldData">
                           <!-- Old Data Will Be Populated Here -->
                         </div>
                       </div>
         
                       <!-- Arrow Section -->
-                      <div class="col-md-2 d-flex justify-content-center align-items-center">
+                      <div class="col-md-1 d-flex justify-content-center align-items-center">
                         <i class="fas fa-arrow-right fa-3x"></i>
                       </div>
         
-                      <!-- New Data Section -->
+                      <!-- New Parent Data -->
                       <div class="col-md-5">
-                        <h5>New Data</h5>
+                        <h6>New Data</h6>
                         <div id="newData">
                           <!-- New Data Will Be Populated Here -->
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div class="card-action text-right">
-                    <button class="btn btn-success" id="approveBtn">Approve Changes</button>
-                    <a href="dataChangeRequest.html" class="btn btn-danger">Cancel</a>
+                </div>
+              </div>
+            </div>
+        
+            <!-- Associated Students Section -->
+            <div class="row mt-4">
+              <div class="col-md-12">
+                <div class="card bg-white shadow-sm">
+                  <div class="card-header">
+                    <h5>Associated Students</h5>
+                  </div>
+                  <div class="card-body" id="associatedStudents">
+                    <!-- Associated Students Will Be Populated Here -->
                   </div>
                 </div>
               </div>
             </div>
+        
+            <div class="card-footer text-right">
+              <button class="btn btn-success" id="approveBtn">Approve Changes</button>
+              <a href="dataChangeRequest.html" class="btn btn-danger">Cancel</a>
+            </div>
           </div>
         </div>
+        
         
         <footer class="footer">
           <div class="container-fluid d-flex justify-content-between">
@@ -460,32 +481,68 @@
         const newDataContainer = document.getElementById("newData");
         const approveBtn = document.getElementById("approveBtn");
     
-        // Fetch Old Data
+        // Fetch Old Data and Associated Students
         fetch(`${apiUrl}/student/telephone/${telephone}`, {
-            headers: {
-                "Authorization": `${token}`,
-            },
+          headers: {
+              "Authorization": `${token}`,
+          },
         })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const student = data.data.student;
-                    const parent = student.parent;
-    
-                    oldDataContainer.innerHTML = `
-                        <p><b>Parent Name:</b> ${parent.name}</p>
-                        <p><b>Parent Gender:</b> ${parent.gender}</p>
-                        <p><b>Parent Telephone:</b> ${parent.telephone}</p>
-                        <p><b>Parent Email:</b> ${parent.email || "-"}</p>
-                    `;
-                } else {
-                    oldDataContainer.innerHTML = `<p class="text-danger">Failed to load old data.</p>`;
-                }
-            })
-            .catch(error => {
-                console.error("Error fetching old data:", error);
-                oldDataContainer.innerHTML = `<p class="text-danger">Error loading old data.</p>`;
-            });
+          .then(response => response.json())
+          .then(data => {
+              if (data.success) {
+                  // Populate Old Data
+                  const oldDataContainer = document.getElementById("oldData");
+                  oldDataContainer.innerHTML = `
+                      <p><strong>Parent Name:</strong> ${data.data.parent.name}</p>
+                      <p><strong>Parent Gender:</strong> ${data.data.parent.gender}</p>
+                      <p><strong>Parent Telephone:</strong> ${data.data.parent.telephone}</p>
+                      <p><strong>Parent Email:</strong> ${data.data.parent.email || "-"}</p>
+                  `;
+
+                  // Populate Associated Students
+                  const associatedStudentsContainer = document.getElementById("associatedStudents");
+                  if (data.data.students.length > 0) {
+                      associatedStudentsContainer.innerHTML = `
+                          <h6 class="fw-bold mb-3">Associated Students</h6>
+                          <div class="row g-3">
+                              ${data.data.students.map(student => `
+                                  <div class="col-md-6">
+                                      <div class="card">
+                                          <div class="card-body">
+                                              <h6 class="card-title fw-bold">${student.name}</h6>
+                                              <p class="mb-1"><strong>Grade:</strong> ${student.grade} (${student.grade_label})</p>
+                                              <p class="mb-0"><strong>Telephone:</strong> ${student.telephone}</p>
+                                          </div>
+                                      </div>
+                                  </div>
+                              `).join("")}
+                          </div>
+                      `;
+                  } else {
+                      associatedStudentsContainer.innerHTML = `
+                          <p class="text-warning">No associated students found.</p>
+                      `;
+                  }
+              } else {
+                  document.getElementById("oldData").innerHTML = `
+                      <p class="text-danger">Failed to load old data.</p>
+                  `;
+                  document.getElementById("associatedStudents").innerHTML = `
+                      <p class="text-danger">Failed to load associated students.</p>
+                  `;
+              }
+          })
+          .catch(error => {
+              console.error("Error fetching old data and associated students:", error);
+              document.getElementById("oldData").innerHTML = `
+                  <p class="text-danger">Error loading old data.</p>
+              `;
+              document.getElementById("associatedStudents").innerHTML = `
+                  <p class="text-danger">Error loading associated students.</p>
+              `;
+          });
+
+
     
         // Fetch Data Change Request
         fetch(`${apiUrl}/student-and-parent/get-all-data-change-request/${requestId}`, {
@@ -537,9 +594,7 @@
                   }
       
                   // Extract and combine data
-                  const parentOld = studentOld.parent;
                   const requestNew = newData.data;
-                  console.log(studentOld)
       
                   const payload = {
                       parent: {
