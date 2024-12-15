@@ -318,7 +318,7 @@
                     <div class="row">
                       <!-- Old Parent Data -->
                       <div class="col-md-6">
-                        <h6>Old Data</h6>
+                        <h5>Old Data</h5>
                         <div id="oldData">
                           <!-- Old Data Will Be Populated Here -->
                         </div>
@@ -331,7 +331,7 @@
         
                       <!-- New Parent Data -->
                       <div class="col-md-5">
-                        <h6>New Data</h6>
+                        <h5>New Data</h5>
                         <div id="newData">
                           <!-- New Data Will Be Populated Here -->
                         </div>
@@ -456,6 +456,14 @@
     <script src="assets/js/apiHost.js"></script>
 
     <script>
+      let payloadReadyForApprove = {
+        old_telephone: "",
+        name: "",
+        telephone: "",
+        email: "",
+        gender: ""
+      };
+      
       document.addEventListener("DOMContentLoaded", () => {
         const token = localStorage.getItem("authToken");
     
@@ -489,6 +497,7 @@
         })
           .then(response => response.json())
           .then(data => {
+            console.log(data)
               if (data.success) {
                   // Populate Old Data
                   const oldDataContainer = document.getElementById("oldData");
@@ -499,18 +508,19 @@
                       <p><strong>Parent Email:</strong> ${data.data.parent.email || "-"}</p>
                   `;
 
+                  payloadReadyForApprove.old_telephone = data.data.parent.telephone
+
                   // Populate Associated Students
                   const associatedStudentsContainer = document.getElementById("associatedStudents");
                   if (data.data.students.length > 0) {
                       associatedStudentsContainer.innerHTML = `
-                          <h6 class="fw-bold mb-3">Associated Students</h6>
                           <div class="row g-3">
                               ${data.data.students.map(student => `
                                   <div class="col-md-6">
                                       <div class="card">
                                           <div class="card-body">
                                               <h6 class="card-title fw-bold">${student.name}</h6>
-                                              <p class="mb-1"><strong>Grade:</strong> ${student.grade} (${student.grade_label})</p>
+                                              <p class="mb-1"><strong>Grade:</strong> ${student.grade}${student.grade_label}</p>
                                               <p class="mb-0"><strong>Telephone:</strong> ${student.telephone}</p>
                                           </div>
                                       </div>
@@ -541,8 +551,6 @@
                   <p class="text-danger">Error loading associated students.</p>
               `;
           });
-
-
     
         // Fetch Data Change Request
         fetch(`${apiUrl}/student-and-parent/get-all-data-change-request/${requestId}`, {
@@ -561,6 +569,11 @@
                         <p><b>Parent Telephone:</b> ${request.new_parent_telephone || "-"}</p>
                         <p><b>Parent Email:</b> ${request.new_parent_email || "-"}</p>
                     `;
+
+                    payloadReadyForApprove.name = request.new_parent_name || "-"
+                    payloadReadyForApprove.telephone = request.new_parent_telephone || "-"
+                    payloadReadyForApprove.email = request.new_parent_email || "-"
+                    payloadReadyForApprove.gender = request.new_parent_gender || "-"
                 } else {
                     newDataContainer.innerHTML = `<p class="text-danger">Failed to load new data.</p>`;
                 }
@@ -572,85 +585,39 @@
     
         // Handle Approve Button
         approveBtn.addEventListener("click", () => {
+          console.log(payloadReadyForApprove)
           const messageElement = document.getElementById("msgs");
-          
-          // Fetch old data and new data
-          const oldDataResponse = fetch(`${apiUrl}/student/telephone/${telephone}`, {
-              headers: {
-                  "Authorization": `${token}`,
-              },
-          }).then(res => res.json());
-      
-          const newDataResponse = fetch(`${apiUrl}/student-and-parent/get-all-data-change-request/${requestId}`, {
-              headers: {
-                  "Authorization": `${token}`,
-              },
-          }).then(res => res.json());
-      
-          Promise.all([oldDataResponse, newDataResponse])
-              .then(([oldData, newData]) => {
-                  if (!oldData.success || !newData.success) {
-                      throw new Error("Failed to fetch required data.");
-                  }
-      
-                  // Extract and combine data
-                  const requestNew = newData.data;
-      
-                  const payload = {
-                      parent: {
-                          name: requestNew.new_parent_name || parentOld.name,
-                          telephone: requestNew.new_parent_telephone || parentOld.telephone,
-                          email: requestNew.new_parent_email || parentOld.email,
-                          gender: requestNew.new_parent_gender || parentOld.gender,
-                      },
-                  };
+          fetch(`${apiUrl}/student-and-parent/approve/dcr`, {
+            method: "POST",
+            headers: {
+                "Authorization": `${token}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payloadReadyForApprove)
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              // Show success message
+              messageElement.innerHTML = data.message;
+              messageElement.classList.remove("text-danger");
+              messageElement.classList.add("text-success");
+              $('#APIResponse').modal('show');
+              setTimeout(() => {
+                window.location.href = "dataChangeRequest.html";
+              }, 1000); 
 
-                  // Hit the update endpoint
-                  return fetch(`${apiUrl}/student-and-parent/modify/${studentOld.student_id}`, {
-                      method: "PUT",
-                      headers: {
-                          "Content-Type": "application/json",
-                          "Authorization": `${token}`,
-                      },
-                      body: JSON.stringify(payload),
-                  });
-              })
-              .then(updateResponse => updateResponse.json())
-              .then(updateResult => {
-                  if (updateResult.success) {
-                      messageElement.textContent = updateResult.message;
-                      messageElement.classList.remove("text-danger");
-                      messageElement.classList.add("text-success");
-                      $('#APIResponse').modal('show');
-                      fetch(`${apiUrl}/student-and-parent/review/dcr/${requestId}`, {
-                        method: "DELETE",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Authorization": `${token}`,
-                        },
-                      });
-                      setTimeout(() => {
-                        window.location.href = "dataChangeRequest.html";
-                      }, 3000);
-                  }else{
-                      let errorMessage = updateResult.message + ":";
-                      if (updateResult.error && updateResult.error.length > 0) {
-                        errorMessage += "<ul>";
-                        updateResult.error.forEach(err => {
-                          errorMessage += `<li>${err}</li>`;
-                        });
-                        errorMessage += "</ul>";
-                      }
-                      messageElement.innerHTML = errorMessage;
-                      messageElement.classList.remove("text-success");
-                      messageElement.classList.add("text-danger");
-                      $('#APIResponse').modal('show');
-                  }
-              })
+            }else{
+              messageElement.innerHTML = data.message;
+              messageElement.classList.remove("text-success");
+              messageElement.classList.add("text-danger");
+              $('#APIResponse').modal('show');
+
+            }
+
+          })
         });
       });
-    
-    
 
       function validateInput(input) {
         // Remove any invalid characters (non-numeric and spaces)

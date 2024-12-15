@@ -33,6 +33,7 @@ type StudentParentRepo interface {
 	GetAllDataChangeRequestByID(ctx context.Context, dcrID int) (*DataChangeRequest, error)
 	GetAllDataChangeRequest(ctx context.Context) (*[]DataChangeRequest, error)
 	DataChangeRequest(ctx context.Context, datas DataChangeRequest) error
+	ApproveDCR(ctx context.Context, req map[string]interface{}) error
 	ReviewDCR(ctx context.Context, dcrID int) error
 }
 
@@ -48,5 +49,6 @@ type StudentParentUseCase interface {
 	GetAllDataChangeRequest(ctx context.Context) (*[]DataChangeRequest, error)
 	GetAllDataChangeRequestByID(ctx context.Context, dcrID int) (*DataChangeRequest, error)
 	DataChangeRequest(ctx context.Context, datas DataChangeRequest) error
+	ApproveDCR(ctx context.Context, req map[string]interface{}) error
 	ReviewDCR(ctx context.Context, dcrID int) error
 }

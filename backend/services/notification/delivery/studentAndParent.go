@@ -53,6 +53,61 @@ func NewStudentParentHandlerDeploy(app *fiber.App, useCase domain.StudentParentU
 	route.Post("/rms", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.SPMassDelete)
 	route.Get("/download-template", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DownloadTemplate)
 	route.Delete("/review/dcr/:request_id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.ReviewDCR)
+	route.Post("/approve/dcr", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.ApproveDCR)
+}
+
+func (sph *studentParentHandler) ApproveDCR(c *fiber.Ctx) error {
+	userToken := c.Locals("user").(*domain.Claims)
+	var payloadReadyForApprove struct {
+		Name         *string    `json:"name"`
+		Gender       *string    `json:"gender"`
+		Telephone    *string    `json:"telephone"`
+		OldTelephone *string    `json:"old_telephone"`
+		Email        *string    `json:"email"`
+		UpdatedAt    *time.Time `json:"updated_at"`
+	}
+
+	if err := c.BodyParser(&payloadReadyForApprove); err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "ApproveDCR")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"error":   err.Error(),
+			"message": "Invalid data",
+		})
+	}
+
+	fmt.Println(payloadReadyForApprove)
+
+	if payloadReadyForApprove.OldTelephone == nil || *payloadReadyForApprove.OldTelephone == "" {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "ApproveDCR")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "Old telephone is required",
+		})
+	}
+
+	repoPayload := map[string]interface{}{
+		"name":         payloadReadyForApprove.Name,
+		"gender":       payloadReadyForApprove.Gender,
+		"telephone":    payloadReadyForApprove.Telephone,
+		"oldTelephone": payloadReadyForApprove.OldTelephone,
+		"email":        payloadReadyForApprove.Email,
+	}
+
+	if err := sph.uc.ApproveDCR(c.Context(), repoPayload); err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "ApproveDCR")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"error":   err.Error(),
+			"message": "Failed to approve data changes",
+		})
+	}
+
+	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "ApproveDCR")
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Data changes approved",
+	})
 }
 
 func (sph *studentParentHandler) DownloadTemplate(c *fiber.Ctx) error {

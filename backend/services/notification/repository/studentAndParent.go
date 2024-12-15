@@ -23,94 +23,97 @@ func NewStudentParentRepository(database *gorm.DB) domain.StudentParentRepo {
 	}
 }
 
-// func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, req *domain.StudentAndParent) *[]string {
-// 	var errList []string
+func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[string]interface{}) error {
+	now := time.Now()
+	var parentHolder domain.Parent
+	var existingParent domain.Parent
+	var studentsAssociated *[]domain.Student
 
-// 	if req.Parent.Email != nil {
-// 		emailLowered := strings.ToLower(strings.TrimSpace(*req.Parent.Email))
-// 		req.Parent.Email = &emailLowered
-// 	}
+	// Start a database transaction
+	tx := spr.db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
 
-// 	match, _ := regexp.MatchString("^[A-Za-z]+$", req.Student.GradeLabel)
-// 	if !match {
-// 		errList = append(errList, fmt.Sprintf("Invalid Grade Label: %s. Only letters (A-Z, a-z) are allowed.", req.Student.GradeLabel))
-// 	}
+	// Validate oldTelephone existence
+	if req["oldTelephone"] == nil || req["oldTelephone"] == "" {
+		tx.Rollback()
+		return fmt.Errorf("oldTelephone is required")
+	}
 
-// 	var studentCount int64
-// 	err := spr.db.WithContext(ctx).Model(&domain.Student{}).Where("telephone = ? AND deleted_at IS NULL", req.Student.Telephone).Count(&studentCount).Error
-// 	if err != nil {
-// 		errList = append(errList, fmt.Sprintf("Error checking for student telephone: %v", err))
-// 	} else if studentCount > 0 {
-// 		errList = append(errList, fmt.Sprintf("Student with telephone %s already exists", req.Student.Telephone))
-// 	}
+	// Find the parent with oldTelephone
+	err := tx.WithContext(ctx).Where("telephone = ? AND deleted_at IS NULL", req["oldTelephone"]).First(&parentHolder).Error
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("parent not found with old telephone: %v", err)
+	}
 
-// 	var parentCount int64
-// 	err = spr.db.WithContext(ctx).Model(&domain.Parent{}).Where("telephone = ? AND deleted_at IS NULL", req.Parent.Telephone).Count(&parentCount).Error
-// 	if err != nil {
-// 		errList = append(errList, fmt.Sprintf("Error checking for parent telephone: %v", err))
-// 	} else if parentCount > 0 {
-// 		errList = append(errList, fmt.Sprintf("Parent with telephone %s already exists", req.Parent.Telephone))
-// 	}
+	err = tx.WithContext(ctx).Where("parent_id = ? AND deleted_at IS NULL", parentHolder.ParentID).Find(&studentsAssociated).Error
+	if err != nil || len(*studentsAssociated) == 0 {
+		tx.Rollback()
+		return fmt.Errorf("parent isn't associated with any students")
+	}
 
-// 	if req.Parent.Email != nil && *req.Parent.Email != "" {
-// 		err = spr.db.WithContext(ctx).Model(&domain.Parent{}).Where("email = ? AND deleted_at IS NULL", *req.Parent.Email).Count(&parentCount).Error
-// 		if err != nil {
-// 			errList = append(errList, fmt.Sprintf("Error checking for parent email: %v", err))
-// 		} else if parentCount > 0 {
-// 			errList = append(errList, fmt.Sprintf("Parent with email %s already exists", *req.Parent.Email))
-// 		}
-// 	}
+	// Check for conflicts with an existing parent
+	err = tx.WithContext(ctx).Where("(name = ? OR telephone = ? OR email = ?) AND deleted_at IS NULL", req["name"], req["telephone"], req["email"]).First(&existingParent).Error
+	if err == nil {
+		// Update associated students to use existingParent.ParentID
+		err = tx.WithContext(ctx).Where("student_id IN (?) AND deleted_at IS NULL", func() []int {
+			var studentIDS []int
+			for _, student := range *studentsAssociated {
+				studentIDS = append(studentIDS, student.StudentID)
+			}
+			return studentIDS
+		}()).Updates(&domain.Student{ParentID: existingParent.ParentID}).Error
+		if err != nil {
+			tx.Rollback()
+			return fmt.Errorf("failed to update or associate students: %v", err)
+		}
+	}
 
-// 	err = spr.db.WithContext(ctx).Model(&domain.Student{}).Where("name = ? AND deleted_at IS NULL", req.Student.Name).Count(&studentCount).Error
-// 	if err != nil {
-// 		errList = append(errList, fmt.Sprintf("Error checking for student name: %v", err))
-// 	} else if studentCount > 0 {
-// 		errList = append(errList, fmt.Sprintf("Student with name %s already exists", req.Student.Name))
-// 	}
+	// Prepare fields to update, excluding oldTelephone
+	updatedParentFields := make(map[string]interface{})
+	if req["name"] != "" {
+		updatedParentFields["name"] = req["name"]
+	}
+	if req["gender"] != "" {
+		updatedParentFields["gender"] = req["gender"]
+	}
+	if req["telephone"] != "" {
+		updatedParentFields["telephone"] = req["telephone"]
+	}
+	if req["email"] != nil && req["email"] != "" {
+		updatedParentFields["email"] = req["email"]
+	}
+	if len(updatedParentFields) > 0 {
+		updatedParentFields["updated_at"] = now
+	}
 
-// 	err = spr.db.WithContext(ctx).Model(&domain.Parent{}).Where("name = ? AND deleted_at IS NULL", req.Parent.Name).Count(&parentCount).Error
-// 	if err != nil {
-// 		errList = append(errList, fmt.Sprintf("Error checking for parent name: %v", err))
-// 	} else if parentCount > 0 {
-// 		errList = append(errList, fmt.Sprintf("Parent with name %s already exists", req.Parent.Name))
-// 	}
+	// Update the parent fields
+	err = tx.Model(&domain.Parent{}).Where("parent_id = ? AND deleted_at IS NULL", parentHolder.ParentID).Updates(&updatedParentFields).Error
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to update parent: %v", err)
+	}
 
-// 	if len(errList) > 0 {
-// 		return &errList
-// 	}
+	err = tx.Model(&domain.DataChangeRequest{}).Where("old_parent_telephone = ? AND is_reviewed IS false", req["oldTelephone"]).Updates(&domain.DataChangeRequest{
+		IsReviewed: true,
+	}).Error
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to update data change request: %v", err)
+	}
 
-// 	tx := spr.db.Begin()
-// 	if tx.Error != nil {
-// 		return &[]string{fmt.Sprintf("Could not begin transaction: %v", tx.Error)}
-// 	}
+	// Commit the transaction
+	err = tx.Commit().Error
+	if err != nil {
+		return fmt.Errorf("failed to commit transaction: %v", err)
+	}
 
-// 	// Insert Parent
-// 	req.Parent.CreatedAt = time.Now()
-// 	req.Parent.UpdatedAt = req.Parent.CreatedAt
-// 	if err := tx.WithContext(ctx).Create(&req.Parent).Error; err != nil {
-// 		tx.Rollback()
-// 		return &[]string{fmt.Sprintf("Could not insert parent: %v", err)}
-// 	}
-
-// 	// Set ParentID for Student
-// 	req.Student.ParentID = req.Parent.ParentID
-// 	req.Student.CreatedAt = time.Now()
-// 	req.Student.UpdatedAt = req.Student.CreatedAt
-
-// 	// Insert Student
-// 	req.Student.GradeLabel = strings.ToUpper(req.Student.GradeLabel)
-// 	if err := tx.WithContext(ctx).Create(&req.Student).Error; err != nil {
-// 		tx.Rollback()
-// 		return &[]string{fmt.Sprintf("Could not insert student: %v", err)}
-// 	}
-
-// 	// Commit Transaction
-// 	if err := tx.Commit().Error; err != nil {
-// 		return &[]string{fmt.Sprintf("Could not commit transaction: %v", err)}
-// 	}
-
-// 	return nil
-// }
+	return nil
+}
 
 func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, req *domain.StudentAndParent) *[]string {
 	var errList []string

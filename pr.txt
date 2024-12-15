@@ -2,16 +2,6 @@ pr = kita cuma send yang benar benar gak ada kabar / bolos, kalau izin / kirim s
 import csv (loading, check di exel/csv ne ade ne patuh sing data e)
 sort radio send notif subject
 
-same with send mass test score / jika nilai 0 kirim masihh ape sing? / jika subject deleted jangan dikirim
-tipe data nilai float or int 
-
-
-loading import
-logic 1 to many
-
-
-
-
 PR BARU
 DETAILREQUESTDATACHANGE UBAH
 CSV PENILAIAN???
