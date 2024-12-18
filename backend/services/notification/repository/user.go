@@ -572,15 +572,12 @@ func (ur *userRepository) GetAllSubject(ctx context.Context, userID int) (*[]dom
 }
 
 func (ur *userRepository) UpdateSubject(ctx context.Context, id int, newSubjectData *domain.Subject) error {
-	nameLowered := strings.ToLower(newSubjectData.Name)
-
 	var existingSubject domain.Subject
-	err := ur.db.WithContext(ctx).Where("name = ? AND subject_id != ? AND deleted_at IS NULL", nameLowered, id).First(&existingSubject).Error
+	err := ur.db.WithContext(ctx).Where("name = ? AND subject_id != ? AND deleted_at IS NULL", newSubjectData.Name, id).First(&existingSubject).Error
 	if err == nil {
-		return fmt.Errorf("subject with name %s already exists", nameLowered)
+		return fmt.Errorf("subject with name %s already exists", newSubjectData.Name)
 	}
 
-	newSubjectData.Name = nameLowered
 	newSubjectData.UpdatedAt = time.Now()
 
 	err = ur.db.WithContext(ctx).Model(&domain.Subject{}).
@@ -588,7 +585,7 @@ func (ur *userRepository) UpdateSubject(ctx context.Context, id int, newSubjectD
 		Updates(&newSubjectData).Error
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
-			return fmt.Errorf("subject with name %s already exists", nameLowered)
+			return fmt.Errorf("subject with name %s already exists", newSubjectData.Name)
 		}
 		return fmt.Errorf("could not update staff: %v", err)
 	}

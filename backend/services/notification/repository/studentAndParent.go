@@ -107,10 +107,6 @@ func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[stri
 		return nil, fmt.Errorf("parent doesn't associate with any student, error: %v", err)
 	}
 
-	fmt.Println("Associated student with parent: ")
-	config.PrintStruct(AssociatedStudent)
-	fmt.Println("==============================================================================================")
-
 	// Check for an existing parent record with the same details
 	var ExistingParent domain.Parent
 	err = tx.Where("(name = ? OR telephone = ? OR email = ?) AND deleted_at IS NULL", req["name"], req["telephone"], req["email"]).First(&ExistingParent).Error
@@ -135,7 +131,6 @@ func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[stri
 
 	var msgs *string
 	var studentParentIDHolder int
-	fmt.Println("running assign student to existing parent")
 	// Assign associated students to the existing parent
 	for _, student := range AssociatedStudent {
 		spIDHolder := student.ParentID
@@ -147,7 +142,7 @@ func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[stri
 			tx.Rollback()
 			return nil, fmt.Errorf("failed to assign student to existing parent, error: %v", err)
 		}
-		message := fmt.Sprintf("Parent data already exists, allocating %d students to the existing parent", len(AssociatedStudent))
+		message := fmt.Sprintf("Parent data already exists, allocating %d students to the existing parent named: %s", len(AssociatedStudent), ExistingParent.Name)
 		msgs = &message
 	}
 

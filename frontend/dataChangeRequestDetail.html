@@ -603,9 +603,7 @@
               messageElement.classList.remove("text-danger");
               messageElement.classList.add("text-success");
               $('#APIResponse').modal('show');
-              setTimeout(() => {
-                window.location.href = "dataChangeRequest.html";
-              }, 1000); 
+              
 
             }else{
               messageElement.innerHTML = data.message+" "+data.error;
@@ -633,6 +631,7 @@
 
       document.getElementById("confirmAPIResponse").addEventListener("click", function() {
         $('#APIResponse').modal('hide');
+        window.location.href = "dataChangeRequest.html"
       });
 
       function logout() {

@@ -92,12 +92,22 @@ func (sph *studentParentHandler) ApproveDCR(c *fiber.Ctx) error {
 		"email":        payloadReadyForApprove.Email,
 	}
 
-	if _, err := sph.uc.ApproveDCR(c.Context(), repoPayload); err != nil {
+	allocated, err := sph.uc.ApproveDCR(c.Context(), repoPayload)
+	if err != nil {
 		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "ApproveDCR")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"error":   err.Error(),
 			"message": "Failed to approve data changes",
+		})
+	}
+
+	if allocated != nil {
+		msgs := fmt.Sprintf("Data changes approved, %s", *allocated)
+		config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "ApproveDCR")
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"success": true,
+			"message": msgs,
 		})
 	}
 
