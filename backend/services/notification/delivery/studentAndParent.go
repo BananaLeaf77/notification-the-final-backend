@@ -76,8 +76,6 @@ func (sph *studentParentHandler) ApproveDCR(c *fiber.Ctx) error {
 		})
 	}
 
-	fmt.Println(payloadReadyForApprove)
-
 	if payloadReadyForApprove.OldTelephone == nil || *payloadReadyForApprove.OldTelephone == "" {
 		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "ApproveDCR")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -94,7 +92,7 @@ func (sph *studentParentHandler) ApproveDCR(c *fiber.Ctx) error {
 		"email":        payloadReadyForApprove.Email,
 	}
 
-	if err := sph.uc.ApproveDCR(c.Context(), repoPayload); err != nil {
+	if _, err := sph.uc.ApproveDCR(c.Context(), repoPayload); err != nil {
 		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "ApproveDCR")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,

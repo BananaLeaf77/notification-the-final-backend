@@ -128,12 +128,12 @@ func (spu *studentParentUseCase) ReviewDCR(ctx context.Context, dcrID int) error
 	return nil
 }
 
-func (spu *studentParentUseCase) ApproveDCR(ctx context.Context, req map[string]interface{}) error {
-	err := spu.repo.ApproveDCR(ctx, req)
+func (spu *studentParentUseCase) ApproveDCR(ctx context.Context, req map[string]interface{}) (*string, error) {
+	b, err := spu.repo.ApproveDCR(ctx, req)
 	if err != nil {
-		return err
+		return b, err
 	}
-	return nil
+	return b, nil
 }
 
 // func (spu *studentParentUseCase) GetClassIDByName(className string) (*int, error) {

@@ -23,11 +23,13 @@ func NewStudentParentRepository(database *gorm.DB) domain.StudentParentRepo {
 	}
 }
 
-func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[string]interface{}) error {
+func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[string]interface{}) (*string, error) {
+	fmt.Println("req payload")
+	config.PrintStruct(req)
 	now := time.Now()
 	var parentHolder domain.Parent
 	var existingParent domain.Parent
-	var studentsAssociated *[]domain.Student
+	var allocatedDataMsgs string
 
 	// Start a database transaction
 	tx := spr.db.Begin()
@@ -40,62 +42,108 @@ func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[stri
 	// Validate oldTelephone existence
 	if req["oldTelephone"] == nil || req["oldTelephone"] == "" {
 		tx.Rollback()
-		return fmt.Errorf("oldTelephone is required")
+		return nil, fmt.Errorf("oldTelephone is required")
 	}
 
 	// Find the parent with oldTelephone
 	err := tx.WithContext(ctx).Where("telephone = ? AND deleted_at IS NULL", req["oldTelephone"]).First(&parentHolder).Error
-	if err != nil {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		tx.Rollback()
-		return fmt.Errorf("parent not found with old telephone: %v", err)
+		return nil, fmt.Errorf("parent not found with old telephone")
+	} else if err != nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("error fetching parent: %v", err)
+	}
+	fmt.Println("parent found")
+	config.PrintStruct(parentHolder)
+
+	updateFields := make(map[string]interface{})
+
+	// Update Name
+	if name, ok := req["name"].(string); ok && strings.TrimSpace(name) != "" && name != parentHolder.Name {
+		updateFields["name"] = strings.TrimSpace(name)
 	}
 
-	err = tx.WithContext(ctx).Where("parent_id = ? AND deleted_at IS NULL", parentHolder.ParentID).Find(&studentsAssociated).Error
-	if err != nil || len(*studentsAssociated) == 0 {
-		tx.Rollback()
-		return fmt.Errorf("parent isn't associated with any students")
+	// Update Gender
+	if gender, ok := req["gender"].(string); ok && strings.TrimSpace(gender) != "" && gender != parentHolder.Gender {
+		updateFields["gender"] = strings.TrimSpace(gender)
 	}
 
-	// Check for conflicts with an existing parent
-	err = tx.WithContext(ctx).Where("(name = ? OR telephone = ? OR email = ?) AND deleted_at IS NULL", req["name"], req["telephone"], req["email"]).First(&existingParent).Error
-	if err == nil {
-		// Update associated students to use existingParent.ParentID
-		err = tx.WithContext(ctx).Where("student_id IN (?) AND deleted_at IS NULL", func() []int {
-			var studentIDS []int
-			for _, student := range *studentsAssociated {
-				studentIDS = append(studentIDS, student.StudentID)
-			}
-			return studentIDS
-		}()).Updates(&domain.Student{ParentID: existingParent.ParentID}).Error
-		if err != nil {
-			tx.Rollback()
-			return fmt.Errorf("failed to update or associate students: %v", err)
+	// Update Telephone
+	if telephone, ok := req["telephone"].(string); ok {
+		trimmedTelephone := strings.TrimSpace(telephone)
+		if trimmedTelephone != "" && trimmedTelephone != parentHolder.Telephone {
+			updateFields["telephone"] = trimmedTelephone
+			fmt.Println("masux - Telephone Updated:", trimmedTelephone)
 		}
 	}
 
-	// Prepare fields to update, excluding oldTelephone
-	updatedParentFields := make(map[string]interface{})
-	if req["name"] != "" {
-		updatedParentFields["name"] = req["name"]
-	}
-	if req["gender"] != "" {
-		updatedParentFields["gender"] = req["gender"]
-	}
-	if req["telephone"] != "" {
-		updatedParentFields["telephone"] = req["telephone"]
-	}
-	if req["email"] != nil && req["email"] != "" {
-		updatedParentFields["email"] = req["email"]
-	}
-	if len(updatedParentFields) > 0 {
-		updatedParentFields["updated_at"] = now
+	// Update Email
+	if email, ok := req["email"].(string); ok && strings.TrimSpace(email) != "" {
+		emailTrimmed := strings.TrimSpace(email)
+		if parentHolder.Email == nil || *parentHolder.Email != emailTrimmed {
+			updateFields["email"] = emailTrimmed
+		}
 	}
 
-	// Update the parent fields
-	err = tx.Model(&domain.Parent{}).Where("parent_id = ? AND deleted_at IS NULL", parentHolder.ParentID).Updates(&updatedParentFields).Error
+	// Always Update UpdatedAt
+	updateFields["updated_at"] = now
+
+	// Debug the updates to verify
+	fmt.Println("Fields to Update:")
+	config.PrintStruct(updateFields)
+
+	// Find students associated with the parent
+	studentsAssociated := []domain.Student{}
+	err = tx.WithContext(ctx).Where("parent_id = ? AND deleted_at IS NULL", parentHolder.ParentID).Find(&studentsAssociated).Error
+	if err != nil || len(studentsAssociated) == 0 {
+		tx.Rollback()
+		return nil, fmt.Errorf("no students associated with parent")
+	}
+
+	// Handle parent conflicts
+	existingParent = domain.Parent{}
+	err = tx.WithContext(ctx).Where("(name = ? OR telephone = ? OR email = ?) AND deleted_at IS NULL",
+		req["name"], req["telephone"], req["email"]).First(&existingParent).Error
+
+	if err == nil {
+		// Conflict exists, update student associations
+		var previousParentID int
+		studentIDs := []int{}
+		for _, student := range studentsAssociated {
+			previousParentID = student.ParentID
+			studentIDs = append(studentIDs, student.StudentID)
+		}
+		err = tx.WithContext(ctx).Model(&domain.Student{}).Where("student_id IN (?)", studentIDs).
+			Updates(&domain.Student{ParentID: existingParent.ParentID}).Error
+		if err != nil {
+			tx.Rollback()
+			return nil, fmt.Errorf("failed to reassign students: %v", err)
+		}
+		var parentCounter int64
+		allocatedDataMsgs = fmt.Sprintf("Parent data already exists, allocating %d students to parent %s", len(studentsAssociated), existingParent.Name)
+		err = tx.WithContext(ctx).Where("parent_id = ? AND deleted_at IS NULL", previousParentID).Count(&parentCounter).Error
+		if err != nil {
+			return nil, fmt.Errorf("error counting previous parent, error:%v", err)
+		}
+		if parentCounter > 0 {
+			err = tx.WithContext(ctx).Where("parent_id = ? AND deleted_at IS NULL", previousParentID).Updates(&domain.Parent{
+				DeletedAt: &now,
+			}).Error
+			if err != nil {
+				return nil, fmt.Errorf("failed to delete student with no associated to any student, error:%v", err)
+			}
+		}
+	}
+
+	// Perform the update using GORM
+	err = tx.Model(&domain.Parent{}).
+		Where("parent_id = ? AND deleted_at IS NULL", parentHolder.ParentID).
+		Updates(&updateFields).Error
+
 	if err != nil {
 		tx.Rollback()
-		return fmt.Errorf("failed to update parent: %v", err)
+		return nil, fmt.Errorf("failed to update parent: %v", err)
 	}
 
 	err = tx.Model(&domain.DataChangeRequest{}).Where("old_parent_telephone = ? AND is_reviewed IS false", req["oldTelephone"]).Updates(&domain.DataChangeRequest{
@@ -103,16 +151,24 @@ func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[stri
 	}).Error
 	if err != nil {
 		tx.Rollback()
-		return fmt.Errorf("failed to update data change request: %v", err)
+		return nil, fmt.Errorf("failed to update data change request: %v", err)
 	}
 
 	// Commit the transaction
 	err = tx.Commit().Error
 	if err != nil {
-		return fmt.Errorf("failed to commit transaction: %v", err)
+		return nil, fmt.Errorf("failed to commit transaction: %v", err)
 	}
 
-	return nil
+	if allocatedDataMsgs != "" {
+		fmt.Println("lol 0")
+
+		return &allocatedDataMsgs, nil
+	}
+
+	fmt.Println("LOl")
+
+	return nil, nil
 }
 
 func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, req *domain.StudentAndParent) *[]string {

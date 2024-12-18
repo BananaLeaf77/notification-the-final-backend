@@ -3,6 +3,4 @@ import csv (loading, check di exel/csv ne ade ne patuh sing data e)
 sort radio send notif subject
 
 PR BARU
-DETAILREQUESTDATACHANGE UBAH
 CSV PENILAIAN???
-Update data for dcr baru biin nagih func to
