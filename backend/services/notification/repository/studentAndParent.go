@@ -24,150 +24,155 @@ func NewStudentParentRepository(database *gorm.DB) domain.StudentParentRepo {
 }
 
 func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[string]interface{}) (*string, error) {
-	fmt.Println("req payload")
+	fmt.Println("Req Map :")
 	config.PrintStruct(req)
-	now := time.Now()
-	var parentHolder domain.Parent
-	var existingParent domain.Parent
-	var allocatedDataMsgs string
+	fmt.Println("==============================================================================================")
 
-	// Start a database transaction
-	tx := spr.db.Begin()
+	var dcr domain.DataChangeRequest
+	var Parent domain.Parent
+	var AssociatedStudent []domain.Student
+	tNow := time.Now()
+	var comparedData struct {
+		Name      string
+		Gender    string
+		Telephone string
+		Email     *string
+		UpdatedAt time.Time
+	}
+
+	// Begin transaction
+	tx := spr.db.WithContext(ctx).Begin()
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
+			panic(r)
 		}
 	}()
 
-	// Validate oldTelephone existence
-	if req["oldTelephone"] == nil || req["oldTelephone"] == "" {
-		tx.Rollback()
-		return nil, fmt.Errorf("oldTelephone is required")
-	}
-
-	// Find the parent with oldTelephone
-	err := tx.WithContext(ctx).Where("telephone = ? AND deleted_at IS NULL", req["oldTelephone"]).First(&parentHolder).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		tx.Rollback()
-		return nil, fmt.Errorf("parent not found with old telephone")
-	} else if err != nil {
-		tx.Rollback()
-		return nil, fmt.Errorf("error fetching parent: %v", err)
-	}
-	fmt.Println("parent found")
-	config.PrintStruct(parentHolder)
-
-	updateFields := make(map[string]interface{})
-
-	// Update Name
-	if name, ok := req["name"].(string); ok && strings.TrimSpace(name) != "" && name != parentHolder.Name {
-		updateFields["name"] = strings.TrimSpace(name)
-	}
-
-	// Update Gender
-	if gender, ok := req["gender"].(string); ok && strings.TrimSpace(gender) != "" && gender != parentHolder.Gender {
-		updateFields["gender"] = strings.TrimSpace(gender)
-	}
-
-	// Update Telephone
-	if telephone, ok := req["telephone"].(string); ok {
-		trimmedTelephone := strings.TrimSpace(telephone)
-		if trimmedTelephone != "" && trimmedTelephone != parentHolder.Telephone {
-			updateFields["telephone"] = trimmedTelephone
-			fmt.Println("masux - Telephone Updated:", trimmedTelephone)
-		}
-	}
-
-	// Update Email
-	if email, ok := req["email"].(string); ok && strings.TrimSpace(email) != "" {
-		emailTrimmed := strings.TrimSpace(email)
-		if parentHolder.Email == nil || *parentHolder.Email != emailTrimmed {
-			updateFields["email"] = emailTrimmed
-		}
-	}
-
-	// Always Update UpdatedAt
-	updateFields["updated_at"] = now
-
-	// Debug the updates to verify
-	fmt.Println("Fields to Update:")
-	config.PrintStruct(updateFields)
-
-	// Find students associated with the parent
-	studentsAssociated := []domain.Student{}
-	err = tx.WithContext(ctx).Where("parent_id = ? AND deleted_at IS NULL", parentHolder.ParentID).Find(&studentsAssociated).Error
-	if err != nil || len(studentsAssociated) == 0 {
-		tx.Rollback()
-		return nil, fmt.Errorf("no students associated with parent")
-	}
-
-	// Handle parent conflicts
-	existingParent = domain.Parent{}
-	err = tx.WithContext(ctx).Where("(name = ? OR telephone = ? OR email = ?) AND deleted_at IS NULL",
-		req["name"], req["telephone"], req["email"]).First(&existingParent).Error
-
-	if err == nil {
-		// Conflict exists, update student associations
-		var previousParentID int
-		studentIDs := []int{}
-		for _, student := range studentsAssociated {
-			previousParentID = student.ParentID
-			studentIDs = append(studentIDs, student.StudentID)
-		}
-		err = tx.WithContext(ctx).Model(&domain.Student{}).Where("student_id IN (?)", studentIDs).
-			Updates(&domain.Student{ParentID: existingParent.ParentID}).Error
-		if err != nil {
-			tx.Rollback()
-			return nil, fmt.Errorf("failed to reassign students: %v", err)
-		}
-		var parentCounter int64
-		allocatedDataMsgs = fmt.Sprintf("Parent data already exists, allocating %d students to parent %s", len(studentsAssociated), existingParent.Name)
-		err = tx.WithContext(ctx).Where("parent_id = ? AND deleted_at IS NULL", previousParentID).Count(&parentCounter).Error
-		if err != nil {
-			return nil, fmt.Errorf("error counting previous parent, error:%v", err)
-		}
-		if parentCounter > 0 {
-			err = tx.WithContext(ctx).Where("parent_id = ? AND deleted_at IS NULL", previousParentID).Updates(&domain.Parent{
-				DeletedAt: &now,
-			}).Error
-			if err != nil {
-				return nil, fmt.Errorf("failed to delete student with no associated to any student, error:%v", err)
-			}
-		}
-	}
-
-	// Perform the update using GORM
-	err = tx.Model(&domain.Parent{}).
-		Where("parent_id = ? AND deleted_at IS NULL", parentHolder.ParentID).
-		Updates(&updateFields).Error
-
+	// Find the parent by oldTelephone
+	oldTelephone := req["oldTelephone"]
+	err := tx.Where("telephone = ? AND deleted_at IS NULL", oldTelephone).First(&Parent).Error
 	if err != nil {
 		tx.Rollback()
-		return nil, fmt.Errorf("failed to update parent: %v", err)
+		return nil, fmt.Errorf("failure on finding parent with old telephone: %s, error: %v", oldTelephone, err)
 	}
 
-	err = tx.Model(&domain.DataChangeRequest{}).Where("old_parent_telephone = ? AND is_reviewed IS false", req["oldTelephone"]).Updates(&domain.DataChangeRequest{
+	// Find the DataChangeRequest for the given oldTelephone
+	err = tx.Where("old_parent_telephone = ? AND is_reviewed IS FALSE", oldTelephone).First(&dcr).Error
+	if err != nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("failure finding data change request, error: %v", err)
+	}
+
+	fmt.Println("found parent using old telephone")
+	config.PrintStruct(Parent)
+	fmt.Println("==============================================================================================")
+
+	// Compare dcr and parent fields to populate comparedData
+	if dcr.NewParentName != nil && *dcr.NewParentName != Parent.Name {
+		comparedData.Name = *dcr.NewParentName
+	} else {
+		comparedData.Name = Parent.Name
+	}
+
+	if dcr.NewParentGender != nil && *dcr.NewParentGender != Parent.Gender {
+		comparedData.Gender = *dcr.NewParentGender
+	} else {
+		comparedData.Gender = Parent.Gender
+	}
+
+	if dcr.NewParentTelephone != nil && *dcr.NewParentTelephone != Parent.Telephone {
+		comparedData.Telephone = *dcr.NewParentTelephone
+	} else {
+		comparedData.Telephone = Parent.Telephone
+	}
+
+	if dcr.NewParentEmail != nil && *dcr.NewParentEmail != *Parent.Email {
+		comparedData.Email = dcr.NewParentEmail
+	} else {
+		comparedData.Email = Parent.Email
+	}
+
+	// Always update the timestamp
+	comparedData.UpdatedAt = tNow
+
+	fmt.Println("compared data print:")
+	config.PrintStruct(comparedData)
+	fmt.Println("==============================================================================================")
+
+	// Check if parent is associated with any students
+	err = tx.Where("parent_id = ? AND deleted_at IS NULL", Parent.ParentID).Find(&AssociatedStudent).Error
+	if err != nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("parent doesn't associate with any student, error: %v", err)
+	}
+
+	fmt.Println("Associated student with parent: ")
+	config.PrintStruct(AssociatedStudent)
+	fmt.Println("==============================================================================================")
+
+	// Check for an existing parent record with the same details
+	var ExistingParent domain.Parent
+	err = tx.Where("(name = ? OR telephone = ? OR email = ?) AND deleted_at IS NULL", req["name"], req["telephone"], req["email"]).First(&ExistingParent).Error
+	if err == gorm.ErrRecordNotFound {
+		fmt.Println("Duplicate Parent Not found, running update current parent using compared data")
+		// If no existing parent found, update the current parent
+		err = tx.Model(&domain.Parent{}).Where("parent_id = ? AND deleted_at IS NULL", Parent.ParentID).Updates(&comparedData).Error
+		if err != nil {
+			tx.Rollback()
+			return nil, fmt.Errorf("failed to update parent, error: %v", err)
+		}
+		err = spr.db.WithContext(ctx).Model(&domain.DataChangeRequest{}).Where("old_parent_telephone = ? AND is_reviewed IS FALSE", oldTelephone).Updates(&domain.DataChangeRequest{
+			IsReviewed: true,
+		}).Error
+		if err != nil {
+			tx.Rollback()
+			return nil, fmt.Errorf("failed to review data change request, error: %v", err)
+		}
+		tx.Commit()
+		return nil, nil
+	}
+
+	var msgs *string
+	var studentParentIDHolder int
+	fmt.Println("running assign student to existing parent")
+	// Assign associated students to the existing parent
+	for _, student := range AssociatedStudent {
+		spIDHolder := student.ParentID
+		studentParentIDHolder = spIDHolder
+		err = tx.Model(&domain.Student{}).Where("student_id = ? AND parent_id = ? AND deleted_at IS NULL", student.StudentID, Parent.ParentID).Updates(&domain.Student{
+			ParentID: ExistingParent.ParentID,
+		}).Error
+		if err != nil {
+			tx.Rollback()
+			return nil, fmt.Errorf("failed to assign student to existing parent, error: %v", err)
+		}
+		message := fmt.Sprintf("Parent data already exists, allocating %d students to the existing parent", len(AssociatedStudent))
+		msgs = &message
+	}
+
+	err = spr.db.WithContext(ctx).Model(&domain.Parent{}).Where("parent_id = ? AND deleted_at IS NULL", studentParentIDHolder).Updates(&domain.Parent{
+		DeletedAt: &tNow,
+	}).Error
+	if err != nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("error deleting allocated student parents, error: %v", err)
+	}
+
+	err = spr.db.WithContext(ctx).Model(&domain.DataChangeRequest{}).Where("old_parent_telephone = ? AND is_reviewed IS FALSE", oldTelephone).Updates(&domain.DataChangeRequest{
 		IsReviewed: true,
 	}).Error
 	if err != nil {
 		tx.Rollback()
-		return nil, fmt.Errorf("failed to update data change request: %v", err)
+		return nil, fmt.Errorf("failed to review data change request, error: %v", err)
 	}
 
-	// Commit the transaction
-	err = tx.Commit().Error
-	if err != nil {
-		return nil, fmt.Errorf("failed to commit transaction: %v", err)
+	if msgs != nil {
+		tx.Commit()
+		return msgs, nil
 	}
 
-	if allocatedDataMsgs != "" {
-		fmt.Println("lol 0")
-
-		return &allocatedDataMsgs, nil
-	}
-
-	fmt.Println("LOl")
-
+	tx.Commit()
 	return nil, nil
 }
 
