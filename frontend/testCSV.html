@@ -19,6 +19,7 @@
     <script>
         document.getElementById('uploadForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            console.log("nigga")
             const token = localStorage.getItem("authToken");
             
             const fileInput = document.getElementById('fileInput');
@@ -33,11 +34,11 @@
                     },
                     body: formData
                 });
-
+                console.log(response)
                 if (response.ok) {
-                    alert('File uploaded successfully!');
+                    alert('File uploaded successfully!' + " " +  response.message);
                 } else {
-                    alert('File upload failed.');
+                    alert('File upload failed.' + " " + response.message);
                 }
             } catch (error) {
                 console.error('Error during file upload:', error);

@@ -526,8 +526,6 @@
         $('#logoutConfirmationModal').modal('show');
       }
 
-
-      
       // Event listener for confirming logout
       document.getElementById("confirmLogoutButton").addEventListener("click", function () {
           // Remove the token from local storage
@@ -563,55 +561,54 @@
 
       document.getElementById('sp-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        console.log(e.preventDefault())
-    
+
         const token = localStorage.getItem("authToken");
+        const fileInput = document.getElementById('exampleFormControlFile1'); // Updated ID
         const messageElement = document.getElementById("msgs");
-        const fileInput = document.getElementById("exampleFormControlFile1");
-    
-        // Ensure a file is selected
-        if (!fileInput.files.length) {
-            messageElement.textContent = "Please select a file to upload.";
-            messageElement.classList.add("text-danger");
-            $('#APIResponse').modal('show'); // Show the modal
+
+        if (!fileInput || !fileInput.files[0]) {
+            alert('Please select a file before submitting.');
             return;
         }
-    
+
         const formData = new FormData();
-        formData.append("file", fileInput.files[0]);
-    
+        formData.append('file', fileInput.files[0]);
+
         try {
-          const response = fetch(`${apiUrl}/student-and-parent/import`, {
-            method: 'POST',
-            headers: {
-                'Authorization': token,
-            },
-            body: formData,
-          }).then((res) => {
-          }).then((res) => {
-            console.log("success")
-          $('#APIResponse').modal('show');
-          })
-          .catch((err) => {
-            messageElement.textContent = "An error occurred while uploading the file.";
-          $('#APIResponse').modal('show');
+            const response = await fetch(`${apiUrl}/student-and-parent/import`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': token,
+                },
+                body: formData
+            });
 
-          })
-
-        
-            // Show the modal with the response message
-        } catch (error) {
-            console.log("Error occurred:", error);
-            messageElement.textContent = "An error occurred while uploading the file.";
-            messageElement.classList.remove("text-success");
-            messageElement.classList.add("text-danger");
-    
-            // Show the modal
+            const result = await response.json();
+            if (result.success) {
+                messageElement.textContent = result.message;
+                messageElement.classList.remove("text-danger");
+                messageElement.classList.add("text-success");
+            } else {
+              let errorMessage = result.message + ":";
+              if (result.error && result.error.length > 0) {
+                errorMessage += "<ul>";
+                result.error.forEach(err => {
+                  errorMessage += `<li>${err}</li>`;
+                });
+                errorMessage += "</ul>";
+              }
+              messageElement.innerHTML = errorMessage;
+              messageElement.classList.remove("text-success");
+              messageElement.classList.add("text-danger");
+            }
             $('#APIResponse').modal('show');
-        }finally{
-          console.log("test")
+
+        } catch (error) {
+            console.error('Error during file upload:', error);
+            alert('An error occurred during the file upload.');
         }
       });
+
 
       function fetchDataChangeRequestCount(token) {
         fetch(`${apiUrl}/student-and-parent/get-all-data-change-request`, {
