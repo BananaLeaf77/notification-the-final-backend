@@ -24,10 +24,6 @@ func NewStudentParentRepository(database *gorm.DB) domain.StudentParentRepo {
 }
 
 func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[string]interface{}) (*string, error) {
-	fmt.Println("Req Map :")
-	config.PrintStruct(req)
-	fmt.Println("==============================================================================================")
-
 	var dcr domain.DataChangeRequest
 	var Parent domain.Parent
 	var AssociatedStudent []domain.Student
@@ -64,10 +60,6 @@ func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[stri
 		return nil, fmt.Errorf("failure finding data change request, error: %v", err)
 	}
 
-	fmt.Println("found parent using old telephone")
-	config.PrintStruct(Parent)
-	fmt.Println("==============================================================================================")
-
 	// Compare dcr and parent fields to populate comparedData
 	if dcr.NewParentName != nil && *dcr.NewParentName != Parent.Name {
 		comparedData.Name = *dcr.NewParentName
@@ -96,10 +88,6 @@ func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[stri
 	// Always update the timestamp
 	comparedData.UpdatedAt = tNow
 
-	fmt.Println("compared data print:")
-	config.PrintStruct(comparedData)
-	fmt.Println("==============================================================================================")
-
 	// Check if parent is associated with any students
 	err = tx.Where("parent_id = ? AND deleted_at IS NULL", Parent.ParentID).Find(&AssociatedStudent).Error
 	if err != nil {
@@ -111,7 +99,6 @@ func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[stri
 	var ExistingParent domain.Parent
 	err = tx.Where("(name = ? OR telephone = ? OR email = ?) AND deleted_at IS NULL", req["name"], req["telephone"], req["email"]).First(&ExistingParent).Error
 	if err == gorm.ErrRecordNotFound {
-		fmt.Println("Duplicate Parent Not found, running update current parent using compared data")
 		// If no existing parent found, update the current parent
 		err = tx.Model(&domain.Parent{}).Where("parent_id = ? AND deleted_at IS NULL", Parent.ParentID).Updates(&comparedData).Error
 		if err != nil {
@@ -480,6 +467,7 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 		if err == nil {
 			// Update parent_id to the existing parent's ID
 			updatedStudentFields["ParentID"] = existingParent.ParentID
+
 		} else if errors.Is(err, gorm.ErrRecordNotFound) {
 			// Update the parent and keep the current parent_id
 			if err := tx.WithContext(ctx).
@@ -506,6 +494,32 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 		tx.Rollback()
 		errList = append(errList, fmt.Sprintf("failed to update student: %v", err))
 		return &errList
+	}
+
+	var counter int64
+
+	err = tx.WithContext(ctx).Model(&domain.Student{}).Where("parent_id = ? AND deleted_at IS NULL", student.ParentID).Count(&counter).Error
+	if err != nil {
+		tx.Rollback()
+		errList = append(errList, fmt.Sprintf("failed to count parent in student associate: %v", err))
+		return &errList
+	}
+	if counter == 0 {
+		fmt.Println("masuk counter 0")
+		fmt.Println(counter)
+		result := tx.WithContext(ctx).Model(&domain.Parent{}).
+			Where("parent_id = ? AND deleted_at IS NULL", student.ParentID).
+			Update("deleted_at", &now)
+		if result.Error != nil {
+			tx.Rollback()
+			errList = append(errList, fmt.Sprintf("failed to delete parent with no associate student: %v", result.Error))
+			return &errList
+		}
+		if result.RowsAffected == 0 {
+			tx.Rollback()
+			errList = append(errList, "no parent found to delete")
+			return &errList
+		}
 	}
 
 	if err := tx.Commit().Error; err != nil {
