@@ -158,7 +158,7 @@
                   </button>
               </div>
               <div class="modal-body">
-                  Are you sure you want to delete "<span id="username"></span>"?
+                  Are you sure you want to delete "<span id="name"></span>"?
               </div>
               <div class="modal-footer">
                   <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
@@ -833,7 +833,7 @@
             <td>${teachingCount}</td> <!-- Display the count of subjects -->
             <td>
                 <button class="btn btn-warning btn-sm update-btn" onclick="event.stopPropagation(); runUserUpdateModal(${user.user_id})">Update</button>
-                <button class="btn btn-danger btn-sm delete-btn" onclick="event.stopPropagation(); showDeleteModal(${user.user_id}, '${user.username}')">Delete</button>
+                <button class="btn btn-danger btn-sm delete-btn" onclick="event.stopPropagation(); showDeleteModal(${user.user_id}, '${user.name}')">Delete</button>
             </td>
         `;
         return row;
@@ -1038,7 +1038,7 @@
 
       // Function to show the modal and set dynamic data for deletion
       function showDeleteModal(userId, username) {
-        document.getElementById("username").textContent = username;
+        document.getElementById("name").textContent = username;
         
         const confirmDeleteButton = document.getElementById("confirmDeleteButton");
         confirmDeleteButton.setAttribute("data-user-id", userId);

@@ -358,6 +358,7 @@ func (ur *userRepository) UpdateStaff(ctx context.Context, id int, payload *doma
 
 	updateUser := domain.User{
 		Username:  usernameLowered,
+		Name:      payload.Name,
 		Role:      "staff",
 		UpdatedAt: time.Now(),
 	}
