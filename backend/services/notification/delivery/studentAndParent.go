@@ -452,8 +452,8 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 		if err != nil {
 			errList = append(errList, fmt.Sprintf("row %d: Invalid student telephone: %s, telephone should be numeric", i+2, row[4]))
 		}
-		if len(row[4]) > 15 {
-			errList = append(errList, fmt.Sprintf("row %d: Invalid student telephone: %s, telephone should be 15 numbers max", i+2, row[4]))
+		if len(row[4]) > 13 {
+			errList = append(errList, fmt.Sprintf("row %d: Invalid student telephone: %s, telephone should be 13 numbers max", i+2, row[4]))
 		}
 
 		// Populate student data
@@ -479,8 +479,8 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 		if err != nil {
 			errList = append(errList, fmt.Sprintf("row %d: Invalid parent telephone: %s, telephone should be numeric", i+2, row[7]))
 		}
-		if len(row[7]) > 15 {
-			errList = append(errList, fmt.Sprintf("row %d: Invalid parent telephone: %s, telephone should be 15 numbers max", i+2, row[7]))
+		if len(row[7]) > 13 {
+			errList = append(errList, fmt.Sprintf("row %d: Invalid parent telephone: %s, telephone should be 13 numbers max", i+2, row[7]))
 		}
 
 		// Populate parent data

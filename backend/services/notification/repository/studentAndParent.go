@@ -274,14 +274,14 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 		isDuplicate := false
 
 		// Validate Parent Telephone
-		if len(record.Parent.Telephone) > 15 {
-			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent telephone %s exceeds max length (15)", index+2, record.Parent.Telephone))
+		if len(record.Parent.Telephone) > 13 {
+			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent telephone %s exceeds max length (13)", index+2, record.Parent.Telephone))
 			isDuplicate = true
 		}
 
 		// Validate Student Telephone
-		if len(record.Student.Telephone) > 15 {
-			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student telephone %s exceeds max length (15)", index+2, record.Student.Telephone))
+		if len(record.Student.Telephone) > 13 {
+			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student telephone %s exceeds max length (13)", index+2, record.Student.Telephone))
 			isDuplicate = true
 		} else if err := spr.db.WithContext(ctx).Where("telephone = ? AND deleted_at IS NULL", record.Student.Telephone).First(&studentExists).Error; err == nil {
 			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student telephone %s already exists", index+2, record.Student.Telephone))
