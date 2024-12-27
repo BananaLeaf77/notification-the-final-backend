@@ -3,7 +3,5 @@ import csv (loading, check di exel/csv ne ade ne patuh sing data e)
 sort radio send notif subject
 
 PR BARU
+Ganti login page ne pang isi detail school
 Update stud and parent message ubah yin alllocating student
-Front end import data
-dont allow visitor to request many data with that telephone
-check dcr if new name, new email, new telephone, new gender AND  ==== niil return one of data should be filled

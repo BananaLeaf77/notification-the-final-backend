@@ -3,6 +3,7 @@ package delivery
 import (
 	"context"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"log"
 	"notification/config"
@@ -659,6 +660,21 @@ func (sph *studentParentHandler) GetStudentDetailsByID(c *fiber.Ctx) error {
 	})
 }
 
+func ValidateDataChangeRequest(data *domain.DataChangeRequest) error {
+	if data == nil {
+		return errors.New("request cannot be nil")
+	}
+
+	if (data.NewParentName == nil || *data.NewParentName == "") &&
+		(data.NewParentTelephone == nil || *data.NewParentTelephone == "") &&
+		(data.NewParentEmail == nil || *data.NewParentEmail == "") &&
+		(data.NewParentGender == nil || *data.NewParentGender == "") {
+		return errors.New("please input at least one new data field")
+	}
+
+	return nil
+}
+
 func (sph *studentParentHandler) DataChangeRequest(c *fiber.Ctx) error {
 	guess := "Guest"
 	var datas domain.DataChangeRequest
@@ -670,6 +686,15 @@ func (sph *studentParentHandler) DataChangeRequest(c *fiber.Ctx) error {
 			"success": false,
 			"message": "Invalid Request",
 			"error":   err,
+		})
+	}
+
+	err = ValidateDataChangeRequest(&datas)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "Invalid Request",
+			"error":   err.Error(),
 		})
 	}
 
