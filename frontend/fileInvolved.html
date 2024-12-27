@@ -588,6 +588,8 @@
                 messageElement.textContent = result.message;
                 messageElement.classList.remove("text-danger");
                 messageElement.classList.add("text-success");
+                $('#APIResponse').modal('show');
+
             } else {
               let errorMessage = result.message + ":";
               if (result.error && result.error.length > 0) {
@@ -600,8 +602,8 @@
               messageElement.innerHTML = errorMessage;
               messageElement.classList.remove("text-success");
               messageElement.classList.add("text-danger");
+              $('#APIResponse').modal('show');
             }
-            $('#APIResponse').modal('show');
 
         } catch (error) {
             console.error('Error during file upload:', error);

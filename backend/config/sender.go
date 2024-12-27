@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"net/smtp"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sync"
 
 	_ "github.com/lib/pq"
-	"github.com/skip2/go-qrcode"
 
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/store/sqlstore"
@@ -211,8 +211,9 @@ func getDBName() (*string, error) {
 }
 
 func generateQRCode(data, filePath string) error {
-	// Generate QR code and save as an image file
-	err := qrcode.WriteFile(data, qrcode.Medium, 256, filePath)
+	// Run the qrencode command to generate the QR code as an image
+	cmd := exec.Command("qrencode", "-o", filePath, data)
+	err := cmd.Run()
 	if err != nil {
 		return fmt.Errorf("failed to generate QR code: %v", err)
 	}
