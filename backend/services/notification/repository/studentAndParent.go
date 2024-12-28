@@ -801,13 +801,24 @@ func (spr *studentParentRepository) GetAllDataChangeRequestByID(ctx context.Cont
 
 func (spr *studentParentRepository) DataChangeRequest(ctx context.Context, datas domain.DataChangeRequest) error {
 	var countVariable int64
-	err := spr.db.WithContext(ctx).Model(&domain.DataChangeRequest{}).Where("old_parent_telephone = ? AND is_reviewed IS FALSE", datas.OldParentTelephone).Count(&countVariable).Error
+	var parentCount int64
+	err := spr.db.WithContext(ctx).Model(&domain.Parent{}).Where("telephone = ? AND deleted_at IS NULL", datas.OldParentTelephone).Count(&parentCount).Error
 	if err != nil {
 		return err
 	}
+	if parentCount == 0 {
+		return fmt.Errorf("parent with telephone %s does not exist or registered", datas.OldParentTelephone)
+	}
+
+	err = spr.db.WithContext(ctx).Model(&domain.DataChangeRequest{}).Where("old_parent_telephone = ? AND is_reviewed IS FALSE", datas.OldParentTelephone).Count(&countVariable).Error
+	if err != nil {
+		return err
+	}
+
 	if countVariable > 0 {
 		return fmt.Errorf("data change request with old telephone parent: %s already exists and has not been reviewed yet. If this is urgent, please contact the school directly", datas.OldParentTelephone)
 	}
+
 	err = spr.db.WithContext(ctx).Create(&datas).Error
 	if err != nil {
 		return err
