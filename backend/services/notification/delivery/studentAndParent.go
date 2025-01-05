@@ -569,19 +569,30 @@ func (sph *studentParentHandler) UpdateStudentAndParent(c *fiber.Ctx) error {
 		})
 	}
 
+	if req.Student.Name == "" || req.Student.Grade == 0 || req.Student.GradeLabel == "" || req.Student.Gender == "" || req.Student.Telephone == "" || req.Parent.Name == "" || req.Parent.Telephone == "" || req.Parent.Gender == "" {
+		fmt.Println("masuk error or or")
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "UpdateStudentAndParent")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"error":   []string{"fields cannot be blank"}, // Error as an array
+			"message": "Invalid request body",
+		})
+	}
+
 	_, err = govalidator.ValidateStruct(&req)
 	if err != nil {
 		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "UpdateStudentAndParent")
 		validationErrors := govalidator.ErrorsByField(err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
-			"errors":  validationErrors,
+			"error":   validationErrors,
 			"message": "Invalid request body",
 		})
 	}
 
 	errList := sph.uc.UpdateStudentAndParent(c.Context(), convertetID, &req)
 	if errList != nil && len(*errList) > 0 {
+		fmt.Println(errList)
 		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "UpdateStudentAndParent")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
@@ -686,6 +697,14 @@ func (sph *studentParentHandler) DataChangeRequest(c *fiber.Ctx) error {
 			"success": false,
 			"message": "Invalid Request",
 			"error":   err,
+		})
+	}
+
+	if *datas.NewParentTelephone == datas.OldParentTelephone {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "Invalid Request",
+			"error":   "new parent telephone should not have the same value as old parent telephone",
 		})
 	}
 

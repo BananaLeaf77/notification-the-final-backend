@@ -50,11 +50,15 @@
       <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="updateSPModalLabel">Update Student and Parent</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
+            <div class="d-flex flex-column w-100">  
+                <h5 class="modal-title mb-1" id="updateSPModalLabel">Update Student and Parent</h5>
+                <p class="text-muted mb-0" style="font-size: 14px;">Please modify or input only the required data. Do not input blank data, except for the email field.</p>
+            </div>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="position: absolute; top: 15px; right: 15px;">
+                <span aria-hidden="true">&times;</span>
             </button>
           </div>
+        
           <div class="modal-body">
             <div class="row">
               <!-- Student Info - Left Side -->
@@ -115,7 +119,7 @@
                   <input type="text" class="form-control" id="modalParentTelephone" placeholder="08xx" maxlength="13" pattern="\d{1,13}" required />
                 </div>
                 <div class="form-group">
-                  <label for="modalParentEmail">Parent Email</label>
+                  <label for="modalParentEmail">Parent Email (optional)</label>
                   <input type="email" class="form-control" id="modalParentEmail" placeholder="Parent Email">
                 </div>
               </div>
@@ -1303,6 +1307,7 @@
                   $('#APIResponse').modal('show');
                   fetchStudents(token)
                 } else {
+                  console.log(data.error)
                   // Error message
                   let errorMessage = data.message + ":";
                     if (data.error && data.error.length > 0) {
