@@ -23,6 +23,18 @@ func NewStudentParentRepository(database *gorm.DB) domain.StudentParentRepo {
 	}
 }
 
+// func (spr *studentParentRepository) DeleteDCR(ctx context.Context, dcrID int) error{
+// 	var dcr domain.DataChangeRequest
+// 	err := spr.db.WithContext(ctx).Model(&domain.DataChangeRequest{}).Where("request_id = ? AND deleted_at IS NULL", dcrID).First(&dcr).Error
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	err = spr.db.WithContext(ctx).Model(&domain.DataChangeRequest{}).Where("request_id = ? AND deleted_at IS NULL", )
+
+// 	return nil
+// }
+
 func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[string]interface{}) (*string, error) {
 	var dcr domain.DataChangeRequest
 	var Parent domain.Parent
@@ -40,6 +52,7 @@ func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[stri
 	tx := spr.db.WithContext(ctx).Begin()
 	defer func() {
 		if r := recover(); r != nil {
+			fmt.Print("==========================================================")
 			tx.Rollback()
 			panic(r)
 		}

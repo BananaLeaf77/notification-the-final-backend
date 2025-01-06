@@ -11,14 +11,15 @@ type StudentAndParent struct {
 }
 
 type DataChangeRequest struct {
-	RequestID          int       `gorm:"primaryKey;autoIncrement" json:"request_id"`
-	OldParentTelephone string    `json:"old_parent_telephone,omitempty"`
-	NewParentName      *string   `json:"new_parent_name,omitempty"`
-	NewParentTelephone *string   `json:"new_parent_telephone,omitempty"`
-	NewParentEmail     *string   `json:"new_parent_email,omitempty"`
-	NewParentGender    *string   `gorm:"type:gender_enum" json:"new_parent_gender" valid:"required~Gender is required,in(male|female)~Invalid gender"`
-	CreatedAt          time.Time `gorm:"autoCreateTime" json:"created_at"`
-	IsReviewed         bool      `gorm:"default:false" json:"is_reviewed"`
+	RequestID          int        `gorm:"primaryKey;autoIncrement" json:"request_id"`
+	OldParentTelephone string     `json:"old_parent_telephone,omitempty"`
+	NewParentName      *string    `json:"new_parent_name,omitempty"`
+	NewParentTelephone *string    `json:"new_parent_telephone,omitempty"`
+	NewParentEmail     *string    `json:"new_parent_email,omitempty"`
+	NewParentGender    *string    `gorm:"type:gender_enum" json:"new_parent_gender" valid:"required~Gender is required,in(male|female)~Invalid gender"`
+	CreatedAt          time.Time  `gorm:"autoCreateTime" json:"created_at"`
+	IsReviewed         bool       `gorm:"default:false" json:"is_reviewed"`
+	DeletedAt          *time.Time `gorm:"index" json:"deleted_at"`
 }
 
 type StudentParentRepo interface {
@@ -35,6 +36,7 @@ type StudentParentRepo interface {
 	DataChangeRequest(ctx context.Context, datas DataChangeRequest) error
 	ApproveDCR(ctx context.Context, req map[string]interface{}) (*string, error)
 	ReviewDCR(ctx context.Context, dcrID int) error
+	// DeleteDCR(ctx context.Context, dcrID int) error
 }
 
 type StudentParentUseCase interface {
@@ -51,4 +53,5 @@ type StudentParentUseCase interface {
 	DataChangeRequest(ctx context.Context, datas DataChangeRequest) error
 	ApproveDCR(ctx context.Context, req map[string]interface{}) (*string, error)
 	ReviewDCR(ctx context.Context, dcrID int) error
+	// DeleteDCR(ctx context.Context, dcrID int) error
 }

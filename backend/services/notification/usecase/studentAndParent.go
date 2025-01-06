@@ -136,6 +136,14 @@ func (spu *studentParentUseCase) ApproveDCR(ctx context.Context, req map[string]
 	return b, nil
 }
 
+// func (spu *studentParentUseCase) DeleteDCR(ctx context.Context, dcrID int) error {
+// 	err := spu.repo.ReviewDCR(ctx, dcrID)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
+
 // func (spu *studentParentUseCase) GetClassIDByName(className string) (*int, error) {
 
 // 	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
