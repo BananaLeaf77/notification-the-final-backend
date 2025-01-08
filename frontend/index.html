@@ -1153,7 +1153,7 @@
             // Process and sort students by class (merge grade and grade_label)
             const students = data.data.map(student => ({
                 ...student,
-                class: `${student.grade}${student.grade_label}` // Merge grade and grade_label
+                class: `${student.grade} ${student.grade_label}` // Merge grade and grade_label
             }));
             
             const sortedStudents = students.sort((a, b) => sortStudentsByClass(a.class, b.class));
