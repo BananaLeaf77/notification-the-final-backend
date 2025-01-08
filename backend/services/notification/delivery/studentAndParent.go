@@ -53,7 +53,7 @@ func NewStudentParentHandlerDeploy(app *fiber.App, useCase domain.StudentParentU
 	route.Get("/get-all-data-change-request/:request_id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.GetAllDataChangeRequestByID)
 	route.Post("/rms", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.SPMassDelete)
 	route.Get("/download-template", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DownloadTemplate)
-	route.Delete("/review/dcr/:request_id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.ReviewDCR)
+	route.Delete("/review/dcr/:request_id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteDCR)
 	route.Post("/approve/dcr", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.ApproveDCR)
 }
 
@@ -140,32 +140,32 @@ func (sph *studentParentHandler) DownloadTemplate(c *fiber.Ctx) error {
 	return nil
 }
 
-func (sph *studentParentHandler) ReviewDCR(c *fiber.Ctx) error {
+func (sph *studentParentHandler) DeleteDCR(c *fiber.Ctx) error {
 	userToken := c.Locals("user").(*domain.Claims)
 	id := c.Params("request_id")
 	convertedID, err := strconv.Atoi(id)
 	if err != nil {
-		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "ReviewDCR")
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "DeleteDCR")
 		return c.Status(fiber.StatusBadRequest).JSON((fiber.Map{
 			"success": false,
 			"error":   err.Error(),
 			"message": "Converter Failure on request_id",
 		}))
 	}
-	err = sph.uc.ReviewDCR(c.Context(), convertedID)
+	err = sph.uc.DeleteDCR(c.Context(), convertedID)
 	if err != nil {
-		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "ReviewDCR")
+		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "DeleteDCR")
 		return c.Status(fiber.StatusInternalServerError).JSON((fiber.Map{
 			"success": false,
 			"error":   err.Error(),
-			"message": "Failed to review data change request",
+			"message": "Failed to delete data change request",
 		}))
 	}
 
-	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "ReviewDCR")
+	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "DeleteDCR")
 	return c.Status(fiber.StatusOK).JSON((fiber.Map{
 		"success": true,
-		"message": "Data Change Request reviewed successfully",
+		"message": "Data Change Request deleted successfully",
 	}))
 }
 
@@ -700,7 +700,7 @@ func (sph *studentParentHandler) DataChangeRequest(c *fiber.Ctx) error {
 		})
 	}
 
-	if *datas.NewParentTelephone == datas.OldParentTelephone {
+	if datas.NewParentTelephone != nil && *datas.NewParentTelephone == datas.OldParentTelephone {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"message": "Invalid Request",

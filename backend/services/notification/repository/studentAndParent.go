@@ -278,12 +278,11 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 
 func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]domain.StudentAndParent) (*[]string, error) {
 	var duplicateMessages []string
-	var readyToExecute []domain.StudentAndParent
+	var validRecords []domain.StudentAndParent
 	now := time.Now()
 
 	// Validate and filter the records
 	for index, record := range *payload {
-		var studentExists domain.Student
 		isDuplicate := false
 
 		// Validate Parent Telephone
@@ -293,6 +292,7 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 		}
 
 		// Validate Student Telephone
+		var studentExists domain.Student
 		if len(record.Student.Telephone) > 13 {
 			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student telephone %s exceeds max length (13)", index+2, record.Student.Telephone))
 			isDuplicate = true
@@ -312,26 +312,27 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 			continue
 		}
 
+		// Assign timestamps
 		record.Parent.CreatedAt = now
 		record.Parent.UpdatedAt = now
 		record.Student.CreatedAt = now
 		record.Student.UpdatedAt = now
 
-		// Add valid records to readyToExecute
-		readyToExecute = append(readyToExecute, record)
+		// Add valid records
+		validRecords = append(validRecords, record)
 	}
 
-	// If there are duplicate messages, return them
+	// Return duplicate messages if any
 	if len(duplicateMessages) > 0 {
 		return &duplicateMessages, nil
 	}
 
 	// Insert valid records into the database
 	err := spr.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		for _, record := range readyToExecute {
+		for _, record := range validRecords {
 			var parentExist domain.Parent
 
-			// Validate and handle parent
+			// Check if parent already exists
 			err := tx.Where("(name = ? OR telephone = ? OR email = ?) AND deleted_at IS NULL",
 				record.Parent.Name,
 				record.Parent.Telephone,
@@ -348,16 +349,14 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 			}
 
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				// Parent does not exist, create new
-				if err = tx.Create(&record.Parent).Error; err != nil {
+				// Parent does not exist, create a new one
+				if err := tx.Create(&record.Parent).Error; err != nil {
 					return fmt.Errorf("failed to insert parent: %w", err)
 				}
-			}
-
-			// Use the existing or newly created parent ID for the student
-			record.Student.ParentID = parentExist.ParentID
-			if parentExist.ParentID == 0 {
 				record.Student.ParentID = record.Parent.ParentID
+			} else {
+				// Use the existing parent's ID
+				record.Student.ParentID = parentExist.ParentID
 			}
 
 			// Insert student
@@ -367,12 +366,14 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 		}
 		return nil
 	})
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute database transaction: %w", err)
 	}
 
 	return nil, nil
 }
+
 
 func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, id int, req *domain.StudentAndParent) *[]string {
 	var student domain.Student
@@ -799,7 +800,7 @@ func (spr *studentParentRepository) GetAllDataChangeRequestByID(ctx context.Cont
 	var result domain.DataChangeRequest
 
 	err := spr.db.WithContext(ctx).
-		Where("request_id = ? AND is_reviewed IS FALSE", dcrID).
+		Where("request_id = ? AND is_reviewed IS FALSE AND deleted_at IS NULL", dcrID).
 		First(&result).Error
 
 	if err != nil {
@@ -823,7 +824,7 @@ func (spr *studentParentRepository) DataChangeRequest(ctx context.Context, datas
 		return fmt.Errorf("parent with telephone %s does not exist or registered", datas.OldParentTelephone)
 	}
 
-	err = spr.db.WithContext(ctx).Model(&domain.DataChangeRequest{}).Where("old_parent_telephone = ? AND is_reviewed IS FALSE", datas.OldParentTelephone).Count(&countVariable).Error
+	err = spr.db.WithContext(ctx).Model(&domain.DataChangeRequest{}).Where("old_parent_telephone = ? AND is_reviewed IS FALSE AND deleted_at IS NULL", datas.OldParentTelephone).Count(&countVariable).Error
 	if err != nil {
 		return err
 	}
@@ -840,18 +841,18 @@ func (spr *studentParentRepository) DataChangeRequest(ctx context.Context, datas
 	return nil
 }
 
-func (spr *studentParentRepository) ReviewDCR(ctx context.Context, dcrID int) error {
+func (spr *studentParentRepository) DeleteDCR(ctx context.Context, dcrID int) error {
 	result := spr.db.WithContext(ctx).
 		Model(&domain.DataChangeRequest{}).
 		Where("request_id = ?", dcrID).
-		Update("is_reviewed", true)
+		Update("deleted_at", time.Now())
 
 	if result.Error != nil {
-		return fmt.Errorf("failed to update is_reviewed for request_id %d: %w", dcrID, result.Error)
+		return fmt.Errorf("failed to delete for request_id %d: %w", dcrID, result.Error)
 	}
 
 	if result.RowsAffected == 0 {
-		return fmt.Errorf("no data change request found with request_id %d", dcrID)
+		return fmt.Errorf("no data change request found with request id %d", dcrID)
 	}
 
 	return nil
@@ -860,7 +861,7 @@ func (spr *studentParentRepository) ReviewDCR(ctx context.Context, dcrID int) er
 func (spr *studentParentRepository) GetAllDataChangeRequest(ctx context.Context) (*[]domain.DataChangeRequest, error) {
 	var req []domain.DataChangeRequest
 
-	if err := spr.db.WithContext(ctx).Where("is_reviewed IS FALSE").Find(&req).Error; err != nil {
+	if err := spr.db.WithContext(ctx).Where("is_reviewed IS FALSE AND deleted_at IS NULL").Find(&req).Error; err != nil {
 		return nil, fmt.Errorf("could not get all data change request : %v", err)
 	}
 

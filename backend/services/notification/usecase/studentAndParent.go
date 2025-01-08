@@ -120,8 +120,8 @@ func (spu *studentParentUseCase) SPMassDelete(ctx context.Context, studentIDS *[
 	return nil
 }
 
-func (spu *studentParentUseCase) ReviewDCR(ctx context.Context, dcrID int) error {
-	err := spu.repo.ReviewDCR(ctx, dcrID)
+func (spu *studentParentUseCase) DeleteDCR(ctx context.Context, dcrID int) error {
+	err := spu.repo.DeleteDCR(ctx, dcrID)
 	if err != nil {
 		return err
 	}
