@@ -2,7 +2,6 @@ pr = kita cuma send yang benar benar gak ada kabar / bolos, kalau izin / kirim s
 import csv (loading, check di exel/csv ne ade ne patuh sing data e)
 sort radio send notif subject
 
-dcr add deleted at 
+
 responsive
 
-frontend check role di halaman 
