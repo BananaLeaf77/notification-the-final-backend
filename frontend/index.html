@@ -3,10 +3,8 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>SINOAN Dashboard</title>
-    <meta
-      content="width=device-width, initial-scale=1.0, shrink-to-fit=no"
-      name="viewport"
-    />
+    <meta name="viewport" content="width=1024">
+    
     <link
       rel="icon"
     href="assets/img/kaiadmin/pageLogo.png"
@@ -1197,17 +1195,10 @@
           }
       }
 
-      // Helper function to parse class strings (e.g., "2A" to [2, "A"])
-      function parseClass(classStr) {
-          const match = classStr.match(/^(\d+)([A-Z])$/);
-          return match ? [parseInt(match[1], 10), match[2]] : [0, ''];
-      }
-
       // Convert selected IDs to JSON format
       function getSelectedIdsJson() {
           return JSON.stringify({ ids: selectedStudentIds });
       }
-
 
       function createStudentRow(student) {
         const row = document.createElement('tr');
