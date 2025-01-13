@@ -15,3 +15,13 @@ Gambar 4.10
 + deleted at(DCR)
 Tabel 4.15 
 + deleted at(DCR)
+
+
+dokumen
+gambar login
+Pada halaman ini user admin dan guru / staff dapat melakukan autentikasi untuk akses kedalam sistem,
+setelah login berhasil sistem akan memecah alur ke dashboard menjadi 2 yaitu untuk admin dan untuk guru.
+Pada halaman ini juga terdapat fungsi mengirim permintaan perubahan data.
+
+dashboard admin
+pada 
