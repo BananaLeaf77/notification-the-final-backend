@@ -18,10 +18,49 @@ Tabel 4.15
 
 
 dokumen
-gambar login
+
+1. login
 Pada halaman ini user admin dan guru / staff dapat melakukan autentikasi untuk akses kedalam sistem,
 setelah login berhasil sistem akan memecah alur ke dashboard menjadi 2 yaitu untuk admin dan untuk guru.
 Pada halaman ini juga terdapat fungsi mengirim permintaan perubahan data.
 
-dashboard admin
-pada 
+-2. dashboard admin
+halaman ini adalah halaman yang akan dialihkan setelah melakukan autentikasi pada halaman login . 
+pada halaman ini hanya user dengan role admin yang dapat mengakesnya. Halaman dashboard admin ini terdapat fungsi pengelolaan siswa, orang tua dan notifikasi absensi.
+
+-3. dashboard guru / staff
+halaman ini adalah halaman yang akan dialihkan setelah melakukan autentikasi pada halaman login . 
+pada halaman ini hanya user dengan role guru / staff yang dapat mengakesnya. Halaman dashboard guru / staff ini terdapat fungsi pengelolaan notifikasi absensi.
+
+-4. test score input admin 
+pada halaman ini hanya user dengan role admin yang dapat mengaksesnya. halaman ini digunakan untuk penginputan masing masing nilai siswa dan pengiriman pengumuman nilai tes
+
+-5. test score input guru / staff 
+pada halaman ini hanya user dengan role guru / staff yang dapat mengaksesnya. halaman ini digunakan oleh guru / staff untuk melakukan penginputan nilai masing masing siswa yang diajarnya saja.
+
+-6. registered teacher / guru terdaftar
+pada halaman ini hanya user dengan role admin yang dapat mengaksesnya. halaman ini berguna untuk user admin melakukan pengelolaan guru / staff
+
+-6. Halaman detail guru / staff
+Halaman ini dapat diakses oleh admin dan guru / staff. halaman ini menampilkan data detail dari suatu guru / staff.
+
+7. Halaman Input Data Siswa dan Orang tua
+pada halaman ini hanya user dengan role admin yang dapat mengaksesnya. halaman ini adalah pengelolaan lanjut siswa dan orang tua dari dahsboard admin. pada halaman ini admin dapat melakukan input data siswa dan orang tua.
+
+-8. Halaman detail siswa dan orang tua
+halaman ini dapat diakses oleh admin dan guru / staff. halaman ini berisi data detail dari siswa dan orang tua yang tersangkut.
+
+9. Halaman Unggah CSV
+pada halaman ini hanya user dengan role admin yang dapat mengaksesnya. halaman ini berguna untuk melakukan input data siswa dan orang tua secara massal menggunakan file dengan format csv
+
+10. Halaman Permintaan Perubahan Data
+pada halaman ini hanya user dengan role admin yang dapat mengaksesnya. halaman ini berguna untuk pengelolaan permintaan perubahan data yang telah diinputkan oleh visitor pada halaman login.
+
+11. Halaman Detail Permintaan Perubahan Data
+pada halaman ini hanya user dengan role admin yang dapat mengkasesnya. halaman ini adalah halaman pengelolaan permintaan perubahan data lebih lanjut, berisi informasi detail dari suatu permintaan perubahan data.
+
+-12. Halaman riwayat notifikasi absensi 
+halaman yang dapat diakses oleh admin dan guru untuk melihat Riwayat dari notifikasi absensi yang sudah terkirim. 
+
+-13. Halaman mata pelajaran terdaftar
+pada halaman ini hanya admin yang dapat mengaksesnya. halaman ini digunakan untuk admin melakukan pengelolaan mata pelajaran.
