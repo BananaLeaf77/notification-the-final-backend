@@ -19,6 +19,20 @@ Tabel 4.15
 
 dokumen
 
+Halaman Dashboard Admin
+Halaman Input Data Siswa dan Orang tua
+Halaman Unggah CSV
+Halaman Permintaan Perubahan Data
+Halaman Detail Permintaan Perubahan Data
+Halaman Input Nilai
+Halaman Guru Terdaftar
+Halaman Detail Guru
+Halaman Mata Pelajaran Terdaftar
+Halaman Riwayat Notifikasi Absensi
+Halaman Detail Siswa dan Orang tua
+Halaman Dashboard Guru / Staff
+Halaman Nilai Tes Perspektif Guru   
+
 1. login
 Pada halaman ini user admin dan guru / staff dapat melakukan autentikasi untuk akses kedalam sistem,
 setelah login berhasil sistem akan memecah alur ke dashboard menjadi 2 yaitu untuk admin dan untuk guru.
@@ -64,3 +78,7 @@ halaman yang dapat diakses oleh admin dan guru untuk melihat Riwayat dari notifi
 
 -13. Halaman mata pelajaran terdaftar
 pada halaman ini hanya admin yang dapat mengaksesnya. halaman ini digunakan untuk admin melakukan pengelolaan mata pelajaran.
+
+
+check parent telephone ne biar gak sama dengan student CRUD 
+loading benyah bangsat
