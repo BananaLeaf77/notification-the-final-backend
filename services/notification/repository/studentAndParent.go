@@ -108,6 +108,16 @@ func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[stri
 		return nil, fmt.Errorf("parent doesn't associate with any student, error: %v", err)
 	}
 
+	var parentTelInStudent int64
+	err = spr.db.WithContext(ctx).Model(&domain.Student{}).Where("telephone = ? AND deleted_at IS NULL", req["telephone"]).Count(&parentTelInStudent).Error
+	if err != nil {
+		return nil, fmt.Errorf("error checking parent telephone in student table: %v", err)
+	}
+
+	if parentTelInStudent > 0 {
+		return nil, fmt.Errorf("parent with telephone %s already exist in student", comparedData.Telephone)
+	}
+
 	// Check for an existing parent record with the same details
 	var ExistingParent domain.Parent
 	err = tx.Where("(name = ? OR telephone = ? OR email = ?) AND deleted_at IS NULL", req["name"], req["telephone"], req["email"]).First(&ExistingParent).Error
@@ -201,6 +211,16 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 		errList = append(errList, fmt.Sprintf("Error checking for student name: %v", err))
 	} else if studentCount > 0 {
 		errList = append(errList, fmt.Sprintf("Student with name %s already exists", req.Student.Name))
+	}
+
+	var parentTelInStudent int64
+	err = spr.db.WithContext(ctx).Model(&domain.Student{}).Where("telephone = ? AND deleted_at IS NULL", req.Parent.Telephone).Count(&parentTelInStudent).Error
+	if err != nil {
+		errList = append(errList, fmt.Sprintf("Error checking parent telephone in student table: %v", err))
+	}
+
+	if parentTelInStudent > 0 {
+		errList = append(errList, fmt.Sprintf("Parent with telephone %s already exist in student", req.Parent.Telephone))
 	}
 
 	// If student errors exist, return immediately
@@ -301,6 +321,19 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 			isDuplicate = true
 		}
 
+		// Validate parent telephone (checking availablity parent telephone in student)
+		var parentTelInStudent int64
+		err := spr.db.WithContext(ctx).Model(&domain.Student{}).Where("telephone = ? AND deleted_at IS NULL", record.Parent.Telephone).Count(&parentTelInStudent).Error
+		if err != nil {
+			duplicateMessages = append(duplicateMessages, fmt.Sprintf("Error checking parent telephone in student table: %v", err))
+			isDuplicate = true
+		}
+
+		if parentTelInStudent > 0 {
+			duplicateMessages = append(duplicateMessages, fmt.Sprintf("Parent with telephone %s already exist in student", record.Parent.Telephone))
+			isDuplicate = true
+		}
+
 		// Validate Student Name
 		if err := spr.db.WithContext(ctx).Where("name = ? AND deleted_at IS NULL", record.Student.Name).First(&studentExists).Error; err == nil {
 			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student name %s already exists", index+2, record.Student.Name))
@@ -374,7 +407,6 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 	return nil, nil
 }
 
-
 func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, id int, req *domain.StudentAndParent) *[]string {
 	var student domain.Student
 	var errList []string
@@ -415,13 +447,23 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 		}
 	}
 
+	var parentTelInStudent int64
+	err := spr.db.WithContext(ctx).Model(&domain.Student{}).Where("telephone = ? AND deleted_at IS NULL", req.Parent.Telephone).Count(&parentTelInStudent).Error
+	if err != nil {
+		errList = append(errList, fmt.Sprintf("Error checking parent telephone in student table: %v", err))
+	}
+
+	if parentTelInStudent > 0 {
+		errList = append(errList, fmt.Sprintf("Parent with telephone %s already exist in student", req.Parent.Telephone))
+	}
+
 	if len(errList) > 0 {
 		tx.Rollback()
 		return &errList
 	}
 
 	// Fetch existing student with parent
-	err := spr.db.WithContext(ctx).Preload("Parent").Where("student_id = ? AND deleted_at IS NULL", id).First(&student).Error
+	err = spr.db.WithContext(ctx).Preload("Parent").Where("student_id = ? AND deleted_at IS NULL", id).First(&student).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			errList = append(errList, fmt.Sprintf("can't find student with id %d", id))

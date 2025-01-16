@@ -404,12 +404,14 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to open CSV file: %v", err)
 	}
-	defer file.Close()
+
 	defer func() {
 		if err := os.Remove(filePath); err != nil {
 			log.Printf("Failed to delete file: %v", err)
 		}
 	}()
+
+	defer file.Close()
 
 	reader := csv.NewReader(file)
 	records, err := reader.ReadAll()
@@ -455,6 +457,10 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 		}
 		if len(row[4]) > 13 {
 			errList = append(errList, fmt.Sprintf("row %d: Invalid student telephone: %s, telephone should be 13 numbers max", i+2, row[4]))
+		}
+
+		if row[4] == row[7] {
+			errList = append(errList, fmt.Sprintf("row %d: Student and parent have the same telephone: %s", i+2, row[7]))
 		}
 
 		// Populate student data
@@ -511,6 +517,9 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 			}
 			if item.Student.Telephone == listStudentAndParent[j].Student.Telephone {
 				duplicateErrList = append(duplicateErrList, fmt.Sprintf("Duplicate student telephone: %s found in rows %d and %d", item.Student.Telephone, i+2, j+2))
+			}
+			if item.Parent.Telephone == listStudentAndParent[j].Student.Telephone {
+				duplicateErrList = append(duplicateErrList, fmt.Sprintf("Duplicate parent telephone: %s found in student rows %d and %d", item.Parent.Telephone, j+2, i+2))
 			}
 		}
 	}
