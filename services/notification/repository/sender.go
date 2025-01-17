@@ -315,9 +315,11 @@ func (m *senderRepository) fetchStudentDetails(ctx context.Context, studentID in
 }
 
 func (m *senderRepository) sendEmail(payload *domain.StudentAndParent, subjectEmail string, body string) error {
-	msg := "From: " + m.emailSender + "\n" +
-		"To: " + *payload.Parent.Email + "\n" +
-		"Subject: " + subjectEmail + "\n\n" +
+	msg := "From: " + m.emailSender + "\r\n" +
+		"To: " + *payload.Parent.Email + "\r\n" +
+		"Subject: " + subjectEmail + "\r\n" +
+		"MIME-Version: 1.0\r\n" +
+		"Content-Type: text/plain; charset=UTF-8\r\n\r\n" +
 		body
 
 	err := smtp.SendMail(m.smtpAdress, m.client, m.emailSender, []string{*payload.Parent.Email}, []byte(msg))
@@ -348,9 +350,11 @@ func (m *senderRepository) sendEmailTestScore(idv *domain.IndividualExamScore, b
 
 	subjectTestScoreEmail := fmt.Sprintf("Pemberitahuan Hasil Penilaian %s pada %s %s, tanggal %s", idv.Student.Name, hourAndMinute, isAM, formattedDate)
 
-	msg := "From: " + m.emailSender + "\n" +
-		"To: " + *idv.Student.Parent.Email + "\n" +
-		"Subject: " + subjectTestScoreEmail + "\n\n" +
+	msg := "From: " + m.emailSender + "\r\n" +
+		"To: " + *idv.Student.Parent.Email + "\r\n" +
+		"Subject: " + subjectTestScoreEmail + "\r\n" +
+		"MIME-Version: 1.0\r\n" +
+		"Content-Type: text/plain; charset=UTF-8\r\n\r\n" +
 		body
 
 	err = smtp.SendMail(m.smtpAdress, m.client, m.emailSender, []string{*idv.Student.Parent.Email}, []byte(msg))
