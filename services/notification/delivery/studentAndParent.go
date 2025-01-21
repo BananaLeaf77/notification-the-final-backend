@@ -308,12 +308,22 @@ func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
 		}
 	}
 
-	if err := sph.uc.CreateStudentAndParentUC(c.Context(), &req); err != nil {
+	allocated, errList := sph.uc.CreateStudentAndParentUC(c.Context(), &req)
+	if errList != nil {
 		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "CreateStudentAndParent")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
-			"error":   err,
+			"error":   errList,
 			"message": "Failed to Create Student and Parent",
+		})
+	}
+
+	if allocated != nil {
+		msgs := fmt.Sprintf("Student and Parent created successfully, %s", *allocated)
+		config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "ApproveDCR")
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"success": true,
+			"message": msgs,
 		})
 	}
 
@@ -599,7 +609,7 @@ func (sph *studentParentHandler) UpdateStudentAndParent(c *fiber.Ctx) error {
 		})
 	}
 
-	errList := sph.uc.UpdateStudentAndParent(c.Context(), convertetID, &req)
+	allocated, errList := sph.uc.UpdateStudentAndParent(c.Context(), convertetID, &req)
 	if errList != nil && len(*errList) > 0 {
 		fmt.Println(errList)
 		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "UpdateStudentAndParent")
@@ -607,6 +617,15 @@ func (sph *studentParentHandler) UpdateStudentAndParent(c *fiber.Ctx) error {
 			"success": false,
 			"error":   *errList,
 			"message": "Failed to update student and parent",
+		})
+	}
+
+	if allocated != nil {
+		msgs := fmt.Sprintf("Student and Parent updated successfully, %s", *allocated)
+		config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "ApproveDCR")
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"success": true,
+			"message": msgs,
 		})
 	}
 

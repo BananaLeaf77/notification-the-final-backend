@@ -181,7 +181,7 @@ func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[stri
 	return nil, nil
 }
 
-func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, req *domain.StudentAndParent) *[]string {
+func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, req *domain.StudentAndParent) (*string, *[]string) {
 	var errList []string
 
 	// Normalize email if provided
@@ -225,7 +225,7 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 
 	// If student errors exist, return immediately
 	if len(errList) > 0 {
-		return &errList
+		return nil, &errList
 	}
 
 	// Find existing parent with matching attributes
@@ -252,9 +252,9 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 	}()
 
 	if tx.Error != nil {
-		return &[]string{fmt.Sprintf("Could not begin transaction: %v", tx.Error)}
+		return nil, &[]string{fmt.Sprintf("Could not begin transaction: %v", tx.Error)}
 	}
-
+	var msgs *string
 	if oneToManyCondition {
 		// Parent exists, create student with reference
 		req.Student.ParentID = existingParent.ParentID
@@ -264,8 +264,11 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 
 		if err := tx.WithContext(ctx).Create(&req.Student).Error; err != nil {
 			tx.Rollback()
-			return &[]string{fmt.Sprintf("Could not insert student: %v", err)}
+			return nil, &[]string{fmt.Sprintf("Could not insert student: %v", err)}
 		}
+
+		message := fmt.Sprintf("Parent data already exists, allocating the student to the existing parent named: %s", existingParent.Name)
+		msgs = &message
 	} else {
 		// Create new parent
 		req.Parent.CreatedAt = time.Now()
@@ -273,7 +276,7 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 
 		if err := tx.WithContext(ctx).Create(&req.Parent).Error; err != nil {
 			tx.Rollback()
-			return &[]string{fmt.Sprintf("Could not insert parent: %v", err)}
+			return nil, &[]string{fmt.Sprintf("Could not insert parent: %v", err)}
 		}
 
 		// Create new student
@@ -284,16 +287,20 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 
 		if err := tx.WithContext(ctx).Create(&req.Student).Error; err != nil {
 			tx.Rollback()
-			return &[]string{fmt.Sprintf("Could not insert student: %v", err)}
+			return nil, &[]string{fmt.Sprintf("Could not insert student: %v", err)}
 		}
 	}
 
-	// Commit transaction
-	if err := tx.Commit().Error; err != nil {
-		return &[]string{fmt.Sprintf("Could not commit transaction: %v", err)}
+	if msgs != nil {
+		tx.Commit()
+		return msgs, nil
 	}
 
-	return nil
+	if err := tx.Commit().Error; err != nil {
+		return nil, &[]string{fmt.Sprintf("Could not commit transaction: %v", err)}
+	}
+
+	return nil, nil
 }
 
 func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]domain.StudentAndParent) (*[]string, error) {
@@ -407,7 +414,7 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 	return nil, nil
 }
 
-func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, id int, req *domain.StudentAndParent) *[]string {
+func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, id int, req *domain.StudentAndParent) (*string, *[]string) {
 	var student domain.Student
 	var errList []string
 
@@ -422,7 +429,7 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 	tx := spr.db.Begin()
 	if err := tx.Error; err != nil {
 		errList = append(errList, fmt.Sprintf("could not begin transaction: %v", err))
-		return &errList
+		return nil, &errList
 	}
 
 	now := time.Now()
@@ -459,7 +466,7 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 
 	if len(errList) > 0 {
 		tx.Rollback()
-		return &errList
+		return nil, &errList
 	}
 
 	// Fetch existing student with parent
@@ -467,10 +474,10 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			errList = append(errList, fmt.Sprintf("can't find student with id %d", id))
-			return &errList
+			return nil, &errList
 		}
 		errList = append(errList, fmt.Sprintf("database error: %v", err))
-		return &errList
+		return nil, &errList
 	}
 
 	// Build map of updated fields for student
@@ -513,6 +520,7 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 		updatedParentFields["updated_at"] = now
 	}
 
+	var msgs *string
 	if len(updatedParentFields) > 0 {
 		var existingParent domain.Parent
 		err = tx.WithContext(ctx).Where(
@@ -523,6 +531,8 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 		if err == nil {
 			// Update parent_id to the existing parent's ID
 			updatedStudentFields["ParentID"] = existingParent.ParentID
+			message := fmt.Sprintf("Parent data already exists, allocating the student to the existing parent named: %s", existingParent.Name)
+			msgs = &message
 
 		} else if errors.Is(err, gorm.ErrRecordNotFound) {
 			// Update the parent and keep the current parent_id
@@ -532,12 +542,12 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 				Updates(updatedParentFields).Error; err != nil {
 				tx.Rollback()
 				errList = append(errList, fmt.Sprintf("failed to update parent: %v", err))
-				return &errList
+				return nil, &errList
 			}
 		} else {
 			tx.Rollback()
 			errList = append(errList, fmt.Sprintf("database error while checking parent: %v", err))
-			return &errList
+			return nil, &errList
 		}
 	}
 
@@ -549,7 +559,7 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 	if err != nil {
 		tx.Rollback()
 		errList = append(errList, fmt.Sprintf("failed to update student: %v", err))
-		return &errList
+		return nil, &errList
 	}
 
 	var counter int64
@@ -558,7 +568,7 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 	if err != nil {
 		tx.Rollback()
 		errList = append(errList, fmt.Sprintf("failed to count parent in student associate: %v", err))
-		return &errList
+		return nil, &errList
 	}
 	if counter == 0 {
 		fmt.Println("masuk counter 0")
@@ -569,21 +579,26 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 		if result.Error != nil {
 			tx.Rollback()
 			errList = append(errList, fmt.Sprintf("failed to delete parent with no associate student: %v", result.Error))
-			return &errList
+			return nil, &errList
 		}
 		if result.RowsAffected == 0 {
 			tx.Rollback()
 			errList = append(errList, "no parent found to delete")
-			return &errList
+			return nil, &errList
 		}
+	}
+
+	if msgs != nil {
+		tx.Commit()
+		return msgs, nil
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		errList = append(errList, fmt.Sprintf("could not commit transaction: %v", err))
-		return &errList
+		return nil, &errList
 	}
 
-	return nil
+	return nil, nil
 }
 
 func (spr *studentParentRepository) SPMassDelete(ctx context.Context, studentIDs *[]int) error {

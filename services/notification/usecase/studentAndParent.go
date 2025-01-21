@@ -18,15 +18,15 @@ func NewStudentParentUseCase(repo domain.StudentParentRepo, to time.Duration) do
 	}
 }
 
-func (spu *studentParentUseCase) CreateStudentAndParentUC(ctx context.Context, req *domain.StudentAndParent) *[]string {
+func (spu *studentParentUseCase) CreateStudentAndParentUC(ctx context.Context, req *domain.StudentAndParent) (*string, *[]string) {
 	ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
 	defer cancel()
 
-	err := spu.repo.CreateStudentAndParent(ctx, req)
+	v, err := spu.repo.CreateStudentAndParent(ctx, req)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return v, nil
 }
 
 func (spu *studentParentUseCase) ImportCSV(ctx context.Context, payload *[]domain.StudentAndParent) (*[]string, error) {
@@ -40,16 +40,16 @@ func (spu *studentParentUseCase) ImportCSV(ctx context.Context, payload *[]domai
 	return data, nil
 }
 
-func (spu *studentParentUseCase) UpdateStudentAndParent(ctx context.Context, id int, payload *domain.StudentAndParent) *[]string {
+func (spu *studentParentUseCase) UpdateStudentAndParent(ctx context.Context, id int, payload *domain.StudentAndParent) (*string, *[]string) {
 
 	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
 	// defer cancel()
 
-	err := spu.repo.UpdateStudentAndParent(ctx, id, payload)
+	v, err := spu.repo.UpdateStudentAndParent(ctx, id, payload)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return v, nil
 }
 
 func (spu *studentParentUseCase) GetStudentDetailsByID(ctx context.Context, id int) (*domain.StudentAndParent, error) {

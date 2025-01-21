@@ -24,10 +24,10 @@ type DataChangeRequest struct {
 
 type StudentParentRepo interface {
 	GetStudentDetailsByID(ctx context.Context, id int) (*StudentAndParent, error)
-	CreateStudentAndParent(ctx context.Context, req *StudentAndParent) *[]string
+	CreateStudentAndParent(ctx context.Context, req *StudentAndParent) (*string, *[]string)
 	DeleteStudentAndParent(ctx context.Context, id int) error
 	SPMassDelete(ctx context.Context, studentIDS *[]int) error
-	UpdateStudentAndParent(ctx context.Context, id int, payload *StudentAndParent) *[]string
+	UpdateStudentAndParent(ctx context.Context, id int, payload *StudentAndParent) (*string, *[]string)
 	// GetClassIDByName(className string) (*int, error)
 
 	ImportCSV(ctx context.Context, payload *[]StudentAndParent) (*[]string, error)
@@ -40,10 +40,10 @@ type StudentParentRepo interface {
 
 type StudentParentUseCase interface {
 	GetStudentDetailsByID(ctx context.Context, id int) (*StudentAndParent, error)
-	CreateStudentAndParentUC(ctx context.Context, req *StudentAndParent) *[]string
+	CreateStudentAndParentUC(ctx context.Context, req *StudentAndParent) (*string, *[]string)
 	DeleteStudentAndParent(ctx context.Context, id int) error
 	SPMassDelete(ctx context.Context, studentIDS *[]int) error
-	UpdateStudentAndParent(ctx context.Context, id int, payload *StudentAndParent) *[]string
+	UpdateStudentAndParent(ctx context.Context, id int, payload *StudentAndParent) (*string, *[]string)
 	// GetClassIDByName(className string) (*int, error)
 
 	ImportCSV(ctx context.Context, payload *[]StudentAndParent) (*[]string, error)
