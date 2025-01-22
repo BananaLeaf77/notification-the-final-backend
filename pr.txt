@@ -4,3 +4,9 @@ sort radio send notif subject
 
 check parent telephone ne biar gak sama dengan student CRUD 
 loading benyah bangsat
+
+
+ask
+survey ne engken
+ngambil ta lagi di smstr 8 gpp kah?
+
