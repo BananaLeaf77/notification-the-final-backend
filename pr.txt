@@ -10,3 +10,31 @@ ask
 survey ne engken
 ngambil ta lagi di smstr 8 gpp kah?
 
+
+
+
+revisi
+flowchart 4.3 
+garis
+
+simpan proses kotak ne npelih 
+4.4 flowchart
+
+
+asterik di optional ui
+
+per angkatan nis
+di siswa status field, nis / student id
+
+Ui filter berdasarkan kelas,
+
+attribut guru sedikit karena ini sistem informasi notifikasi saja jadi fokusnya lain
+
+pola penulisan mapel kode tambah attribut jadi sing auto increment
+delete mapel gone / kinda kalo bisa jelasin boleh 
+
+data siswa banyak sama guru (display)
+
+bahasa send notifikasi english konsistensi
+
+survey pernyataan apakah sudah layak digunakan oleh orang yang boleh pakek sus
