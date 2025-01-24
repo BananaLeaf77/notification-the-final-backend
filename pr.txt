@@ -15,26 +15,29 @@ ngambil ta lagi di smstr 8 gpp kah?
 
 revisi
 flowchart 4.3 
-garis
+garis sing dadi nyatu 
 
 simpan proses kotak ne npelih 
 4.4 flowchart
+garis sing dadi nyatu 
 
 
-asterik di optional ui
 
-per angkatan nis
-di siswa status field, nis / student id
+asterik di optional field (ui)
+
+di siswa tamabh attribut nis / pengganti auto increment
 
 Ui filter berdasarkan kelas,
 
 attribut guru sedikit karena ini sistem informasi notifikasi saja jadi fokusnya lain
 
-pola penulisan mapel kode tambah attribut jadi sing auto increment
+penulisan mapel kode tambah attribut jadi sing auto increment
 delete mapel gone / kinda kalo bisa jelasin boleh 
 
 data siswa banyak sama guru (display)
 
-bahasa send notifikasi english konsistensi
+bahasa ssitem konsisten english
 
 survey pernyataan apakah sudah layak digunakan oleh orang yang boleh pakek sus
+
+validasi sistem penulisan email
