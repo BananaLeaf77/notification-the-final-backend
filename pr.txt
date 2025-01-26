@@ -42,3 +42,21 @@ validasi sistem penulisan email
 
 
 validasi nisn nya cuy
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+validasi stud and parent
+student := nsn length, nsn duplicate, tel length,
+parent := tel length, email format, 

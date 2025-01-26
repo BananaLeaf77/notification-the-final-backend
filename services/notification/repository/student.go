@@ -69,7 +69,7 @@ func (sp *studentRepository) GetAllStudent(ctx context.Context, userID int) (*[]
 
 	if existingUser.Role == "admin" {
 		// Admin gets all students
-		err = sp.db.WithContext(ctx).Find(&students).Error
+		err = sp.db.WithContext(ctx).Preload("Parent").Find(&students).Error
 		if err != nil {
 			return nil, fmt.Errorf("failed to retrieve all students: %w", err)
 		}
@@ -91,6 +91,7 @@ func (sp *studentRepository) GetAllStudent(ctx context.Context, userID int) (*[]
 		// Fetch students whose grade matches the grades the user teaches
 		err = sp.db.WithContext(ctx).
 			Where("grade IN ?", grades).
+			Preload("Parent").
 			Find(&students).Error
 		if err != nil {
 			return nil, fmt.Errorf("failed to retrieve students: %w", err)

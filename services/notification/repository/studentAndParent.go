@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"notification/config"
 	"notification/domain"
 	"regexp"
 	"strings"
@@ -149,7 +148,7 @@ func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[stri
 			tx.Rollback()
 			return nil, fmt.Errorf("failed to assign student to existing parent, error: %v", err)
 		}
-		message := fmt.Sprintf("Parent data already exists, allocating %d students to the existing parent named: %s", len(AssociatedStudent), ExistingParent.Name)
+		message := fmt.Sprintf("Parent data already exists, allocating %d students to the existing parent name: %s, telephone: %s, email: %s", len(AssociatedStudent), ExistingParent.Name, ExistingParent.Telephone, *ExistingParent.Email)
 		msgs = &message
 	}
 
@@ -173,18 +172,25 @@ func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[stri
 func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, req *domain.StudentAndParent) (*string, *[]string) {
 	var errList []string
 
-	// Normalize email if provided
-	if req.Parent.Email != nil {
-		emailLowered := strings.ToLower(strings.TrimSpace(*req.Parent.Email))
-		req.Parent.Email = &emailLowered
+	if req.Student.Telephone == req.Parent.Telephone {
+		errList = append(errList, "Student and parent cant have the same telephone")
 	}
-
+	// ========================================STUDENT=======================================================
+	// Validate NSN
+	nsnLength := len(req.Student.NSN)
+	if nsnLength > 10 {
+		errList = append(errList, "NSN length exceeds maximum length of 10")
+	}
 	// Validate GradeLabel
 	match, _ := regexp.MatchString("^[A-Za-z]+$", req.Student.GradeLabel)
 	if !match {
 		errList = append(errList, fmt.Sprintf("Invalid Grade Label: %s. Only letters (A-Z, a-z) are allowed.", req.Student.GradeLabel))
 	}
-
+	//  Validate telephone length bjir
+	studTelLength := len(req.Student.Telephone)
+	if studTelLength > 13 {
+		errList = append(errList, "Student telephone should not be more than 13 number")
+	}
 	// Check for duplicate student telephone
 	var studentCount int64
 	err := spr.db.WithContext(ctx).Model(&domain.Student{}).Where("telephone = ?", req.Student.Telephone).Count(&studentCount).Error
@@ -194,9 +200,13 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 		errList = append(errList, fmt.Sprintf("Student with telephone %s already exists", req.Student.Telephone))
 	}
 
-	nsnLength := len(req.Student.NSN)
-	if nsnLength > 10 {
-		errList = append(errList, "NSN length exceeds maximum length of 10")
+	// Check for duplicate student telephone in parent table
+	var studentCountInParent int64
+	err = spr.db.WithContext(ctx).Model(&domain.Parent{}).Where("telephone = ?", req.Student.Telephone).Count(&studentCountInParent).Error
+	if err != nil {
+		errList = append(errList, fmt.Sprintf("Error checking for student telephone: %v", err))
+	} else if studentCountInParent > 0 {
+		errList = append(errList, fmt.Sprintf("Student with telephone %s already exists in parent", req.Student.Telephone))
 	}
 
 	var studentCountNSN int64
@@ -214,6 +224,24 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 	} else if studentCount > 0 {
 		errList = append(errList, fmt.Sprintf("Student with name %s already exists", req.Student.Name))
 	}
+	// ========================================PARENT========================================================
+	// Normalize Parent email if provided
+	if req.Parent.Email != nil && *req.Parent.Email != "" {
+		emailLowered := strings.ToLower(strings.TrimSpace(*req.Parent.Email))
+		req.Parent.Email = &emailLowered
+
+		// Validate email format
+		emailRegex := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
+		match, _ := regexp.MatchString(emailRegex, *req.Parent.Email)
+		if !match {
+			errList = append(errList, fmt.Sprintf("Invalid email format for parent: %s", *req.Parent.Email))
+		}
+	}
+	// Validate parent telephone length
+	parTelLength := len(req.Parent.Telephone)
+	if parTelLength > 13 {
+		errList = append(errList, "Parent telephone should not be more than 13 number")
+	}
 
 	var parentTelInStudent int64
 	err = spr.db.WithContext(ctx).Model(&domain.Student{}).Where("telephone = ?", req.Parent.Telephone).Count(&parentTelInStudent).Error
@@ -225,7 +253,7 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 		errList = append(errList, fmt.Sprintf("Parent with telephone %s already exist in student", req.Parent.Telephone))
 	}
 
-	// If student errors exist, return immediately
+	// If errors exist, return immediately
 	if len(errList) > 0 {
 		return nil, &errList
 	}
@@ -269,7 +297,17 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 			return nil, &[]string{fmt.Sprintf("Could not insert student: %v", err)}
 		}
 
-		message := fmt.Sprintf("Parent data already exists, allocating the student to the existing parent named: %s", existingParent.Name)
+		message := fmt.Sprintf(
+			"Parent data already exists, allocating the student to the existing parent name: %s, telephone: %s, email: %s",
+			existingParent.Name,
+			existingParent.Telephone,
+			func() string {
+				if existingParent.Email == nil {
+					return "N/A"
+				}
+				return *existingParent.Email
+			}(),
+		)
 		msgs = &message
 	} else {
 		// Create new parent
@@ -419,13 +457,37 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, id int, req *domain.StudentAndParent) (*string, *[]string) {
 	var student domain.Student
 	var errList []string
-
+	// ========================================STUDENT=======================================================
 	// Validate GradeLabel to only contain letters
 	match, _ := regexp.MatchString("^[A-Za-z]+$", req.Student.GradeLabel)
 	if !match {
 		errList = append(errList, fmt.Sprintf("Invalid Grade Label: %s. Only letters (A-Z, a-z) are allowed.", req.Student.GradeLabel))
 	}
 	req.Student.GradeLabel = strings.ToUpper(req.Student.GradeLabel)
+
+	studTelLength := len(req.Student.Telephone)
+	if studTelLength > 13 {
+		errList = append(errList, "Student telephone should not be more than 13 number")
+	}
+
+	// ========================================PARENT=======================================================
+	// Normalize email if provided
+	if req.Parent.Email != nil && *req.Parent.Email != "" {
+		emailLowered := strings.ToLower(strings.TrimSpace(*req.Parent.Email))
+		req.Parent.Email = &emailLowered
+
+		// Validate email format
+		emailRegex := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
+		match, _ := regexp.MatchString(emailRegex, *req.Parent.Email)
+		if !match {
+			errList = append(errList, fmt.Sprintf("Invalid email format for parent: %s", *req.Parent.Email))
+		}
+	}
+
+	parTelLength := len(req.Parent.Telephone)
+	if parTelLength > 13 {
+		errList = append(errList, "Parent telephone should not be more than 13 number")
+	}
 
 	// Start a transaction
 	tx := spr.db.Begin()
@@ -438,7 +500,20 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 	req.Student.UpdatedAt = now
 	req.Parent.UpdatedAt = now
 
-	// Check for duplicate student data
+	// =======================================STUDENT=======================================================
+	nsnLength := len(req.Student.NSN)
+	if nsnLength > 10 {
+		errList = append(errList, "NSN length exceeds maximum length of 10")
+	}
+
+	var studentCountNSN int64
+	err := spr.db.WithContext(ctx).Model(&domain.Student{}).Where("nsn = ? AND student_id != ?", req.Student.NSN, id).Count(&studentCountNSN).Error
+	if err != nil {
+		errList = append(errList, fmt.Sprintf("Error checking for student nsn: %v", err))
+	} else if studentCountNSN > 0 {
+		errList = append(errList, fmt.Sprintf("Student with nsn %s already exists", req.Student.NSN))
+	}
+
 	if req.Student.Name != "" {
 		err := spr.db.WithContext(ctx).
 			Where("name = ? AND student_id != ?", req.Student.Name, id).
@@ -456,8 +531,17 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 		}
 	}
 
+	var studTelInParent int64
+	err = spr.db.WithContext(ctx).Model(&domain.Parent{}).Where("telephone = ?", req.Student.Telephone).Count(&studTelInParent).Error
+	if err != nil {
+		errList = append(errList, fmt.Sprintf("Error checking for student telephone: %v", err))
+	} else if studTelInParent > 0 {
+		errList = append(errList, fmt.Sprintf("Student with telephone %s already exists in parent", req.Student.Telephone))
+	}
+
+	// ========================================PARENT=======================================================
 	var parentTelInStudent int64
-	err := spr.db.WithContext(ctx).Model(&domain.Student{}).Where("telephone = ?", req.Parent.Telephone).Count(&parentTelInStudent).Error
+	err = spr.db.WithContext(ctx).Model(&domain.Student{}).Where("telephone = ?", req.Parent.Telephone).Count(&parentTelInStudent).Error
 	if err != nil {
 		errList = append(errList, fmt.Sprintf("Error checking parent telephone in student table: %v", err))
 	}
@@ -486,6 +570,9 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 	updatedStudentFields := make(map[string]interface{})
 	if req.Student.Name != "" && req.Student.Name != student.Name {
 		updatedStudentFields["name"] = req.Student.Name
+	}
+	if req.Student.NSN != "" && req.Student.NSN != student.NSN {
+		updatedStudentFields["nsn"] = req.Student.NSN
 	}
 	if req.Student.Grade != 0 && req.Student.Grade != student.Grade {
 		updatedStudentFields["grade"] = req.Student.Grade
@@ -553,7 +640,6 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 		}
 	}
 
-	config.PrintStruct(updatedStudentFields)
 	err = tx.WithContext(ctx).
 		Model(domain.Student{}).
 		Where("student_id = ?", student.StudentID).
@@ -805,7 +891,6 @@ func (spr *studentParentRepository) DeleteStudentAndParentMass(ctx context.Conte
 
 func (spr *studentParentRepository) GetStudentDetailsByID(ctx context.Context, studentID int) (*domain.StudentAndParent, error) {
 	var result domain.StudentAndParent
-
 	err := spr.db.WithContext(ctx).
 		Preload("Parent").
 		Where("students.student_id = ?", studentID).
@@ -818,9 +903,9 @@ func (spr *studentParentRepository) GetStudentDetailsByID(ctx context.Context, s
 		return nil, fmt.Errorf("could not fetch student details: %v", err)
 	}
 
-	// Explicitly check if the parent was not loaded
-	if result.Student.ParentID != 0 {
-		result.Student.Parent = domain.Parent{} // Reset to an empty struct if deleted
+	// If ParentID is 0, it means the student has no associated parent
+	if result.Student.ParentID == 0 {
+		result.Student.Parent = domain.Parent{} // Explicitly set to empty struct
 	}
 
 	return &result, nil

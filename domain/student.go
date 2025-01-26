@@ -6,12 +6,13 @@ import (
 )
 
 type Subject struct {
-	SubjectID int        `gorm:"primaryKey;autoIncrement" json:"subject_id"`
-	Name      string     `gorm:"type:varchar(100);not null;" json:"name" valid:"required~Subject name is required"`
-	Grade     int        `gorm:"not null" json:"grade" valid:"required~Grade is required"`
-	CreatedAt time.Time  `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
-	DeletedAt *time.Time `gorm:"index" json:"deleted_at"`
+	SubjectID   int        `gorm:"primaryKey;autoIncrement" json:"subject_id"`
+	SubjectCode string     `gorm:"type:varchar(5);not null;" json:"subject_code" valid:"required~Subject code is required"`
+	Name        string     `gorm:"type:varchar(100);not null;" json:"name" valid:"required~Subject name is required"`
+	Grade       int        `gorm:"not null" json:"grade" valid:"required~Grade is required"`
+	CreatedAt   time.Time  `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt   time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
+	DeletedAt   *time.Time `gorm:"index" json:"deleted_at"`
 }
 
 type Student struct {
