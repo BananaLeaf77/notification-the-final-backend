@@ -83,6 +83,7 @@ type ParentNoGorm struct {
 
 type StudentNoGorm struct {
 	StudentID int        `json:"student_id"`
+	NSN       string     `gorm:"type:varchar(10);not null;" json:"nsn" valid:"required~NSN is required"`
 	Name      string     `json:"name" valid:"required~Name is required"`
 	Class     string     `json:"class" valid:"required~Class is required"`
 	Gender    string     `json:"gender" valid:"required~Gender is required,in(male|female)~Invalid gender"`

@@ -25,7 +25,7 @@ func (spr *studentRepository) GetStudentByParentTelephone(ctx context.Context, p
 
 	var parent domain.Parent
 	err := spr.db.WithContext(ctx).
-		Where("telephone = ? AND deleted_at IS NULL", parTel).
+		Where("telephone = ?", parTel).
 		First(&parent).Error
 
 	if err != nil {
@@ -41,7 +41,7 @@ func (spr *studentRepository) GetStudentByParentTelephone(ctx context.Context, p
 	// Fetch students associated with the parent
 	var students []domain.Student
 	err = spr.db.WithContext(ctx).
-		Where("parent_id = ? AND deleted_at IS NULL", parent.ParentID).
+		Where("parent_id = ?", parent.ParentID).
 		Find(&students).Error
 
 	if err != nil {
@@ -60,7 +60,7 @@ func (spr *studentRepository) GetStudentByParentTelephone(ctx context.Context, p
 func (sp *studentRepository) GetAllStudent(ctx context.Context, userID int) (*[]domain.Student, error) {
 	// Check if the user exists
 	var existingUser domain.User
-	err := sp.db.WithContext(ctx).Where("user_id = ? AND deleted_at IS NULL", userID).Preload("Teaching").First(&existingUser).Error
+	err := sp.db.WithContext(ctx).Where("user_id = ?", userID).Preload("Teaching").First(&existingUser).Error
 	if err != nil {
 		return nil, fmt.Errorf("invalid user: %w", err)
 	}
@@ -69,7 +69,7 @@ func (sp *studentRepository) GetAllStudent(ctx context.Context, userID int) (*[]
 
 	if existingUser.Role == "admin" {
 		// Admin gets all students
-		err = sp.db.WithContext(ctx).Where("deleted_at IS NULL").Find(&students).Error
+		err = sp.db.WithContext(ctx).Find(&students).Error
 		if err != nil {
 			return nil, fmt.Errorf("failed to retrieve all students: %w", err)
 		}
@@ -90,7 +90,7 @@ func (sp *studentRepository) GetAllStudent(ctx context.Context, userID int) (*[]
 
 		// Fetch students whose grade matches the grades the user teaches
 		err = sp.db.WithContext(ctx).
-			Where("grade IN ? AND deleted_at IS NULL", grades).
+			Where("grade IN ?", grades).
 			Find(&students).Error
 		if err != nil {
 			return nil, fmt.Errorf("failed to retrieve students: %w", err)

@@ -21,11 +21,9 @@ simpan proses kotak ne npelih
 4.4 flowchart
 garis sing dadi nyatu 
 
-
-
 asterik di optional field (ui)
 
-di siswa tamabh attribut nis / pengganti auto increment
+di siswa tamabh attribut nis
 
 Ui filter berdasarkan kelas,
 
@@ -41,3 +39,6 @@ bahasa ssitem konsisten english
 survey pernyataan apakah sudah layak digunakan oleh orang yang boleh pakek sus
 
 validasi sistem penulisan email
+
+
+validasi nisn nya cuy
