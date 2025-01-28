@@ -34,7 +34,7 @@ func NewUserHandlerDeploy(app *fiber.App, useCase domain.UserUseCase) {
 	group.Get("/profile-dashboard", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.ShowProfile)
 	group.Post("/rm/users", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteStaffMass)
 	group.Get("/subject/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.GetSubjectDetail)
-	group.Post("/rm/subjects", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteSubjectMass)
+	// group.Post("/rm/subjects", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteSubjectMass)
 	group.Get("/get-all/test-scores", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetAllTestScores)
 	group.Get("/get/test-scores/:subject_id", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetAllTestScoresBySubjectID)
 	// group.Get("/reset/test-scores", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.ResetTestScore)

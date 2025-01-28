@@ -24,14 +24,10 @@ func (np *notificationRepo) GetAllAttendanceNotificationHistory(ctx context.Cont
 
 	// Query the attendance notification history
 	if err := np.db.WithContext(ctx).
-		Preload("Student", func(db *gorm.DB) *gorm.DB {
-			return db.Where("deleted_at IS NULL")
-		}).
+		Preload("Student").
 		Preload("Parent").
 		Preload("User").
-		Preload("Subject", func(db *gorm.DB) *gorm.DB {
-			return db.Where("deleted_at IS NULL")
-		}).
+		Preload("Subject").
 		Find(&dataHolder).Error; err != nil {
 		return nil, fmt.Errorf("could not get all attendance notification history, error: %v", err)
 	}

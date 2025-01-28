@@ -42,66 +42,66 @@ func (m *senderRepository) createTestScoreEmail(individual domain.IndividualExam
 	if individual.Student.Parent.Gender != "male" {
 		body := fmt.Sprintf(`SINOAN Service 🔔
 
-Kepada Yth. Ibu %s,
-Kami ingin menyampaikan informasi mengenai hasil %s untuk siswa berikut:
-Nama: %s,
-Kelas: %s.
-Berikut adalah detail hasil ulangan pada beberapa mata pelajaran:
+Dear Mrs. %s,
+We would like to inform you about the %s results for the following student:
+Name: %s,
+Class: %s.
+Below are the details of the test results for several subjects:
 `, individual.Student.Parent.Name, examType, individual.Student.Name, fmt.Sprintf("%d%s", individual.Student.Grade, individual.Student.GradeLabel))
 
 		// Add the subject and score details
 		for _, result := range individual.SubjectAndScoreResult {
 			subjectName := result.Subject.Name
-			score := "Belum Ada Nilai"
+			score := "No Score Yet"
 			if result.Score != nil {
 				score = fmt.Sprintf("%.2f", *result.Score)
 			}
 
-			body += fmt.Sprintf("- Mata Pelajaran: %s | Nilai: %s\n", subjectName, score)
+			body += fmt.Sprintf("- Subject: %s | Score: %s\n", subjectName, score)
 		}
 
 		// Close the email with contact details
 		body += fmt.Sprintf(`
 
-Jika terdapat pertanyaan atau memerlukan informasi lebih lanjut, Ibu dapat menghubungi kami di %s.
+If you have any questions or need further information, you can contact us at %s.
 
-Terima kasih atas perhatian dan kerjasamanya.
+Thank you for your attention and cooperation.
 
-Hormat kami,
-Tim SINOAN`, m.schoolPhone)
+Sincerely,
+SINOAN Team`, m.schoolPhone)
 
 		bodyTestScore := body
 		return bodyTestScore
 	} else {
 		body := fmt.Sprintf(`SINOAN Service 🔔
 
-Kepada Yth. Bapak %s,
-Kami ingin menyampaikan informasi mengenai hasil %s untuk siswa berikut:
-Nama: %s,
-Kelas: %s. 
-Berikut adalah detail hasil ulangan pada beberapa mata pelajaran:
+Dear Mr. %s,
+We would like to inform you about the %s results for the following student:
+Name: %s,
+Class: %s.
+Below are the details of the test results for several subjects:
 `, individual.Student.Parent.Name, examType, individual.Student.Name, fmt.Sprintf("%d%s", individual.Student.Grade, individual.Student.GradeLabel))
 
 		// Add the subject and score details
 		for _, result := range individual.SubjectAndScoreResult {
 			subjectName := result.Subject.Name
-			score := "Belum Ada Nilai | 0"
+			score := "No Score Yet | 0"
 			if result.Score != nil {
 				score = fmt.Sprintf("%.1f", *result.Score)
 			}
 
-			body += fmt.Sprintf("- Mata Pelajaran: %s | Nilai: %s\n", subjectName, score)
+			body += fmt.Sprintf("- Subject: %s | Score: %s\n", subjectName, score)
 		}
 
 		// Close the email with contact details
 		body += fmt.Sprintf(`
 
-Jika terdapat pertanyaan atau memerlukan informasi lebih lanjut, Bapak dapat menghubungi kami di %s.
+If you have any questions or need further information, you can contact us at %s.
 
-Terima kasih atas perhatian dan kerjasamanya.
+Thank you for your attention and cooperation.
 
-Hormat kami,
-Tim SINOAN`, m.schoolPhone)
+Sincerely,
+SINOAN Team`, m.schoolPhone)
 
 		bodyTestScore := body
 		return bodyTestScore
