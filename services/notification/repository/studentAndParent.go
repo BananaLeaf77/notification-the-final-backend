@@ -110,7 +110,7 @@ func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[stri
 	var parentTelInStudent int64
 	err = spr.db.WithContext(ctx).Model(&domain.Student{}).Where("telephone = ?", req["telephone"]).Count(&parentTelInStudent).Error
 	if err != nil {
-		return nil, fmt.Errorf("error checking parent telephone in student table: %v", err)
+		return nil, fmt.Errorf("error checking parent telephone in student: %v", err)
 	}
 
 	if parentTelInStudent > 0 {
@@ -246,7 +246,7 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 	var parentTelInStudent int64
 	err = spr.db.WithContext(ctx).Model(&domain.Student{}).Where("telephone = ?", req.Parent.Telephone).Count(&parentTelInStudent).Error
 	if err != nil {
-		errList = append(errList, fmt.Sprintf("Error checking parent telephone in student table: %v", err))
+		errList = append(errList, fmt.Sprintf("Error checking parent telephone in student: %v", err))
 	}
 
 	if parentTelInStudent > 0 {
@@ -352,13 +352,28 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 	for index, record := range *payload {
 		isDuplicate := false
 
-		// Validate Parent Telephone
-		if len(record.Parent.Telephone) > 13 {
-			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent telephone %s exceeds max length (13)", index+2, record.Parent.Telephone))
-			isDuplicate = true
+		// Student validation to DB
+
+		// Check student nsn already exist in db
+		var studentNsnExistsCount int64
+		err := spr.db.WithContext(ctx).Model(&domain.Student{}).Where("nsn = ?", record.Student.NSN).Count(&studentNsnExistsCount).Error
+		if err == nil {
+			if studentNsnExistsCount > 0 {
+				isDuplicate = true
+				duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student nsn %s already exists", index+2, record.Student.NSN))
+			}
 		}
 
-		// Validate Student Telephone
+		var studentNameExistsCount int64
+		// Validate Student Name
+		if err := spr.db.WithContext(ctx).Model(&domain.Student{}).Where("name = ?", record.Student.Name).Count(&studentNameExistsCount).Error; err == nil {
+			if studentNameExistsCount > 0 {
+				duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student name %s already exists", index+2, record.Student.Name))
+				isDuplicate = true
+			}
+		}
+
+		// Student Telephone
 		var studentExists domain.Student
 		if len(record.Student.Telephone) > 13 {
 			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student telephone %s exceeds max length (13)", index+2, record.Student.Telephone))
@@ -368,22 +383,31 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 			isDuplicate = true
 		}
 
+		// Student Telephone in Parent
+		var studentTelInParent int64
+		err = spr.db.WithContext(ctx).Model(&domain.Parent{}).Where("telephone = ?", record.Student.Telephone).Count(&studentTelInParent).Error
+		if err == nil {
+			if studentTelInParent > 0 {
+				duplicateMessages = append(duplicateMessages, fmt.Sprintf("Parent with telephone %s already exist in student", record.Parent.Telephone))
+				isDuplicate = true
+			}
+		}
+
+		// Parent Validation
+
 		// Validate parent telephone (checking availablity parent telephone in student)
 		var parentTelInStudent int64
-		err := spr.db.WithContext(ctx).Model(&domain.Student{}).Where("telephone = ?", record.Parent.Telephone).Count(&parentTelInStudent).Error
-		if err != nil {
-			duplicateMessages = append(duplicateMessages, fmt.Sprintf("Error checking parent telephone in student table: %v", err))
-			isDuplicate = true
+		err = spr.db.WithContext(ctx).Model(&domain.Student{}).Where("telephone = ?", record.Parent.Telephone).Count(&parentTelInStudent).Error
+		if err == nil {
+			if parentTelInStudent > 0 {
+				duplicateMessages = append(duplicateMessages, fmt.Sprintf("Parent with telephone %s already exist in student", record.Parent.Telephone))
+				isDuplicate = true
+			}
 		}
 
-		if parentTelInStudent > 0 {
-			duplicateMessages = append(duplicateMessages, fmt.Sprintf("Parent with telephone %s already exist in student", record.Parent.Telephone))
-			isDuplicate = true
-		}
-
-		// Validate Student Name
-		if err := spr.db.WithContext(ctx).Where("name = ?", record.Student.Name).First(&studentExists).Error; err == nil {
-			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student name %s already exists", index+2, record.Student.Name))
+		// Validate Parent Telephone
+		if len(record.Parent.Telephone) > 13 {
+			duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: parent telephone %s exceeds max length (13)", index+2, record.Parent.Telephone))
 			isDuplicate = true
 		}
 
@@ -543,7 +567,7 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 	var parentTelInStudent int64
 	err = spr.db.WithContext(ctx).Model(&domain.Student{}).Where("telephone = ?", req.Parent.Telephone).Count(&parentTelInStudent).Error
 	if err != nil {
-		errList = append(errList, fmt.Sprintf("Error checking parent telephone in student table: %v", err))
+		errList = append(errList, fmt.Sprintf("Error checking parent telephone in student: %v", err))
 	}
 
 	if parentTelInStudent > 0 {

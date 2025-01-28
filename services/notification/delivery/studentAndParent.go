@@ -380,7 +380,7 @@ func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
 
 	if badRequests != nil && len(*badRequests) > 0 {
 		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "UploadAndImport")
-		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"message": "Import Failure, bad input found.",
 			"error":   badRequests,
@@ -389,7 +389,7 @@ func (sph *studentParentHandler) UploadAndImport(c *fiber.Ctx) error {
 
 	if internalServerResponse != nil && len(*internalServerResponse) > 0 {
 		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "UploadAndImport")
-		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"message": "Import Failure, duplicates found.",
 			"error":   internalServerResponse,
@@ -450,14 +450,10 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 			errList = append(errList, parentErrors...)
 		}
 
-		// Check for duplicate telephone numbers between student and parent
-		if row[5] == row[8] {
-			errList = append(errList, fmt.Sprintf("row %d: student and parent have the same telephone number: %s", i+2, row[5]))
-		}
-
 		// Populate student and parent data if no errors
 		if len(studentErrors) == 0 && len(parentErrors) == 0 {
 			student := domain.Student{
+				NSN:        row[0],
 				Name:       row[1],
 				Grade:      mustAtoi(row[2]),
 				GradeLabel: strings.ToUpper(row[3]),
@@ -605,8 +601,16 @@ func checkDuplicates(list []domain.StudentAndParent) []string {
 	seenNames := make(map[string]int)             // Track seen student names
 	seenStudentTelephones := make(map[string]int) // Track seen student telephones
 	seenParentTelephones := make(map[string]int)  // Track seen parent telephones
+	seenNSNs := make(map[string]int)              // Track seen NSNs
 
 	for i, item := range list {
+		// Check for duplicate NSNs
+		if j, exists := seenNSNs[item.Student.NSN]; exists {
+			duplicateErrList = append(duplicateErrList, fmt.Sprintf("duplicate NSN: %s found in rows %d and %d", item.Student.NSN, j+2, i+2))
+		} else {
+			seenNSNs[item.Student.NSN] = i
+		}
+
 		// Check for duplicate student names
 		if j, exists := seenNames[item.Student.Name]; exists {
 			duplicateErrList = append(duplicateErrList, fmt.Sprintf("duplicate student name: %s found in rows %d and %d", item.Student.Name, j+2, i+2))
