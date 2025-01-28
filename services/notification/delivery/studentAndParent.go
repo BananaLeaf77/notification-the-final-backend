@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/gofiber/fiber/v2"
@@ -407,13 +408,12 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 	var errList []string
 	var duplicateErrList []string
 	var listStudentAndParent []domain.StudentAndParent
-	var parentDataHolder domain.Parent
-	var studentDataHolder domain.Student
 
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to open CSV file: %v", err)
 	}
+	defer file.Close()
 
 	defer func() {
 		if err := os.Remove(filePath); err != nil {
@@ -421,136 +421,80 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 		}
 	}()
 
-	defer file.Close()
-
 	reader := csv.NewReader(file)
 	records, err := reader.ReadAll()
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to read CSV file: %v", err)
 	}
 
-	// Precompile the regular expression outside the loop
-	gradeLabelRegex, err := regexp.Compile("^[A-Za-z]+$")
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to compile regular expression: %v", err)
-	}
+	// Precompile regular expressions
+	gradeLabelRegex := regexp.MustCompile("^[A-Za-z]+$")
+	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 
-	// Start from row 2 because row 1 is the header
+	// Skip the header row
 	for i, row := range records[1:] {
-		if len(row) < 8 {
-			log.Printf("Skipping row %d due to insufficient columns", i+2)
+		if len(row) < 10 {
+			errList = append(errList, fmt.Sprintf("row %d: insufficient columns, expected 10 columns", i+2))
 			continue
 		}
 
-		// Student Validation
-		row0 := row[0]
-		if row0 != nil || *row0 != ""{
-			nsnLength := len(row0)
-			if nsnLength > 10 {
-				errList = append(errList, fmt.Sprintf("row %d": ))
+		// Validate Student Data
+		studentErrors := validateStudent(row[:6], i+2, gradeLabelRegex)
+		if len(studentErrors) > 0 {
+			errList = append(errList, studentErrors...)
+		}
+
+		// Validate Parent Data
+		parentErrors := validateParent(row[6:], i+2, emailRegex)
+		if len(parentErrors) > 0 {
+			errList = append(errList, parentErrors...)
+		}
+
+		// Check for duplicate telephone numbers between student and parent
+		if row[5] == row[8] {
+			errList = append(errList, fmt.Sprintf("row %d: student and parent have the same telephone number: %s", i+2, row[5]))
+		}
+
+		// Populate student and parent data if no errors
+		if len(studentErrors) == 0 && len(parentErrors) == 0 {
+			student := domain.Student{
+				Name:       row[1],
+				Grade:      mustAtoi(row[2]),
+				GradeLabel: strings.ToUpper(row[3]),
+				Gender:     strings.ToLower(row[4]),
+				Telephone:  row[5],
+				ParentID:   0,
+				CreatedAt:  time.Now(),
+				UpdatedAt:  time.Now(),
 			}
-		}
-		
 
-		// Check grade conversion
-		convertedGrade, err := strconv.Atoi(row[1])
-		if err != nil {
-			errList = append(errList, fmt.Sprintf("row %d: grade should be number: %s", i+2, row[1]))
-		}
+			parent := domain.Parent{
+				Name:      row[6],
+				Gender:    strings.ToLower(row[7]),
+				Telephone: row[8],
+				Email:     getStringPointer(row[9]),
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			}
 
-		// Validate grade label
-		match := gradeLabelRegex.MatchString(row[2])
-		if !match {
-			errList = append(errList, fmt.Sprintf("row %d: Invalid Grade Label: %s. Only letters (A-Z, a-z) are allowed", i+2, row[2]))
+			listStudentAndParent = append(listStudentAndParent, domain.StudentAndParent{
+				Student: student,
+				Parent:  parent,
+			})
 		}
-
-		// Validate student gender
-		genderLowered := strings.ToLower(row[3])
-		if genderLowered != "male" && genderLowered != "female" {
-			errList = append(errList, fmt.Sprintf("row %d: Invalid student gender: %s, gender should be male / female", i+2, genderLowered))
-		}
-
-		// Validate student telephone
-		_, err = strconv.Atoi(row[4])
-		if err != nil {
-			errList = append(errList, fmt.Sprintf("row %d: Invalid student telephone: %s, telephone should be numeric", i+2, row[4]))
-		}
-		if len(row[4]) > 13 {
-			errList = append(errList, fmt.Sprintf("row %d: Invalid student telephone: %s, telephone should be 13 numbers max", i+2, row[4]))
-		}
-
-		if row[4] == row[7] {
-			errList = append(errList, fmt.Sprintf("row %d: Student and parent have the same telephone: %s", i+2, row[7]))
-		}
-
-		// Populate student data
-		studentDataHolder = domain.Student{
-			Name:       row[0],
-			Grade:      convertedGrade,
-			GradeLabel: strings.ToUpper(row[2]),
-			Gender:     genderLowered,
-			Telephone:  row[4],
-			ParentID:   0,
-			CreatedAt:  time.Now(),
-			UpdatedAt:  time.Now(),
-		}
-
-		// Validate parent gender
-		genderParentLowered := strings.ToLower(row[6])
-		if genderParentLowered != "male" && genderParentLowered != "female" {
-			errList = append(errList, fmt.Sprintf("row %d: Invalid parent gender: %s, gender should be male / female", i+2, genderParentLowered))
-		}
-
-		// Validate parent telephone
-		_, err = strconv.Atoi(row[7])
-		if err != nil {
-			errList = append(errList, fmt.Sprintf("row %d: Invalid parent telephone: %s, telephone should be numeric", i+2, row[7]))
-		}
-		if len(row[7]) > 13 {
-			errList = append(errList, fmt.Sprintf("row %d: Invalid parent telephone: %s, telephone should be 13 numbers max", i+2, row[7]))
-		}
-
-		// Populate parent data
-		parentDataHolder = domain.Parent{
-			Name:      row[5],
-			Gender:    row[6],
-			Telephone: row[7],
-			Email:     getStringPointer(row[8]),
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		}
-
-		// Append student and parent data
-		studNParent := domain.StudentAndParent{
-			Student: studentDataHolder,
-			Parent:  parentDataHolder,
-		}
-
-		listStudentAndParent = append(listStudentAndParent, studNParent)
 	}
 
 	// Check for duplicates in listStudentAndParent
-	for i, item := range listStudentAndParent {
-		for j := i + 1; j < len(listStudentAndParent); j++ {
-			if item.Student.Name == listStudentAndParent[j].Student.Name {
-				duplicateErrList = append(duplicateErrList, fmt.Sprintf("Duplicate student name: %s found in rows %d and %d", item.Student.Name, i+2, j+2))
-			}
-			if item.Student.Telephone == listStudentAndParent[j].Student.Telephone {
-				duplicateErrList = append(duplicateErrList, fmt.Sprintf("Duplicate student telephone: %s found in rows %d and %d", item.Student.Telephone, i+2, j+2))
-			}
-			if item.Parent.Telephone == listStudentAndParent[j].Student.Telephone {
-				duplicateErrList = append(duplicateErrList, fmt.Sprintf("Duplicate parent telephone: %s found in student rows %d and %d", item.Parent.Telephone, j+2, i+2))
-			}
-		}
-	}
+	duplicateErrList = checkDuplicates(listStudentAndParent)
 
+	// Return errors if any
 	if len(errList) > 0 || len(duplicateErrList) > 0 {
 		combinedErrList := append(errList, duplicateErrList...)
 		return &combinedErrList, nil, nil
 	}
 
+	// Import data if no errors
 	duplicates, _ := sph.uc.ImportCSV(c, &listStudentAndParent)
-
 	if duplicates != nil && len(*duplicates) > 0 {
 		return nil, duplicates, nil
 	}
@@ -558,7 +502,171 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 	return nil, nil, nil
 }
 
-// Helper function to get a pointer to a string
+// Helper function to validate student data
+func validateStudent(row []string, rowNum int, gradeLabelRegex *regexp.Regexp) []string {
+	var errList []string
+
+	// Validate NSN
+	if row[0] == "" {
+		errList = append(errList, fmt.Sprintf("row %d: Student NSN cannot be empty", rowNum))
+	} else if len(row[0]) > 10 {
+		errList = append(errList, fmt.Sprintf("row %d: Student NSN cannot be more than 10 characters", rowNum))
+	} else if !isNumeric(row[0]) {
+		errList = append(errList, fmt.Sprintf("row %d: Student NSN must contain only digits", rowNum))
+	}
+
+	// Validate Student Name
+	if row[1] == "" {
+		errList = append(errList, fmt.Sprintf("row %d: Student name cannot be empty", rowNum))
+	} else if len(row[1]) > 150 {
+		errList = append(errList, fmt.Sprintf("row %d: Student name cannot be more than 150 characters", rowNum))
+	} else if containsDigit(row[1]) {
+		errList = append(errList, fmt.Sprintf("row %d: Student name cannot contain digits", rowNum))
+	}
+
+	// Validate Grade
+	if row[2] == "" {
+		errList = append(errList, fmt.Sprintf("row %d: grade cannot be empty", rowNum))
+	} else if grade, err := strconv.Atoi(row[2]); err != nil || grade > 99 {
+		errList = append(errList, fmt.Sprintf("row %d: Student grade: %s, must be a number and less than 100", rowNum, row[2]))
+	}
+
+	// Validate Grade Label
+	if row[3] == "" {
+		errList = append(errList, fmt.Sprintf("row %d: Student grade label cannot be empty", rowNum))
+	} else if len(row[3]) > 3 {
+		errList = append(errList, fmt.Sprintf("row %d: Student grade label cannot be more than 3 characters", rowNum))
+	} else if !gradeLabelRegex.MatchString(row[3]) {
+		errList = append(errList, fmt.Sprintf("row %d: Student grade label must contain only letters", rowNum))
+	}
+
+	// Validate Gender
+	if row[4] == "" {
+		errList = append(errList, fmt.Sprintf("row %d: Student gender cannot be empty", rowNum))
+	} else if gender := strings.ToLower(row[4]); gender != "male" && gender != "female" {
+		errList = append(errList, fmt.Sprintf("row %d: invalid gender: %s, must be 'male' or 'female'", rowNum, row[4]))
+	}
+
+	// Validate Telephone
+	if row[5] == "" {
+		errList = append(errList, fmt.Sprintf("row %d: Student telephone cannot be empty", rowNum))
+	} else if len(row[5]) > 13 {
+		errList = append(errList, fmt.Sprintf("row %d: Student telephone cannot be more than 13 characters", rowNum))
+	} else if !isNumeric(row[5]) {
+		errList = append(errList, fmt.Sprintf("row %d: Student telephone must contain only digits", rowNum))
+	}
+
+	return errList
+}
+
+// Helper function to validate parent data
+func validateParent(row []string, rowNum int, emailRegex *regexp.Regexp) []string {
+	var errList []string
+
+	// Validate Parent Name
+	if row[0] == "" {
+		errList = append(errList, fmt.Sprintf("row %d: Parent name cannot be empty", rowNum))
+	} else if len(row[0]) > 150 {
+		errList = append(errList, fmt.Sprintf("row %d: Parent name cannot be more than 150 characters", rowNum))
+	} else if containsDigit(row[0]) {
+		errList = append(errList, fmt.Sprintf("row %d: Parent name cannot contain digits", rowNum))
+	}
+
+	// Validate Gender
+	if row[1] == "" {
+		errList = append(errList, fmt.Sprintf("row %d: Parent gender cannot be empty", rowNum))
+	} else if gender := strings.ToLower(row[1]); gender != "male" && gender != "female" {
+		errList = append(errList, fmt.Sprintf("row %d: Parent gender: %s, must be 'male' or 'female'", rowNum, row[1]))
+	}
+
+	// Validate Telephone
+	if row[2] == "" {
+		errList = append(errList, fmt.Sprintf("row %d: Parent telephone cannot be empty", rowNum))
+	} else if len(row[2]) > 13 {
+		errList = append(errList, fmt.Sprintf("row %d: Parent telephone cannot be more than 13 characters", rowNum))
+	} else if !isNumeric(row[2]) {
+		errList = append(errList, fmt.Sprintf("row %d: Parent telephone must contain only digits", rowNum))
+	}
+
+	// Validate Email (optional)
+	if row[3] != "" {
+		if len(row[3]) > 255 {
+			errList = append(errList, fmt.Sprintf("row %d: Parent email cannot be more than 255 characters", rowNum))
+		} else if !emailRegex.MatchString(row[3]) {
+			errList = append(errList, fmt.Sprintf("row %d: Parent email format is invalid: %s", rowNum, row[3]))
+		}
+	}
+
+	return errList
+}
+
+func checkDuplicates(list []domain.StudentAndParent) []string {
+	var duplicateErrList []string
+	seenNames := make(map[string]int)             // Track seen student names
+	seenStudentTelephones := make(map[string]int) // Track seen student telephones
+	seenParentTelephones := make(map[string]int)  // Track seen parent telephones
+
+	for i, item := range list {
+		// Check for duplicate student names
+		if j, exists := seenNames[item.Student.Name]; exists {
+			duplicateErrList = append(duplicateErrList, fmt.Sprintf("duplicate student name: %s found in rows %d and %d", item.Student.Name, j+2, i+2))
+		} else {
+			seenNames[item.Student.Name] = i
+		}
+
+		// Check for duplicate student telephones
+		if j, exists := seenStudentTelephones[item.Student.Telephone]; exists {
+			duplicateErrList = append(duplicateErrList, fmt.Sprintf("duplicate student telephone: %s found in rows %d and %d", item.Student.Telephone, j+2, i+2))
+		} else {
+			seenStudentTelephones[item.Student.Telephone] = i
+		}
+
+		// Check for duplicate parent telephones
+		if j, exists := seenParentTelephones[item.Parent.Telephone]; exists {
+			duplicateErrList = append(duplicateErrList, fmt.Sprintf("duplicate parent telephone: %s found in rows %d and %d", item.Parent.Telephone, j+2, i+2))
+		} else {
+			seenParentTelephones[item.Parent.Telephone] = i
+		}
+
+		// Check if student and parent have the same telephone number
+		if item.Student.Telephone == item.Parent.Telephone {
+			duplicateErrList = append(duplicateErrList, fmt.Sprintf("row %d: student and parent have the same telephone number: %s", i+2, item.Student.Telephone))
+		}
+	}
+
+	return duplicateErrList
+}
+
+// Helper function to check if a string contains only digits
+func isNumeric(s string) bool {
+	for _, r := range s {
+		if !unicode.IsDigit(r) {
+			return false
+		}
+	}
+	return true
+}
+
+// Helper function to check if a string contains any digits
+func containsDigit(s string) bool {
+	for _, r := range s {
+		if unicode.IsDigit(r) {
+			return true
+		}
+	}
+	return false
+}
+
+// Helper function to convert string to integer (panics on error)
+func mustAtoi(s string) int {
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		panic(fmt.Sprintf("invalid integer conversion: %s", s))
+	}
+	return i
+}
+
+// Helper function to get a string pointer
 func getStringPointer(s string) *string {
 	if s == "" {
 		return nil
