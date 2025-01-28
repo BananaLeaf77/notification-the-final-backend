@@ -12,15 +12,6 @@ type notifHandler struct {
 	uc domain.NotificationUseCase
 }
 
-func NewNotificationHandler(app *fiber.App, uc domain.NotificationUseCase) {
-	handler := &notifHandler{
-		uc: uc,
-	}
-
-	group := app.Group("/notification")
-	group.Get("/truancy-history", handler.GetAllAttendanceNotificationHistory)
-}
-
 func NewNotificationHandlerDeploy(app *fiber.App, uc domain.NotificationUseCase) {
 	handler := &notifHandler{
 		uc: uc,

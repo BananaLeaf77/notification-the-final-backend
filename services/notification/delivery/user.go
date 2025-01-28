@@ -13,26 +13,6 @@ type uHandler struct {
 	uc domain.UserUseCase
 }
 
-func NewUserHandler(app *fiber.App, useCase domain.UserUseCase) {
-	handler := &uHandler{
-		uc: useCase,
-	}
-	group := app.Group("/user")
-	group.Post("/create-staff", handler.CreateStaff)
-	group.Get("/get-all", handler.GetAllStaff)
-	group.Delete("/rm/:id", handler.DeleteStaff)
-	group.Get("/details/:id", handler.GetStaffDetail)
-	group.Put("/modify/:id", handler.ModifyStaff)
-
-	group.Post("/add-subject", handler.CreateSubject)
-	group.Post("/add-subject-bulk", handler.CreateSubjectBulk)
-	group.Get("/subject/all", handler.GetAllSubject)
-	group.Put("/subject/modify/:id", handler.UpdateSubject)
-	group.Delete("/subject/rm/:id", handler.DeleteSubject)
-
-	group.Get("/show-student-testscores", handler.GetSubjectsForTeacher)
-}
-
 func NewUserHandlerDeploy(app *fiber.App, useCase domain.UserUseCase) {
 	handler := &uHandler{
 		uc: useCase,
@@ -48,7 +28,7 @@ func NewUserHandlerDeploy(app *fiber.App, useCase domain.UserUseCase) {
 	group.Post("/add-subject-bulk", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.CreateSubjectBulk)
 	group.Get("/subject/all", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetAllSubject)
 	group.Put("/subject/modify/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.UpdateSubject)
-	group.Delete("/subject/rm/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteSubject)
+	// group.Delete("/subject/rm/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteSubject)
 	group.Get("/show-user-assigned-subject", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetSubjectsForTeacher)
 	group.Post("/input-test-scores", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.InputTestScores)
 	group.Get("/profile-dashboard", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.ShowProfile)

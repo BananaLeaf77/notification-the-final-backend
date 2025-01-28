@@ -596,21 +596,21 @@ func (ur *userRepository) UpdateSubject(ctx context.Context, id int, newSubjectD
 }
 
 func (ur *userRepository) DeleteSubject(ctx context.Context, id int) error {
-	var subject domain.Subject
-	err := ur.db.WithContext(ctx).Where("subject_id = ? AND deleted_at IS NULL", id).First(&subject).Error
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return fmt.Errorf("subject not found")
-		}
-		return fmt.Errorf("could not get subject details: %v", err)
-	}
+	// var subject domain.Subject
+	// err := ur.db.WithContext(ctx).Where("subject_id = ? AND deleted_at IS NULL", id).First(&subject).Error
+	// if err != nil {
+	// 	if err == gorm.ErrRecordNotFound {
+	// 		return fmt.Errorf("subject not found")
+	// 	}
+	// 	return fmt.Errorf("could not get subject details: %v", err)
+	// }
 
-	now := time.Now()
-	subject.DeletedAt = &now
-	err = ur.db.WithContext(ctx).Save(&subject).Error
-	if err != nil {
-		return fmt.Errorf("could not delete subject: %v", err)
-	}
+	// now := time.Now()
+	// subject.DeletedAt = &now
+	// err = ur.db.WithContext(ctx).Save(&subject).Error
+	// if err != nil {
+	// 	return fmt.Errorf("could not delete subject: %v", err)
+	// }
 
 	return nil
 }

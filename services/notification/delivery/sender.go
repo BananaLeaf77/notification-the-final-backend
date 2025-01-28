@@ -12,15 +12,6 @@ type senderHandler struct {
 	suc domain.SenderUseCase
 }
 
-func NewSenderDelivery(app *fiber.App, uc domain.SenderUseCase) {
-	handler := &senderHandler{
-		suc: uc,
-	}
-
-	route := app.Group("/sender")
-	route.Post("/send-mass", handler.sendMassHandler)
-}
-
 func NewSenderDeliveryDeploy(app *fiber.App, uc domain.SenderUseCase) {
 	handler := &senderHandler{
 		suc: uc,

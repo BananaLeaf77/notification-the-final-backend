@@ -14,16 +14,6 @@ type studentHandler struct {
 	suc domain.StudentUseCase
 }
 
-func NewStudentDelivery(app *fiber.App, uc domain.StudentUseCase) {
-	handler := &studentHandler{
-		suc: uc,
-	}
-
-	route := app.Group("/student")
-	route.Get("/get-all", handler.deliveryGetAllStudent)
-	route.Get("/download_input_template", handler.deliveryDownloadTemplate)
-}
-
 func NewStudentDeliveryDeploy(app *fiber.App, uc domain.StudentUseCase) {
 	handler := &studentHandler{
 		suc: uc,

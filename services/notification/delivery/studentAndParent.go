@@ -25,19 +25,6 @@ type studentParentHandler struct {
 	uc domain.StudentParentUseCase
 }
 
-func NewStudentParentHandler(app *fiber.App, useCase domain.StudentParentUseCase) {
-	handler := &studentParentHandler{
-		uc: useCase,
-	}
-
-	route := app.Group("/student-and-parent")
-	route.Post("/insert", handler.CreateStudentAndParent)
-	route.Post("/import", handler.UploadAndImport)
-	route.Put("/modify/:id", handler.UpdateStudentAndParent)
-	route.Delete("/rm/:id", handler.DeleteStudentAndParent)
-	route.Get("/student/:id", handler.GetStudentDetailsByID)
-}
-
 func NewStudentParentHandlerDeploy(app *fiber.App, useCase domain.StudentParentUseCase) {
 	handler := &studentParentHandler{
 		uc: useCase,
