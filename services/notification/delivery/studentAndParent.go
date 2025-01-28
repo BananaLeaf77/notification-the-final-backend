@@ -442,6 +442,16 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 			continue
 		}
 
+		// Student Validation
+		row0 := row[0]
+		if row0 != nil || *row0 != ""{
+			nsnLength := len(row0)
+			if nsnLength > 10 {
+				errList = append(errList, fmt.Sprintf("row %d": ))
+			}
+		}
+		
+
 		// Check grade conversion
 		convertedGrade, err := strconv.Atoi(row[1])
 		if err != nil {

@@ -12,6 +12,8 @@ ngambil ta lagi di smstr 8 gpp kah?
 
 
 
+==============================DOKUMEN==============================
+survey pernyataan apakah sudah layak digunakan oleh orang yang boleh pakek sus
 
 revisi
 flowchart 4.3 
@@ -21,42 +23,22 @@ simpan proses kotak ne npelih
 4.4 flowchart
 garis sing dadi nyatu 
 
-asterik di optional field (ui)
+(perubahan varchar size check lagi)
 
-di siswa tamabh attribut nis
+==============================UI==============================
+-asterik di optional field (ui)
+-Ui filter berdasarkan kelas,
+-bahasa ssitem konsisten english
 
-Ui filter berdasarkan kelas,
+==============================BACKEND==============================
+-di siswa tamabh attribut nis
+-attribut guru sedikit karena ini sistem informasi notifikasi saja jadi fokusnya lain
+-penulisan mapel kode tambah attribut kode mapel
+-delete mapel gone / kinda kalo bisa jelasin boleh
+-bahasa ssitem konsisten english
 
-attribut guru sedikit karena ini sistem informasi notifikasi saja jadi fokusnya lain
+==============================DEMO (VISUALISASI)==============================
+-data siswa banyak sama guru (display)
 
-penulisan mapel kode tambah attribut jadi sing auto increment
-delete mapel gone / kinda kalo bisa jelasin boleh 
-
-data siswa banyak sama guru (display)
-
-bahasa ssitem konsisten english
-
-survey pernyataan apakah sudah layak digunakan oleh orang yang boleh pakek sus
 
 validasi sistem penulisan email
-
-
-validasi nisn nya cuy
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-validasi stud and parent
-student := nsn length, nsn duplicate, tel length,
-parent := tel length, email format, 
