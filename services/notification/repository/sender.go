@@ -44,20 +44,21 @@ func (m *senderRepository) createTestScoreEmail(individual domain.IndividualExam
 
 Dear Mrs. %s,
 We would like to inform you about the %s results for the following student:
+NSN: %s,
 Name: %s,
 Class: %s.
 Below are the details of the test results for several subjects:
-`, individual.Student.Parent.Name, examType, individual.Student.Name, fmt.Sprintf("%d%s", individual.Student.Grade, individual.Student.GradeLabel))
+`, individual.Student.Parent.Name, examType, individual.Student.NSN, individual.Student.Name, fmt.Sprintf("%d%s", individual.Student.Grade, individual.Student.GradeLabel))
 
 		// Add the subject and score details
 		for _, result := range individual.SubjectAndScoreResult {
 			subjectName := result.Subject.Name
-			score := "No Score Yet"
+			score := "No Score Yet | 0"
 			if result.Score != nil {
-				score = fmt.Sprintf("%.2f", *result.Score)
+				score = fmt.Sprintf("%.1f", *result.Score)
 			}
 
-			body += fmt.Sprintf("- Subject: %s | Score: %s\n", subjectName, score)
+			body += fmt.Sprintf("- Code (%s) | Subject: %s | Score: %s\n", result.Subject.SubjectCode, subjectName, score)
 		}
 
 		// Close the email with contact details
@@ -77,10 +78,11 @@ SINOAN Team`, m.schoolPhone)
 
 Dear Mr. %s,
 We would like to inform you about the %s results for the following student:
+NSN: %s,
 Name: %s,
 Class: %s.
 Below are the details of the test results for several subjects:
-`, individual.Student.Parent.Name, examType, individual.Student.Name, fmt.Sprintf("%d%s", individual.Student.Grade, individual.Student.GradeLabel))
+`, individual.Student.Parent.Name, examType, individual.Student.NSN, individual.Student.Name, fmt.Sprintf("%d%s", individual.Student.Grade, individual.Student.GradeLabel))
 
 		// Add the subject and score details
 		for _, result := range individual.SubjectAndScoreResult {
@@ -90,7 +92,7 @@ Below are the details of the test results for several subjects:
 				score = fmt.Sprintf("%.1f", *result.Score)
 			}
 
-			body += fmt.Sprintf("- Subject: %s | Score: %s\n", subjectName, score)
+			body += fmt.Sprintf("- Code (%s) | Subject: %s | Score: %s\n", result.Subject.SubjectCode, subjectName, score)
 		}
 
 		// Close the email with contact details
@@ -118,9 +120,7 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 
 	// Fetch all test scores with related data
 	err := m.db.WithContext(ctx).
-		Preload("Student", func(db *gorm.DB) *gorm.DB {
-			return db.Where("deleted_at IS NULL")
-		}).
+		Preload("Student").
 		Preload("Subject").
 		Preload("User", func(db *gorm.DB) *gorm.DB {
 			return db.Select("user_id", "username", "name", "role", "created_at", "updated_at", "deleted_at")
@@ -140,7 +140,7 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 	// Fetch all students associated with the test scores
 	err = m.db.WithContext(ctx).
 		Preload("Parent").
-		Where("student_id IN (?) AND deleted_at IS NULL", studentIDs).
+		Where("student_id IN (?)", studentIDs).
 		Find(&students).Error
 	if err != nil {
 		return fmt.Errorf("failed to fetch students: %w", err)
@@ -401,9 +401,9 @@ func (m *senderRepository) initTextWithSubject(payload *domain.StudentAndParent,
 	tNow := time.Now()
 
 	// Format the date and time
-	formattedDate := tNow.Format("02/01/2006")
-	hourOnly := tNow.Format("15")
-	hourAndMinute := tNow.Format("15:04")
+	formattedDate := tNow.Format("02/01/2006") // DD/MM/YYYY format
+	hourOnly := tNow.Format("15")              // 24-hour format
+	hourAndMinute := tNow.Format("15:04")      // HH:MM format
 
 	intHourOnly, err := strconv.Atoi(hourOnly)
 	if err != nil {
@@ -415,36 +415,48 @@ func (m *senderRepository) initTextWithSubject(payload *domain.StudentAndParent,
 		isAM = "PM"
 	}
 
-	subject := fmt.Sprintf("Pemberitahuan Ketidakhadiran %s pada %s %s, tanggal %s", payload.Student.Name, hourAndMinute, isAM, formattedDate)
+	subject := fmt.Sprintf("Notification of Absence for %s at %s %s on %s", payload.Student.Name, hourAndMinute, isAM, formattedDate)
 
 	if payload.Parent.Gender == "male" {
 		bodyMale := fmt.Sprintf(`
 SINOAN Service 🔔
 
-Kepada Yth. Bapak %s,
+Dear Mr. %s,
 
-Kami ingin memberitahukan bahwa anak Bapak, %s kelas %d%s tidak hadir di pelajaran "%s" pada tanggal %s pukul %s %s.
+We would like to inform you that your child,
 
-Alasan ketidakhadiran belum kami terima hingga saat ini. Kami berharap Bapak dapat memberikan konfirmasi atau informasi lebih lanjut mengenai kondisi anak Bapak.
+NSN: %s,
+Name: %s, 
+class %d%s 
 
-Jika terdapat pertanyaan atau memerlukan bantuan lebih lanjut, Bapak dapat menghubungi kami di %s.
+was absent from the lesson "%s" on %s at %s %s.
 
-Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Student.Name, payload.Student.Grade, payload.Student.GradeLabel, strings.ToUpper(subjectName), formattedDate, hourAndMinute, isAM, m.schoolPhone)
+We have not yet received any reason for the absence. We kindly ask you to provide confirmation or further information regarding your child's condition.
+
+If you have any questions or require further assistance, please feel free to contact us at %s.
+
+Thank you for your attention and cooperation.`, payload.Parent.Name, payload.Student.NSN, payload.Student.Name, payload.Student.Grade, payload.Student.GradeLabel, strings.ToUpper(subjectName), formattedDate, hourAndMinute, isAM, m.schoolPhone)
 
 		return &subject, &bodyMale, nil
 	} else {
 		bodyFemale := fmt.Sprintf(`
 SINOAN Service 🔔
 
-Kepada Yth. Ibu %s,
+Dear Mrs. %s,
 
-Kami ingin memberitahukan bahwa anak Ibu, %s kelas %d%s tidak hadir di pelajaran "%s" pada tanggal %s pukul %s %s.
+We would like to inform you that your child, 
 
-Alasan ketidakhadiran belum kami terima hingga saat ini. Kami berharap Ibu dapat memberikan konfirmasi atau informasi lebih lanjut mengenai kondisi anak Ibu.
+NSN: %s,
+Name: %s, 
+class %d%s 
 
-Jika terdapat pertanyaan atau memerlukan bantuan lebih lanjut, Ibu dapat menghubungi kami di %s.
+was absent from the lesson "%s" on %s at %s %s.
 
-Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Student.Name, payload.Student.Grade, payload.Student.GradeLabel, strings.ToUpper(subjectName), formattedDate, hourAndMinute, isAM, m.schoolPhone)
+We have not yet received any reason for the absence. We kindly ask you to provide confirmation or further information regarding your child's condition.
+
+If you have any questions or require further assistance, please feel free to contact us at %s.
+
+Thank you for your attention and cooperation.`, payload.Parent.Name, payload.Student.NSN, payload.Student.Name, payload.Student.Grade, payload.Student.GradeLabel, strings.ToUpper(subjectName), formattedDate, hourAndMinute, isAM, m.schoolPhone)
 		return &subject, &bodyFemale, nil
 	}
 }
