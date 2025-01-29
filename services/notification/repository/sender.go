@@ -48,7 +48,7 @@ NSN: %s,
 Name: %s,
 Class: %s.
 Below are the details of the test results for several subjects:
-`, individual.Student.Parent.Name, examType, individual.Student.NSN, individual.Student.Name, fmt.Sprintf("%d%s", individual.Student.Grade, individual.Student.GradeLabel))
+`, individual.Student.Parent.Name, examType, individual.Student.NSN, individual.Student.Name, fmt.Sprintf("%d %s", individual.Student.Grade, individual.Student.GradeLabel))
 
 		// Add the subject and score details
 		for _, result := range individual.SubjectAndScoreResult {
@@ -82,7 +82,7 @@ NSN: %s,
 Name: %s,
 Class: %s.
 Below are the details of the test results for several subjects:
-`, individual.Student.Parent.Name, examType, individual.Student.NSN, individual.Student.Name, fmt.Sprintf("%d%s", individual.Student.Grade, individual.Student.GradeLabel))
+`, individual.Student.Parent.Name, examType, individual.Student.NSN, individual.Student.Name, fmt.Sprintf("%d %s", individual.Student.Grade, individual.Student.GradeLabel))
 
 		// Add the subject and score details
 		for _, result := range individual.SubjectAndScoreResult {
@@ -427,7 +427,7 @@ We would like to inform you that your child,
 
 NSN: %s,
 Name: %s, 
-class %d%s 
+class %d %s 
 
 was absent from the lesson "%s" on %s at %s %s.
 
@@ -448,7 +448,7 @@ We would like to inform you that your child,
 
 NSN: %s,
 Name: %s, 
-class %d%s 
+class %d %s 
 
 was absent from the lesson "%s" on %s at %s %s.
 
