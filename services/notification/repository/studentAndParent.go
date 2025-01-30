@@ -114,7 +114,7 @@ func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[stri
 	}
 
 	if parentTelInStudent > 0 {
-		return nil, fmt.Errorf("parent with telephone %s already exist in student", comparedData.Telephone)
+		return nil, fmt.Errorf("parent telephone %s already exist in student", comparedData.Telephone)
 	}
 
 	// Check for an existing parent record with the same details
@@ -206,7 +206,7 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 	if err != nil {
 		errList = append(errList, fmt.Sprintf("Error checking for student telephone: %v", err))
 	} else if studentCountInParent > 0 {
-		errList = append(errList, fmt.Sprintf("Student with telephone %s already exists in parent", req.Student.Telephone))
+		errList = append(errList, fmt.Sprintf("Student telephone %s already exists in parent", req.Student.Telephone))
 	}
 
 	var studentCountNSN int64
@@ -250,7 +250,7 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 	}
 
 	if parentTelInStudent > 0 {
-		errList = append(errList, fmt.Sprintf("Parent with telephone %s already exist in student", req.Parent.Telephone))
+		errList = append(errList, fmt.Sprintf("Parent telephone %s already exist in student", req.Parent.Telephone))
 	}
 
 	// If errors exist, return immediately
@@ -388,7 +388,7 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 		err = spr.db.WithContext(ctx).Model(&domain.Parent{}).Where("telephone = ?", record.Student.Telephone).Count(&studentTelInParent).Error
 		if err == nil {
 			if studentTelInParent > 0 {
-				duplicateMessages = append(duplicateMessages, fmt.Sprintf("Parent with telephone %s already exist in student", record.Parent.Telephone))
+				duplicateMessages = append(duplicateMessages, fmt.Sprintf("Student with telephone %s already exist in parent", record.Parent.Telephone))
 				isDuplicate = true
 			}
 		}
@@ -560,7 +560,7 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 	if err != nil {
 		errList = append(errList, fmt.Sprintf("Error checking for student telephone: %v", err))
 	} else if studTelInParent > 0 {
-		errList = append(errList, fmt.Sprintf("Student with telephone %s already exists in parent", req.Student.Telephone))
+		errList = append(errList, fmt.Sprintf("Student telephone %s already exists in parent", req.Student.Telephone))
 	}
 
 	// ========================================PARENT=======================================================
@@ -571,7 +571,7 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 	}
 
 	if parentTelInStudent > 0 {
-		errList = append(errList, fmt.Sprintf("Parent with telephone %s already exist in student", req.Parent.Telephone))
+		errList = append(errList, fmt.Sprintf("Parent telephone %s already exist in student", req.Parent.Telephone))
 	}
 
 	if len(errList) > 0 {

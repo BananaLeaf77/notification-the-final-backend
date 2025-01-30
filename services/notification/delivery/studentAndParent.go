@@ -97,7 +97,7 @@ func (sph *studentParentHandler) ApproveDCR(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"success": true,
 			"message": msgs,
-		})
+		})	
 	}
 
 	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "ApproveDCR")
@@ -697,8 +697,7 @@ func (sph *studentParentHandler) UpdateStudentAndParent(c *fiber.Ctx) error {
 		})
 	}
 
-	if req.Student.Name == "" || req.Student.Grade == 0 || req.Student.GradeLabel == "" || req.Student.Gender == "" || req.Student.Telephone == "" || req.Parent.Name == "" || req.Parent.Telephone == "" || req.Parent.Gender == "" {
-		fmt.Println("masuk error or or")
+	if req.Student.NSN == "" || req.Student.Name == "" || req.Student.Grade == 0 || req.Student.GradeLabel == "" || req.Student.Gender == "" || req.Student.Telephone == "" || req.Parent.Name == "" || req.Parent.Telephone == "" || req.Parent.Gender == "" {
 		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "UpdateStudentAndParent")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
@@ -707,13 +706,17 @@ func (sph *studentParentHandler) UpdateStudentAndParent(c *fiber.Ctx) error {
 		})
 	}
 
+	var validatorResponse []string
 	_, err = govalidator.ValidateStruct(&req)
 	if err != nil {
 		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "UpdateStudentAndParent")
 		validationErrors := govalidator.ErrorsByField(err)
+		for i := range validationErrors {
+			validatorResponse = append(validatorResponse, validationErrors[i])
+		}
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
-			"error":   validationErrors,
+			"error":   validatorResponse,
 			"message": "Invalid request body",
 		})
 	}
@@ -730,6 +733,7 @@ func (sph *studentParentHandler) UpdateStudentAndParent(c *fiber.Ctx) error {
 	}
 
 	if allocated != nil {
+		fmt.Println("masuk allocated")
 		msgs := fmt.Sprintf("Student and Parent updated successfully, %s", *allocated)
 		config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "ApproveDCR")
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{

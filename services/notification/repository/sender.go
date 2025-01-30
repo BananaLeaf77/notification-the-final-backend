@@ -427,7 +427,7 @@ We would like to inform you that your child,
 
 NSN: %s,
 Name: %s, 
-class %d %s 
+Class: %d %s 
 
 was absent from the lesson "%s" on %s at %s %s.
 
@@ -448,7 +448,7 @@ We would like to inform you that your child,
 
 NSN: %s,
 Name: %s, 
-class %d %s 
+Class: %d %s 
 
 was absent from the lesson "%s" on %s at %s %s.
 
