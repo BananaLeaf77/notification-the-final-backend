@@ -97,7 +97,7 @@ func (sph *studentParentHandler) ApproveDCR(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"success": true,
 			"message": msgs,
-		})	
+		})
 	}
 
 	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "ApproveDCR")
@@ -426,12 +426,29 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 		}
 
 		// Validate Student Data
+		trimmedStudentNSN := strings.TrimSpace(row[0])
+		row[0] = trimmedStudentNSN
+
+		trimmedStudentGrade := strings.TrimSpace(row[2])
+		row[2] = trimmedStudentGrade
+
+		trimmedStudentGradeLabel := strings.TrimSpace(row[3])
+		row[3] = trimmedStudentGradeLabel
+
+		trimmedStudentTelephone := strings.TrimSpace(row[5])
+		row[5] = trimmedStudentTelephone
+
 		studentErrors := validateStudent(row[:6], i+2, gradeLabelRegex)
 		if len(studentErrors) > 0 {
 			errList = append(errList, studentErrors...)
 		}
 
 		// Validate Parent Data
+		trimmedParentTelephone := strings.TrimSpace(row[8])
+		row[8] = trimmedParentTelephone
+
+		trimmedEmail := strings.TrimSpace(row[9])
+		row[9] = trimmedEmail
 		parentErrors := validateParent(row[6:], i+2, emailRegex)
 		if len(parentErrors) > 0 {
 			errList = append(errList, parentErrors...)
@@ -587,7 +604,6 @@ func checkDuplicates(list []domain.StudentAndParent) []string {
 	var duplicateErrList []string
 	seenNames := make(map[string]int)             // Track seen student names
 	seenStudentTelephones := make(map[string]int) // Track seen student telephones
-	seenParentTelephones := make(map[string]int)  // Track seen parent telephones
 	seenNSNs := make(map[string]int)              // Track seen NSNs
 
 	for i, item := range list {
@@ -610,13 +626,6 @@ func checkDuplicates(list []domain.StudentAndParent) []string {
 			duplicateErrList = append(duplicateErrList, fmt.Sprintf("duplicate student telephone: %s found in rows %d and %d", item.Student.Telephone, j+2, i+2))
 		} else {
 			seenStudentTelephones[item.Student.Telephone] = i
-		}
-
-		// Check for duplicate parent telephones
-		if j, exists := seenParentTelephones[item.Parent.Telephone]; exists {
-			duplicateErrList = append(duplicateErrList, fmt.Sprintf("duplicate parent telephone: %s found in rows %d and %d", item.Parent.Telephone, j+2, i+2))
-		} else {
-			seenParentTelephones[item.Parent.Telephone] = i
 		}
 
 		// Check if student and parent have the same telephone number

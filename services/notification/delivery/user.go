@@ -1,6 +1,7 @@
 package delivery
 
 import (
+	"fmt"
 	"notification/config"
 	"notification/domain"
 	"notification/middleware"
@@ -378,6 +379,17 @@ func (uh *uHandler) UpdateSubject(c *fiber.Ctx) error {
 		config.PrintLogInfo(&userClaims.Username, fiber.StatusBadRequest, "UpdateSubject")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   err.Error(),
+			"success": false,
+			"message": "Failed to update subject",
+		})
+	}
+	fmt.Println(id)
+	config.PrintStruct(subject)
+
+	if subject.SubjectCode == "" || subject.Name == "" || subject.Grade == 0 {
+		config.PrintLogInfo(&userClaims.Username, fiber.StatusBadRequest, "UpdateSubject")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   "Field cannot be empty",
 			"success": false,
 			"message": "Failed to update subject",
 		})

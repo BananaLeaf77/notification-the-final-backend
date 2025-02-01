@@ -63,7 +63,6 @@ Below are the details of the test results for several subjects:
 
 		// Close the email with contact details
 		body += fmt.Sprintf(`
-
 If you have any questions or need further information, you can contact us at %s.
 
 Thank you for your attention and cooperation.
@@ -97,7 +96,6 @@ Below are the details of the test results for several subjects:
 
 		// Close the email with contact details
 		body += fmt.Sprintf(`
-
 If you have any questions or need further information, you can contact us at %s.
 
 Thank you for your attention and cooperation.
@@ -427,7 +425,7 @@ We would like to inform you that your child,
 
 NSN: %s,
 Name: %s, 
-Class: %d %s 
+Class: %d %s.
 
 was absent from the lesson "%s" on %s at %s %s.
 
@@ -448,7 +446,7 @@ We would like to inform you that your child,
 
 NSN: %s,
 Name: %s, 
-Class: %d %s 
+Class: %d %s.
 
 was absent from the lesson "%s" on %s at %s %s.
 

@@ -49,7 +49,7 @@ func (ur *userRepository) GetAllTestScoresBySubjectID(ctx context.Context, subje
 		Preload("User", func(db *gorm.DB) *gorm.DB {
 			return db.Select("user_id", "username", "name", "role", "created_at", "updated_at", "deleted_at")
 		}).
-		Where("subject_id = ?", subjectID).
+		Where("subject_id = ? AND deleted_at IS NULL", subjectID).
 		Find(&testScores).Error
 	if err != nil {
 		return nil, err
@@ -584,7 +584,7 @@ func (ur *userRepository) UpdateSubject(ctx context.Context, id int, newSubjectD
 	newSubjectData.UpdatedAt = time.Now()
 
 	var countSubjectCode int64
-	err := ur.db.WithContext(ctx).Where("subject_code = ? AND subject_id != ?", newSubjectData.SubjectCode, id).Count(&countSubjectCode).Error
+	err := ur.db.WithContext(ctx).Model(&domain.Subject{}).Where("subject_code = ? AND subject_id != ?", newSubjectData.SubjectCode, id).Count(&countSubjectCode).Error
 	if err != nil {
 		return fmt.Errorf("could not check subject code: %v", err)
 	}
@@ -594,7 +594,7 @@ func (ur *userRepository) UpdateSubject(ctx context.Context, id int, newSubjectD
 	}
 
 	var countSubjectName int64
-	err = ur.db.WithContext(ctx).Where("name = ? AND subject_id != ?", newSubjectData.Name, id).Count(&countSubjectName).Error
+	err = ur.db.WithContext(ctx).Model(&domain.Subject{}).Where("name = ? AND subject_id != ?", newSubjectData.Name, id).Count(&countSubjectName).Error
 	if err != nil {
 		return fmt.Errorf("could not check subject name: %v", err)
 	}

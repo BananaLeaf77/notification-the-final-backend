@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"unicode"
 
 	"gorm.io/gorm"
 )
@@ -181,6 +182,13 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 	if nsnLength > 10 {
 		errList = append(errList, "NSN length exceeds maximum length of 10")
 	}
+
+	// Validate Student Name
+	studNameDigit := containsDigit(req.Student.Name)
+	if studNameDigit {
+		errList = append(errList, "Student name should not contain numbers")
+	}
+
 	// Validate GradeLabel
 	match, _ := regexp.MatchString("^[A-Za-z]+$", req.Student.GradeLabel)
 	if !match {
@@ -226,6 +234,12 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 	}
 	// ========================================PARENT========================================================
 	// Normalize Parent email if provided
+
+	parentNameDigit := containsDigit(req.Parent.Name)
+	if parentNameDigit {
+		errList = append(errList, "Parent name should not contain numbers")
+	}
+
 	if req.Parent.Email != nil && *req.Parent.Email != "" {
 		emailLowered := strings.ToLower(strings.TrimSpace(*req.Parent.Email))
 		req.Parent.Email = &emailLowered
@@ -478,10 +492,25 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 	return nil, nil
 }
 
+// Helper function to check if a string contains any digits
+func containsDigit(s string) bool {
+	for _, r := range s {
+		if unicode.IsDigit(r) {
+			return true
+		}
+	}
+	return false
+}
+
 func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, id int, req *domain.StudentAndParent) (*string, *[]string) {
 	var student domain.Student
 	var errList []string
 	// ========================================STUDENT=======================================================
+	tf := containsDigit(req.Student.Name)
+	if tf {
+		errList = append(errList, "Student name should not contain numbers")
+	}
+
 	// Validate GradeLabel to only contain letters
 	match, _ := regexp.MatchString("^[A-Za-z]+$", req.Student.GradeLabel)
 	if !match {
@@ -496,6 +525,11 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 
 	// ========================================PARENT=======================================================
 	// Normalize email if provided
+	tf = containsDigit(req.Parent.Name)
+	if tf {
+		errList = append(errList, "Parent name should not contain numbers")
+	}
+
 	if req.Parent.Email != nil && *req.Parent.Email != "" {
 		emailLowered := strings.ToLower(strings.TrimSpace(*req.Parent.Email))
 		req.Parent.Email = &emailLowered
