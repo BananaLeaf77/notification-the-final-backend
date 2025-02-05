@@ -40,17 +40,14 @@ garis sing dadi nyatu
 ==============================DEMO (VISUALISASI)==============================
 -data siswa banyak sama guru (display)
 
-
-
-
-
-
-
 ------------------------------------------
 sender fix bahasa inggris
 subject insert misi kode subject
 
 
+
+duplicate parent benyah
+sorting dari angka 1- big filter
 
 
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"notification/config"
 	"notification/domain"
 	"regexp"
 	"strings"
@@ -100,6 +101,8 @@ func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[stri
 
 	// Always update the timestamp
 	comparedData.UpdatedAt = tNow
+
+	config.PrintStruct(comparedData)
 
 	// Check if parent is associated with any students
 	err = tx.Where("parent_id = ?", Parent.ParentID).Find(&AssociatedStudent).Error
@@ -233,14 +236,17 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 		errList = append(errList, fmt.Sprintf("Student with name %s already exists", req.Student.Name))
 	}
 	// ========================================PARENT========================================================
-	// Normalize Parent email if provided
-
 	parentNameDigit := containsDigit(req.Parent.Name)
 	if parentNameDigit {
 		errList = append(errList, "Parent name should not contain numbers")
 	}
 
-	if req.Parent.Email != nil && *req.Parent.Email != "" {
+	// Convert empty string email to nil
+	if req.Parent.Email != nil && *req.Parent.Email == "" {
+		req.Parent.Email = nil
+	}
+
+	if req.Parent.Email != nil {
 		emailLowered := strings.ToLower(strings.TrimSpace(*req.Parent.Email))
 		req.Parent.Email = &emailLowered
 
@@ -251,6 +257,7 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 			errList = append(errList, fmt.Sprintf("Invalid email format for parent: %s", *req.Parent.Email))
 		}
 	}
+
 	// Validate parent telephone length
 	parTelLength := len(req.Parent.Telephone)
 	if parTelLength > 13 {
@@ -530,7 +537,17 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 		errList = append(errList, "Parent name should not contain numbers")
 	}
 
-	if req.Parent.Email != nil && *req.Parent.Email != "" {
+	// Convert empty string email to nil
+	if req.Parent.Email != nil && *req.Parent.Email == "" {
+		fmt.Println("Email is empty")
+		fmt.Println(req.Parent.Email)
+		req.Parent.Email = nil
+	}
+
+	if req.Parent.Email != nil {
+		fmt.Println("Email is not empty")
+		fmt.Println(req.Parent.Email)
+
 		emailLowered := strings.ToLower(strings.TrimSpace(*req.Parent.Email))
 		req.Parent.Email = &emailLowered
 
@@ -660,8 +677,10 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 	if req.Parent.Telephone != "" && req.Parent.Telephone != student.Parent.Telephone {
 		updatedParentFields["telephone"] = req.Parent.Telephone
 	}
-	if req.Parent.Email != nil && (student.Parent.Email == nil || *req.Parent.Email != *student.Parent.Email) {
-		updatedParentFields["email"] = *req.Parent.Email
+	if (req.Parent.Email == nil && student.Parent.Email != nil) ||
+		(req.Parent.Email != nil && student.Parent.Email == nil) ||
+		(req.Parent.Email != nil && student.Parent.Email != nil && *req.Parent.Email != *student.Parent.Email) {
+		updatedParentFields["email"] = req.Parent.Email
 	}
 	if len(updatedParentFields) > 0 {
 		updatedParentFields["updated_at"] = now
@@ -1034,7 +1053,7 @@ func (spr *studentParentRepository) DeleteDCR(ctx context.Context, dcrID int) er
 func (spr *studentParentRepository) GetAllDataChangeRequest(ctx context.Context) (*[]domain.DataChangeRequest, error) {
 	var req []domain.DataChangeRequest
 
-	if err := spr.db.WithContext(ctx).Where("is_reviewed IS FALSE").Find(&req).Error; err != nil {
+	if err := spr.db.WithContext(ctx).Where("is_reviewed IS FALSE AND deleted_at IS NULL").Find(&req).Error; err != nil {
 		return nil, fmt.Errorf("could not get all data change request : %v", err)
 	}
 

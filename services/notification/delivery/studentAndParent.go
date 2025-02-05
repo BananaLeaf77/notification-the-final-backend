@@ -253,7 +253,7 @@ func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
 		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "CreateStudentAndParent")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
-			"error":   err.Error(),
+			"error":   []string{"Invalid request body: %v", err.Error()},
 			"message": "Invalid request body",
 		})
 	}
@@ -263,7 +263,7 @@ func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
 		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "CreateStudentAndParent")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
-			"error":   err.Error(),
+			"error":   []string{"Invalid request body: %v", err.Error()},
 			"message": "Invalid Student request body",
 		})
 	}
@@ -272,7 +272,7 @@ func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
 		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "CreateStudentAndParent")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
-			"error":   "Invalid Grade Label",
+			"error":   []string{"Invalid Grade Label: Grade Label is required"},
 			"message": "Invalid Student request body",
 		})
 	}
@@ -282,18 +282,9 @@ func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
 		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "CreateStudentAndParent")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
-			"error":   err.Error(),
+			"error":   []string{"Invalid request body: %v", err.Error()},
 			"message": "Invalid Parent request body",
 		})
-	}
-
-	if req.Parent.Email != nil {
-		trimmedEmail := strings.TrimSpace(*req.Parent.Email)
-		if trimmedEmail == "" {
-			req.Parent.Email = nil
-		} else {
-			req.Parent.Email = &trimmedEmail
-		}
 	}
 
 	allocated, errList := sph.uc.CreateStudentAndParentUC(c.Context(), &req)
@@ -692,7 +683,7 @@ func (sph *studentParentHandler) UpdateStudentAndParent(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"message": "Invalid ID",
-			"error":   err.Error(),
+			"error":   []string{"Invalid request body: %v", err.Error()},
 		})
 	}
 
@@ -701,7 +692,7 @@ func (sph *studentParentHandler) UpdateStudentAndParent(c *fiber.Ctx) error {
 		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "UpdateStudentAndParent")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
-			"error":   err.Error(),
+			"error":   []string{"Invalid request body: %v", err.Error()},
 			"message": "Invalid request body",
 		})
 	}
