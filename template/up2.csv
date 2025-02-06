@@ -1,7 +1,6 @@
 nsn,student_name,grade,grade_label,student_gender,student_telephone,parent_name,parent_gender,parent_telephone,parent_email
 0076762786,John The Example,7,A,male,08111111111,Jessica The Example,female,088732173132,parentemail@example.com
 0078972612,Jane The Example,7,B,female,08222222222,Alexander The Example,male,0895412377187,
-0078972614,Jokowi The Example,7,C,female,08333333333,Gibran The Example,male,089529539993,nigga@gmail.com
 1000000001,Emma Johnson,7,A,female,081234567890,Michael Johnson,male,08911112222,
 1000000002,Liam Brown,7,B,male,081234567891,Sophia Brown,female,08911112223,
 1000000003,Olivia Davis,7,C,female,081234567892,James Davis,male,08911112224,
