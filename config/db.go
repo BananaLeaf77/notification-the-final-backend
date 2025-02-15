@@ -41,13 +41,12 @@ func BootDB() (*gorm.DB, error) {
 }
 
 func autoMigrate(db *gorm.DB) error {
-	// Create ENUM type for gender if not exists
+	// Pastikan ENUM sudah dibuat sebelum digunakan
 	if err := db.Exec(`DO $$ BEGIN
 		IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'gender_enum') THEN
 			CREATE TYPE gender_enum AS ENUM ('male', 'female');
 		END IF;
 	END $$`).Error; err != nil {
-		fmt.Printf("Error creating gender ENUM type: %v\n", err)
 		return fmt.Errorf("failed to create gender ENUM: %w", err)
 	}
 
@@ -56,24 +55,26 @@ func autoMigrate(db *gorm.DB) error {
 			CREATE TYPE role_enum AS ENUM ('admin', 'staff');
 		END IF;
 	END $$`).Error; err != nil {
-		fmt.Printf("Error creating role ENUM type: %v\n", err)
 		return fmt.Errorf("failed to create role ENUM: %w", err)
 	}
 
-	theParent := domain.Parent{}
-	theStudent := domain.Student{}
-	theUser := domain.User{}
-	theNotificationHistory := domain.AttendanceNotificationHistory{}
-	theDataChangeRequest := domain.DataChangeRequest{}
-	theSubject := domain.Subject{}
-	theTestScore := domain.TestScore{}
-
-	if err := db.AutoMigrate(&theParent, &theStudent, &theSubject, &theTestScore, &theUser, &theDataChangeRequest); err != nil {
-		return fmt.Errorf("failed to run initial migrations: %w", err)
+	// Migrasi tabel yang tidak memiliki foreign key lebih dulu
+	if err := db.AutoMigrate(
+		&domain.Parent{},
+		&domain.Student{},
+		&domain.User{},
+		&domain.Subject{},
+	); err != nil {
+		return fmt.Errorf("failed to migrate base tables: %w", err)
 	}
 
-	if err := db.AutoMigrate(&theNotificationHistory); err != nil {
-		return fmt.Errorf("failed to run notification history migration: %w", err)
+	// Migrasi tabel yang memiliki foreign key
+	if err := db.AutoMigrate(
+		&domain.TestScore{},
+		&domain.AttendanceNotificationHistory{},
+		&domain.ParentDataChangeRequest{},
+	); err != nil {
+		return fmt.Errorf("failed to migrate relational tables: %w", err)
 	}
 
 	var existingAdmin domain.User

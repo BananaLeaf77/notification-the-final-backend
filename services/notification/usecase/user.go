@@ -60,8 +60,8 @@ func (u *userUC) DeleteStaff(ctx context.Context, id int) error {
 	return nil
 }
 
-func (u *userUC) UpdateStaff(ctx context.Context, id int, payload *domain.User, subjectIDs []int) error {
-	err := u.userRepo.UpdateStaff(ctx, id, payload, subjectIDs)
+func (u *userUC) UpdateStaff(ctx context.Context, id int, payload *domain.User, subjectCodes []string) error {
+	err := u.userRepo.UpdateStaff(ctx, id, payload, subjectCodes)
 	if err != nil {
 		return err
 	}
@@ -105,8 +105,8 @@ func (u *userUC) GetAllSubject(ctx context.Context, userID int) (*[]domain.Subje
 	return v, nil
 }
 
-func (u *userUC) UpdateSubject(ctx context.Context, id int, newSubjectData *domain.Subject) error {
-	err := u.userRepo.UpdateSubject(ctx, id, newSubjectData)
+func (u *userUC) UpdateSubject(ctx context.Context, subjectCode string, newSubjectData *domain.Subject) error {
+	err := u.userRepo.UpdateSubject(ctx, subjectCode, newSubjectData)
 	if err != nil {
 		return err
 	}
@@ -114,14 +114,14 @@ func (u *userUC) UpdateSubject(ctx context.Context, id int, newSubjectData *doma
 	return nil
 }
 
-func (u *userUC) DeleteSubject(ctx context.Context, id int) error {
-	err := u.userRepo.DeleteSubject(ctx, id)
-	if err != nil {
-		return err
-	}
+// func (u *userUC) DeleteSubject(ctx context.Context, id int) error {
+// 	err := u.userRepo.DeleteSubject(ctx, id)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 func (u *userUC) GetSubjectsForTeacher(ctx context.Context, userID int) (*domain.SafeStaffData, error) {
 	v, err := u.userRepo.GetSubjectsForTeacher(ctx, userID)
@@ -150,8 +150,8 @@ func (u *userUC) DeleteStaffMass(ctx context.Context, ids *[]int) error {
 	return nil
 }
 
-func (u *userUC) GetSubjectDetail(ctx context.Context, subjectID int) (*domain.Subject, error) {
-	v, err := u.userRepo.GetSubjectDetail(ctx, subjectID)
+func (u *userUC) GetSubjectDetail(ctx context.Context, subjectCode string) (*domain.Subject, error) {
+	v, err := u.userRepo.GetSubjectDetail(ctx, subjectCode)
 	if err != nil {
 		return nil, err
 	}
@@ -159,14 +159,14 @@ func (u *userUC) GetSubjectDetail(ctx context.Context, subjectID int) (*domain.S
 	return v, nil
 }
 
-func (u *userUC) DeleteSubjectMass(ctx context.Context, ids *[]int) error {
-	err := u.userRepo.DeleteSubjectMass(ctx, ids)
-	if err != nil {
-		return err
-	}
+// func (u *userUC) DeleteSubjectMass(ctx context.Context, ids *[]int) error {
+// 	err := u.userRepo.DeleteSubjectMass(ctx, ids)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 func (u *userUC) GetAllTestScores(ctx context.Context) (*[]domain.TestScore, error) {
 	v, err := u.userRepo.GetAllTestScores(ctx)
@@ -177,8 +177,8 @@ func (u *userUC) GetAllTestScores(ctx context.Context) (*[]domain.TestScore, err
 	return v, nil
 }
 
-func (u *userUC) GetAllTestScoresBySubjectID(ctx context.Context, subjectID int) (*[]domain.TestScore, error) {
-	v, err := u.userRepo.GetAllTestScoresBySubjectID(ctx, subjectID)
+func (u *userUC) GetAllTestScoresBySubjectID(ctx context.Context, subjectCode string) (*[]domain.TestScore, error) {
+	v, err := u.userRepo.GetAllTestScoresBySubjectID(ctx, subjectCode)
 	if err != nil {
 		return nil, err
 	}

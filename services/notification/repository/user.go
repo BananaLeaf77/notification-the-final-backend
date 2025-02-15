@@ -24,14 +24,14 @@ func NewUserRepository(database *gorm.DB) domain.UserRepo {
 	}
 }
 
-func (ur *userRepository) GetAllTestScoresBySubjectID(ctx context.Context, subjectID int) (*[]domain.TestScore, error) {
+func (ur *userRepository) GetAllTestScoresBySubjectID(ctx context.Context, subjectCode string) (*[]domain.TestScore, error) {
 	// Get the subject first
 	var subject domain.Subject
 	var testScores []domain.TestScore
 	var students []domain.Student
 
 	// Fetch the subject
-	err := ur.db.WithContext(ctx).Where("subject_id = ?", subjectID).First(&subject).Error
+	err := ur.db.WithContext(ctx).Where("subject_code = ?", subjectCode).First(&subject).Error
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (ur *userRepository) GetAllTestScoresBySubjectID(ctx context.Context, subje
 		Preload("User", func(db *gorm.DB) *gorm.DB {
 			return db.Select("user_id", "username", "name", "role", "created_at", "updated_at", "deleted_at")
 		}).
-		Where("subject_id = ? AND deleted_at IS NULL", subjectID).
+		Where("subject_code = ? AND deleted_at IS NULL", subjectCode).
 		Find(&testScores).Error
 	if err != nil {
 		return nil, err
@@ -61,7 +61,7 @@ func (ur *userRepository) GetAllTestScoresBySubjectID(ctx context.Context, subje
 		// Check if the associated student is active
 		var student domain.Student
 		studentCheckErr := ur.db.WithContext(ctx).
-			Where("student_id = ?", testScore.StudentID).
+			Where("student_nsn = ?", testScore.StudentNSN).
 			First(&student).Error
 
 		// Include the test score only if the student is active
@@ -71,18 +71,18 @@ func (ur *userRepository) GetAllTestScoresBySubjectID(ctx context.Context, subje
 	}
 
 	// Create a map of students with valid test scores
-	validStudentIDs := make(map[int]struct{})
+	validStudentIDs := make(map[string]struct{})
 	for _, testScore := range validTestScores {
-		validStudentIDs[testScore.StudentID] = struct{}{}
+		validStudentIDs[testScore.StudentNSN] = struct{}{}
 	}
 
 	// Add students without test scores if they are active
 	for _, student := range students {
-		if _, exists := validStudentIDs[student.StudentID]; !exists {
+		if _, exists := validStudentIDs[student.StudentNSN]; !exists {
 			validTestScores = append(validTestScores, domain.TestScore{
-				StudentID: student.StudentID,
-				Student:   student,
-				Score:     floatPointer(0), // Set Score to 0
+				StudentNSN: student.StudentNSN,
+				Student:    student,
+				Score:      floatPointer(0), // Set Score to 0
 			})
 		}
 	}
@@ -127,34 +127,34 @@ func (r *userRepository) InputTestScores(ctx context.Context, teacherID int, tes
 	}
 
 	var subject domain.Subject
-	if err := tx.Where("subject_id = ?", testScores.SubjectID).First(&subject).Error; err != nil {
+	if err := tx.Where("subject_code = ?", testScores.SubjectCode).First(&subject).Error; err != nil {
 		tx.Rollback()
-		return fmt.Errorf("subject ID %d does not exist", testScores.SubjectID)
+		return fmt.Errorf("subject code %s does not exist", testScores.SubjectCode)
 	}
 
 	for _, individual := range testScores.StudentTestScore {
 		var student domain.Student
-		if err := tx.Where("student_id = ?", individual.StudentID).First(&student).Error; err != nil {
+		if err := tx.Where("student_nsn = ?", individual.StudentNSN).First(&student).Error; err != nil {
 			tx.Rollback()
-			return fmt.Errorf("student ID %d does not exist", individual.StudentID)
+			return fmt.Errorf("student NSN %s does not exist", individual.StudentNSN)
 		}
 
 		// Authorization check for non-admin users
 		if userDetail.Role != "admin" {
 			var count int64
 			err := tx.Table("user_subjects").
-				Where("user_user_id = ? AND subject_subject_id = ?", teacherID, testScores.SubjectID).
+				Where("user_user_id = ? AND subject_subject_code = ?", teacherID, testScores.SubjectCode).
 				Count(&count).Error
 
 			if err != nil || count == 0 {
 				tx.Rollback()
-				return fmt.Errorf("user is not authorized to input scores for subject ID %d", testScores.SubjectID)
+				return fmt.Errorf("user is not authorized to input scores for subject code %s", testScores.SubjectCode)
 			}
 		}
 
 		// Check if a test individual already exists for this student and subject (ignore teacher)
 		var existingScore domain.TestScore
-		err := tx.Where("student_id = ? AND subject_id = ?", individual.StudentID, testScores.SubjectID).
+		err := tx.Where("student_nsn = ? AND subject_code = ?", individual.StudentNSN, testScores.SubjectCode).
 			First(&existingScore).Error
 
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -173,10 +173,10 @@ func (r *userRepository) InputTestScores(ctx context.Context, teacherID int, tes
 		} else {
 			// Create a new test individual record
 			newScore := domain.TestScore{
-				StudentID: individual.StudentID,
-				SubjectID: testScores.SubjectID,
-				UserID:    teacherID,
-				Score:     individual.TestScore,
+				StudentNSN:  individual.StudentNSN,
+				SubjectCode: testScores.SubjectCode,
+				UserID:      teacherID,
+				Score:       individual.TestScore,
 			}
 			config.PrintStruct(newScore)
 			if err := tx.Create(&newScore).Error; err != nil {
@@ -328,7 +328,7 @@ func (ur *userRepository) DeleteStaff(ctx context.Context, id int) error {
 	return nil
 }
 
-func (ur *userRepository) UpdateStaff(ctx context.Context, id int, payload *domain.User, subjectIDs []int) error {
+func (ur *userRepository) UpdateStaff(ctx context.Context, id int, payload *domain.User, subjectCodes []string) error {
 	usernameLowered := strings.ToLower(payload.Username)
 	var foundUser domain.User
 	err := ur.db.WithContext(ctx).Where("user_id = ? AND deleted_at IS NULL", id).First(&foundUser).Error
@@ -381,7 +381,7 @@ func (ur *userRepository) UpdateStaff(ctx context.Context, id int, payload *doma
 		return fmt.Errorf("could not update staff: %v", err)
 	}
 
-	if len(subjectIDs) > 0 {
+	if len(subjectCodes) > 0 {
 		var user domain.User
 		if err := ur.db.WithContext(ctx).First(&user, id).Error; err != nil {
 			return fmt.Errorf("could not find user: %v", err)
@@ -393,7 +393,7 @@ func (ur *userRepository) UpdateStaff(ctx context.Context, id int, payload *doma
 
 		var subjects []domain.Subject
 
-		if err := ur.db.WithContext(ctx).Where("subject_id IN ?", subjectIDs).Find(&subjects).Error; err != nil {
+		if err := ur.db.WithContext(ctx).Where("subject_code IN ?", subjectCodes).Find(&subjects).Error; err != nil {
 			return fmt.Errorf("could not find new subjects: %v", err)
 		}
 
@@ -511,9 +511,9 @@ func (ur *userRepository) CreateSubject(ctx context.Context, subject *domain.Sub
 	return nil
 }
 
-func (ur *userRepository) GetSubjectDetail(ctx context.Context, id int) (*domain.Subject, error) {
+func (ur *userRepository) GetSubjectDetail(ctx context.Context, subjectCode string) (*domain.Subject, error) {
 	var subject domain.Subject
-	err := ur.db.WithContext(ctx).Where("subject_id = ?", id).First(&subject).Error
+	err := ur.db.WithContext(ctx).Where("subject_code = ?", subjectCode).First(&subject).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("subject not found")
@@ -580,11 +580,11 @@ func (ur *userRepository) GetAllSubject(ctx context.Context, userID int) (*[]dom
 	return &subjects, nil
 }
 
-func (ur *userRepository) UpdateSubject(ctx context.Context, id int, newSubjectData *domain.Subject) error {
+func (ur *userRepository) UpdateSubject(ctx context.Context, subjectCode string, newSubjectData *domain.Subject) error {
 	newSubjectData.UpdatedAt = time.Now()
 
 	var countSubjectCode int64
-	err := ur.db.WithContext(ctx).Model(&domain.Subject{}).Where("subject_code = ? AND subject_id != ?", newSubjectData.SubjectCode, id).Count(&countSubjectCode).Error
+	err := ur.db.WithContext(ctx).Model(&domain.Subject{}).Where("subject_code = ? AND subject_code != ?", newSubjectData.SubjectCode, subjectCode).Count(&countSubjectCode).Error
 	if err != nil {
 		return fmt.Errorf("could not check subject code: %v", err)
 	}
@@ -594,7 +594,7 @@ func (ur *userRepository) UpdateSubject(ctx context.Context, id int, newSubjectD
 	}
 
 	var countSubjectName int64
-	err = ur.db.WithContext(ctx).Model(&domain.Subject{}).Where("name = ? AND subject_id != ?", newSubjectData.Name, id).Count(&countSubjectName).Error
+	err = ur.db.WithContext(ctx).Model(&domain.Subject{}).Where("name = ? AND subject_code != ?", newSubjectData.Name, subjectCode).Count(&countSubjectName).Error
 	if err != nil {
 		return fmt.Errorf("could not check subject name: %v", err)
 	}
@@ -604,7 +604,7 @@ func (ur *userRepository) UpdateSubject(ctx context.Context, id int, newSubjectD
 	}
 
 	err = ur.db.WithContext(ctx).Model(&domain.Subject{}).
-		Where("subject_id = ?", id).
+		Where("subject_code = ?", subjectCode).
 		Updates(&newSubjectData).Error
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
@@ -619,7 +619,7 @@ func (ur *userRepository) UpdateSubject(ctx context.Context, id int, newSubjectD
 
 func (ur *userRepository) DeleteSubject(ctx context.Context, id int) error {
 	// var subject domain.Subject
-	// err := ur.db.WithContext(ctx).Where("subject_id = ? AND deleted_at IS NULL", id).First(&subject).Error
+	// err := ur.db.WithContext(ctx).Where("subject_code = ? AND deleted_at IS NULL", id).First(&subject).Error
 	// if err != nil {
 	// 	if err == gorm.ErrRecordNotFound {
 	// 		return fmt.Errorf("subject not found")
@@ -640,7 +640,7 @@ func (ur *userRepository) DeleteSubject(ctx context.Context, id int) error {
 func (ur *userRepository) DeleteSubjectMass(ctx context.Context, ids *[]int) error {
 	// var subjects []domain.Subject
 	// err := ur.db.WithContext(ctx).
-	// 	Where("subject_id IN (?) AND deleted_at IS NULL", *ids).
+	// 	Where("subject_code IN (?) AND deleted_at IS NULL", *ids).
 	// 	Find(&subjects).Error
 	// if err != nil {
 	// 	return fmt.Errorf("could not retrieve subject details: %v", err)
@@ -653,7 +653,7 @@ func (ur *userRepository) DeleteSubjectMass(ctx context.Context, ids *[]int) err
 	// now := time.Now()
 	// err = ur.db.WithContext(ctx).
 	// 	Model(&domain.Subject{}).
-	// 	Where("subject_id IN (?)", *ids).
+	// 	Where("subject_code IN (?)", *ids).
 	// 	Update("deleted_at", now).Error
 	// if err != nil {
 	// 	return fmt.Errorf("could not delete subjects: %v", err)

@@ -31,7 +31,7 @@ type UserRepo interface {
 	GetAllStaff(ctx context.Context) (*[]SafeStaffData, error)
 	GetStaffDetail(ctx context.Context, id int) (*SafeStaffData, error)
 	FindUserByUsername(ctx context.Context, username string) (*User, error)
-	UpdateStaff(ctx context.Context, id int, payload *User, subjectIDs []int) error
+	UpdateStaff(ctx context.Context, id int, payload *User, subjectCodes []string) error
 	CreateStaff(ctx context.Context, payload *User) (*User, error)
 	DeleteStaff(ctx context.Context, id int) error
 	DeleteStaffMass(ctx context.Context, ids *[]int) error
@@ -40,16 +40,16 @@ type UserRepo interface {
 	CreateSubject(ctx context.Context, subject *Subject) error
 	CreateSubjectBulk(ctx context.Context, subjects *[]Subject) (*[]string, error)
 	GetAllSubject(ctx context.Context, userID int) (*[]Subject, error)
-	UpdateSubject(ctx context.Context, id int, newSubjectData *Subject) error
-	DeleteSubject(ctx context.Context, id int) error
-	DeleteSubjectMass(ctx context.Context, ids *[]int) error
+	UpdateSubject(ctx context.Context, subjectCode string, newSubjectData *Subject) error
+	// DeleteSubject(ctx context.Context, id int) error
+	// DeleteSubjectMass(ctx context.Context, ids *[]int) error
 	GetSubjectsForTeacher(ctx context.Context, userID int) (*SafeStaffData, error)
-	GetSubjectDetail(ctx context.Context, subjectID int) (*Subject, error)
+	GetSubjectDetail(ctx context.Context, subjectCode string) (*Subject, error)
 
 	// TestScore
 	InputTestScores(ctx context.Context, teacherID int, testScores *InputTestScorePayload) error
 	GetAllTestScores(ctx context.Context) (*[]TestScore, error)
-	GetAllTestScoresBySubjectID(ctx context.Context, subjectID int) (*[]TestScore, error)
+	GetAllTestScoresBySubjectID(ctx context.Context, subjectCode string) (*[]TestScore, error)
 }
 
 type UserUseCase interface {
@@ -60,7 +60,7 @@ type UserUseCase interface {
 	GetAllStaff(ctx context.Context) (*[]SafeStaffData, error)
 	GetStaffDetail(ctx context.Context, id int) (*SafeStaffData, error)
 	FindUserByUsername(ctx context.Context, username string) (*User, error)
-	UpdateStaff(ctx context.Context, id int, payload *User, subjectIDs []int) error
+	UpdateStaff(ctx context.Context, id int, payload *User, subjectCodes []string) error
 	CreateStaff(ctx context.Context, payload *User) (*User, error)
 	DeleteStaff(ctx context.Context, id int) error
 	DeleteStaffMass(ctx context.Context, ids *[]int) error
@@ -69,14 +69,14 @@ type UserUseCase interface {
 	CreateSubject(ctx context.Context, subject *Subject) error
 	CreateSubjectBulk(ctx context.Context, subjects *[]Subject) (*[]string, error)
 	GetAllSubject(ctx context.Context, userID int) (*[]Subject, error)
-	UpdateSubject(ctx context.Context, id int, newSubjectData *Subject) error
-	DeleteSubject(ctx context.Context, id int) error
-	DeleteSubjectMass(ctx context.Context, ids *[]int) error
+	UpdateSubject(ctx context.Context, subjectCode string, newSubjectData *Subject) error
+	// DeleteSubject(ctx context.Context, id int) error
+	// DeleteSubjectMass(ctx context.Context, ids *[]int) error
 	GetSubjectsForTeacher(ctx context.Context, userID int) (*SafeStaffData, error)
-	GetSubjectDetail(ctx context.Context, subjectID int) (*Subject, error)
+	GetSubjectDetail(ctx context.Context, subjectCode string) (*Subject, error)
 
 	// TestScore
 	InputTestScores(ctx context.Context, teacherID int, testScores *InputTestScorePayload) error
 	GetAllTestScores(ctx context.Context) (*[]TestScore, error)
-	GetAllTestScoresBySubjectID(ctx context.Context, subjectID int) (*[]TestScore, error)
+	GetAllTestScoresBySubjectID(ctx context.Context, subjectCode string) (*[]TestScore, error)
 }

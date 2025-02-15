@@ -44,11 +44,11 @@ func (m *senderRepository) createTestScoreEmail(individual domain.IndividualExam
 
 Dear Mrs. %s,
 We would like to inform you about the %s results for the following student:
-NSN: %s,
+StudentNSN: %s,
 Name: %s,
 Class: %s.
 Below are the details of the test results for several subjects:
-`, individual.Student.Parent.Name, examType, individual.Student.NSN, individual.Student.Name, fmt.Sprintf("%d %s", individual.Student.Grade, individual.Student.GradeLabel))
+`, individual.Student.Parent.Name, examType, individual.Student.StudentNSN, individual.Student.Name, fmt.Sprintf("%d %s", individual.Student.Grade, individual.Student.GradeLabel))
 
 		// Add the subject and score details
 		for _, result := range individual.SubjectAndScoreResult {
@@ -77,11 +77,11 @@ SINOAN Team`, m.schoolPhone)
 
 Dear Mr. %s,
 We would like to inform you about the %s results for the following student:
-NSN: %s,
+StudentNSN: %s,
 Name: %s,
 Class: %s.
 Below are the details of the test results for several subjects:
-`, individual.Student.Parent.Name, examType, individual.Student.NSN, individual.Student.Name, fmt.Sprintf("%d %s", individual.Student.Grade, individual.Student.GradeLabel))
+`, individual.Student.Parent.Name, examType, individual.Student.StudentNSN, individual.Student.Name, fmt.Sprintf("%d %s", individual.Student.Grade, individual.Student.GradeLabel))
 
 		// Add the subject and score details
 		for _, result := range individual.SubjectAndScoreResult {
@@ -113,7 +113,7 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 	var testScores []domain.TestScore
 	var students []domain.Student
 	var results []domain.IndividualExamScore
-	studentMap := make(map[int]domain.Student)
+	studentMap := make(map[string]domain.Student)
 	tNow := time.Now()
 
 	// Fetch all test scores with related data
@@ -130,15 +130,15 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 	}
 
 	// Extract student IDs from test scores
-	studentIDs := make([]int, 0, len(testScores))
+	studentIDs := make([]string, 0, len(testScores))
 	for _, score := range testScores {
-		studentIDs = append(studentIDs, score.StudentID)
+		studentIDs = append(studentIDs, score.StudentNSN)
 	}
 
 	// Fetch all students associated with the test scores
 	err = m.db.WithContext(ctx).
 		Preload("Parent").
-		Where("student_id IN (?)", studentIDs).
+		Where("student_nsn IN (?)", studentIDs).
 		Find(&students).Error
 	if err != nil {
 		return fmt.Errorf("failed to fetch students: %w", err)
@@ -146,12 +146,12 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 
 	// Build a map of students for quick lookup
 	for _, student := range students {
-		studentMap[student.StudentID] = student
+		studentMap[student.StudentNSN] = student
 	}
 
 	// Build results for each test score
 	for _, ts := range testScores {
-		student, exists := studentMap[ts.StudentID]
+		student, exists := studentMap[ts.StudentNSN]
 		if !exists {
 			continue // Skip if student not found
 		}
@@ -159,7 +159,7 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 		// Find or create an individual exam score entry for the student
 		var individual *domain.IndividualExamScore
 		for i := range results {
-			if results[i].StudentID == ts.StudentID {
+			if results[i].StudentNSN == ts.StudentNSN {
 				individual = &results[i]
 				break
 			}
@@ -168,7 +168,7 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 		// Create a new entry if one doesn't exist
 		if individual == nil {
 			newEntry := domain.IndividualExamScore{
-				StudentID:             ts.StudentID,
+				StudentNSN:            ts.StudentNSN,
 				Student:               student,
 				SubjectAndScoreResult: []domain.SubjectAndScoreResult{},
 			}
@@ -178,9 +178,9 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 
 		// Add the subject and score to the student's results
 		individual.SubjectAndScoreResult = append(individual.SubjectAndScoreResult, domain.SubjectAndScoreResult{
-			SubjectID: ts.SubjectID,
-			Subject:   ts.Subject,
-			Score:     ts.Score,
+			SubjectCode: ts.SubjectCode,
+			Subject:     ts.Subject,
+			Score:       ts.Score,
 		})
 	}
 
@@ -207,7 +207,7 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 		go func(idv domain.IndividualExamScore) {
 			defer wg.Done()
 			if err := m.sendWATestScore(ctx, &idv, strBody); err != nil {
-				errorChan <- fmt.Errorf("failed to send WhatsApp for student ID: %d, error: %w", idv.StudentID, err)
+				errorChan <- fmt.Errorf("failed to send WhatsApp for student StudentNSN: %s, error: %w", idv.StudentNSN, err)
 			}
 		}(idv)
 	}
@@ -235,20 +235,20 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 	return nil
 }
 
-func (m *senderRepository) SendMass(ctx context.Context, idList *[]int, userID *int, subjectID int) error {
+func (m *senderRepository) SendMass(ctx context.Context, nsnList *[]string, userID *int, subjectCode string) error {
 	// Fetch the subject details
 	var subject domain.Subject
-	err := m.db.WithContext(ctx).Where("subject_id = ?", subjectID).First(&subject).Error
+	err := m.db.WithContext(ctx).Where("subject_code = ?", subjectCode).First(&subject).Error
 	if err != nil {
 		return fmt.Errorf("failed to fetch subject details: %v", err)
 	}
 
-	for _, id := range *idList {
+	for _, nsn := range *nsnList {
 		var waStatus, emailStatus bool
 		waStatus, emailStatus = false, false
 
 		// Fetch student and parent details
-		student, err := m.fetchStudentDetails(ctx, id)
+		student, err := m.fetchStudentDetails(ctx, nsn)
 		if err != nil {
 			continue // Skip the current student if details cannot be fetched
 		}
@@ -277,7 +277,7 @@ func (m *senderRepository) SendMass(ctx context.Context, idList *[]int, userID *
 		waStatus = true
 
 		// Log the notification history
-		err = m.logNotificationHistory(student.Student.StudentID, student.Student.ParentID, *userID, subjectID, waStatus, emailStatus)
+		err = m.logNotificationHistory(student.Student.StudentNSN, subjectCode, student.Student.ParentID, *userID, waStatus, emailStatus)
 		if err != nil {
 			return fmt.Errorf("failed saving the data to notification history, error: %v", err)
 		}
@@ -286,19 +286,19 @@ func (m *senderRepository) SendMass(ctx context.Context, idList *[]int, userID *
 	return nil
 }
 
-func (m *senderRepository) fetchStudentDetails(ctx context.Context, studentID int) (*domain.StudentAndParent, error) {
+func (m *senderRepository) fetchStudentDetails(ctx context.Context, nsn string) (*domain.StudentAndParent, error) {
 	var student domain.Student
 	var parent domain.Parent
 
-	err := m.db.WithContext(ctx).Where("student_id = ?", studentID).Preload("Parent").First(&student).Error
+	err := m.db.WithContext(ctx).Where("student_nsn = ?", nsn).Preload("Parent").First(&student).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("student with ID %d not found", studentID)
+			return nil, fmt.Errorf("student with StudentNSN %s not found", nsn)
 		}
 		return nil, fmt.Errorf("could not fetch student details: %v", err)
 	}
 
-	err = m.db.WithContext(ctx).Where("parent_id = ?", student.ParentID).First(&parent).Error
+	err = m.db.WithContext(ctx).Where("parent_id = ? AND deleted_at IS NULL", student.ParentID).First(&parent).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("parent with ID %d not found", student.ParentID)
@@ -423,7 +423,7 @@ Dear Mr. %s,
 
 We would like to inform you that your child,
 
-NSN: %s,
+StudentNSN: %s,
 Name: %s, 
 Class: %d %s.
 
@@ -433,7 +433,7 @@ We have not yet received any reason for the absence. We kindly ask you to provid
 
 If you have any questions or require further assistance, please feel free to contact us at %s.
 
-Thank you for your attention and cooperation.`, payload.Parent.Name, payload.Student.NSN, payload.Student.Name, payload.Student.Grade, payload.Student.GradeLabel, strings.ToUpper(subjectName), formattedDate, hourAndMinute, isAM, m.schoolPhone)
+Thank you for your attention and cooperation.`, payload.Parent.Name, payload.Student.StudentNSN, payload.Student.Name, payload.Student.Grade, payload.Student.GradeLabel, strings.ToUpper(subjectName), formattedDate, hourAndMinute, isAM, m.schoolPhone)
 
 		return &subject, &bodyMale, nil
 	} else {
@@ -444,7 +444,7 @@ Dear Mrs. %s,
 
 We would like to inform you that your child, 
 
-NSN: %s,
+StudentNSN: %s,
 Name: %s, 
 Class: %d %s.
 
@@ -454,17 +454,17 @@ We have not yet received any reason for the absence. We kindly ask you to provid
 
 If you have any questions or require further assistance, please feel free to contact us at %s.
 
-Thank you for your attention and cooperation.`, payload.Parent.Name, payload.Student.NSN, payload.Student.Name, payload.Student.Grade, payload.Student.GradeLabel, strings.ToUpper(subjectName), formattedDate, hourAndMinute, isAM, m.schoolPhone)
+Thank you for your attention and cooperation.`, payload.Parent.Name, payload.Student.StudentNSN, payload.Student.Name, payload.Student.Grade, payload.Student.GradeLabel, strings.ToUpper(subjectName), formattedDate, hourAndMinute, isAM, m.schoolPhone)
 		return &subject, &bodyFemale, nil
 	}
 }
 
-func (m *senderRepository) logNotificationHistory(studentID, parentID, userID, subjectID int, whatsappSuccess, emailSuccess bool) error {
+func (m *senderRepository) logNotificationHistory(StudentNSN, subjectCode string, parentID, userID int, whatsappSuccess, emailSuccess bool) error {
 	history := &domain.AttendanceNotificationHistory{
-		StudentID:      studentID,
+		StudentNSN:     StudentNSN,
 		ParentID:       parentID,
 		UserID:         userID,
-		SubjectID:      subjectID,
+		SubjectCode:    subjectCode,
 		WhatsappStatus: whatsappSuccess,
 		EmailStatus:    emailSuccess,
 	}

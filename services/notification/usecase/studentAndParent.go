@@ -40,43 +40,43 @@ func (spu *studentParentUseCase) ImportCSV(ctx context.Context, payload *[]domai
 	return data, nil
 }
 
-func (spu *studentParentUseCase) UpdateStudentAndParent(ctx context.Context, id int, payload *domain.StudentAndParent) (*string, *[]string) {
+func (spu *studentParentUseCase) UpdateStudentAndParent(ctx context.Context, nsn string, payload *domain.StudentAndParent) (*string, *[]string) {
 
 	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
 	// defer cancel()
 
-	v, err := spu.repo.UpdateStudentAndParent(ctx, id, payload)
+	v, err := spu.repo.UpdateStudentAndParent(ctx, nsn, payload)
 	if err != nil {
 		return nil, err
 	}
 	return v, nil
 }
 
-func (spu *studentParentUseCase) GetStudentDetailsByID(ctx context.Context, id int) (*domain.StudentAndParent, error) {
+func (spu *studentParentUseCase) GetStudentDetailsByID(ctx context.Context, studentNSN string) (*domain.StudentAndParent, error) {
 
 	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
 	// defer cancel()
 
-	v, err := spu.repo.GetStudentDetailsByID(ctx, id)
+	v, err := spu.repo.GetStudentDetailsByID(ctx, studentNSN)
 	if err != nil {
 		return nil, err
 	}
 	return v, nil
 }
 
-func (spu *studentParentUseCase) DeleteStudentAndParent(ctx context.Context, id int) error {
+// func (spu *studentParentUseCase) DeleteStudentAndParent(ctx context.Context, id int) error {
 
-	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
-	// defer cancel()
+// 	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
+// 	// defer cancel()
 
-	err := spu.repo.DeleteStudentAndParent(ctx, id)
-	if err != nil {
-		return err
-	}
-	return nil
-}
+// 	err := spu.repo.DeleteStudentAndParent(ctx, id)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
 
-func (spu *studentParentUseCase) DataChangeRequest(ctx context.Context, datas domain.DataChangeRequest) error {
+func (spu *studentParentUseCase) DataChangeRequest(ctx context.Context, datas domain.ParentDataChangeRequest) error {
 
 	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
 	// defer cancel()
@@ -88,7 +88,7 @@ func (spu *studentParentUseCase) DataChangeRequest(ctx context.Context, datas do
 	return nil
 }
 
-func (spu *studentParentUseCase) GetAllDataChangeRequest(ctx context.Context) (*[]domain.DataChangeRequest, error) {
+func (spu *studentParentUseCase) GetAllDataChangeRequest(ctx context.Context) (*[]domain.ParentDataChangeRequest, error) {
 
 	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
 	// defer cancel()
@@ -100,7 +100,7 @@ func (spu *studentParentUseCase) GetAllDataChangeRequest(ctx context.Context) (*
 	return v, nil
 }
 
-func (spu *studentParentUseCase) GetAllDataChangeRequestByID(ctx context.Context, dcrID int) (*domain.DataChangeRequest, error) {
+func (spu *studentParentUseCase) GetAllDataChangeRequestByID(ctx context.Context, dcrID int) (*domain.ParentDataChangeRequest, error) {
 
 	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
 	// defer cancel()
@@ -112,13 +112,13 @@ func (spu *studentParentUseCase) GetAllDataChangeRequestByID(ctx context.Context
 	return v, nil
 }
 
-func (spu *studentParentUseCase) SPMassDelete(ctx context.Context, studentIDS *[]int) error {
-	err := spu.repo.SPMassDelete(ctx, studentIDS)
-	if err != nil {
-		return err
-	}
-	return nil
-}
+// func (spu *studentParentUseCase) SPMassDelete(ctx context.Context, studentIDS *[]int) error {
+// 	err := spu.repo.SPMassDelete(ctx, studentIDS)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
 
 func (spu *studentParentUseCase) DeleteDCR(ctx context.Context, dcrID int) error {
 	err := spu.repo.DeleteDCR(ctx, dcrID)

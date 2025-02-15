@@ -25,7 +25,7 @@ func (spr *studentRepository) GetStudentByParentTelephone(ctx context.Context, p
 
 	var parent domain.Parent
 	err := spr.db.WithContext(ctx).
-		Where("telephone = ?", parTel).
+		Where("telephone = ? AND deleted_at IS NULL", parTel).
 		First(&parent).Error
 
 	if err != nil {
@@ -41,7 +41,7 @@ func (spr *studentRepository) GetStudentByParentTelephone(ctx context.Context, p
 	// Fetch students associated with the parent
 	var students []domain.Student
 	err = spr.db.WithContext(ctx).
-		Where("parent_id = ?", parent.ParentID).
+		Where("parent_id = ? AND deleted_at IS NULL", parent.ParentID).
 		Find(&students).Error
 
 	if err != nil {

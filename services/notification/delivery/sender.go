@@ -58,8 +58,8 @@ func (h *senderHandler) SendTestScores(c *fiber.Ctx) error {
 
 func (h *senderHandler) sendMassHandler(c *fiber.Ctx) error {
 	var payload struct {
-		IDs       []int `json:"ids"`
-		SubjectID int   `json:"subject_id"`
+		NSNList     []string `json:"nsn_list"`
+		SubjectCode string   `json:"subject_code"`
 	}
 
 	userToken := c.Locals("user").(*domain.Claims)
@@ -74,7 +74,7 @@ func (h *senderHandler) sendMassHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	if err := h.suc.SendMass(c.Context(), &payload.IDs, &userID, payload.SubjectID); err != nil {
+	if err := h.suc.SendMass(c.Context(), &payload.NSNList, &userID, payload.SubjectCode); err != nil {
 		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "sendMassHandler")
 
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

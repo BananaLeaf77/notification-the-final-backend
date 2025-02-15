@@ -34,7 +34,7 @@ func (np *notificationRepo) GetAllAttendanceNotificationHistory(ctx context.Cont
 
 	// Iterate over the fetched records to prepare the response
 	for _, record := range dataHolder {
-		if record.Student.StudentID == 0 || record.Subject.SubjectID == 0 {
+		if record.Student.StudentNSN == "" || record.Subject.SubjectCode == "" {
 			continue
 		}
 

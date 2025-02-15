@@ -6,8 +6,7 @@ import (
 )
 
 type Subject struct {
-	SubjectID   int       `gorm:"primaryKey;autoIncrement" json:"subject_id"`
-	SubjectCode string    `gorm:"type:varchar(5);not null;" json:"subject_code" valid:"required~Subject code is required"`
+	SubjectCode string    `gorm:"primaryKey;type:varchar(5);not null;" json:"subject_code" valid:"required~Subject code is required"`
 	Name        string    `gorm:"type:varchar(100);not null;" json:"name" valid:"required~Subject name is required"`
 	Grade       int       `gorm:"not null" json:"grade" valid:"required~Grade is required"`
 	CreatedAt   time.Time `gorm:"autoCreateTime" json:"created_at"`
@@ -15,8 +14,7 @@ type Subject struct {
 }
 
 type Student struct {
-	StudentID  int       `gorm:"primaryKey;autoIncrement" json:"student_id"`
-	NSN        string    `gorm:"type:varchar(10);not null;" json:"nsn" valid:"required~NSN is required"`
+	StudentNSN string    `gorm:"primaryKey;type:varchar(10);not null;" json:"student_nsn" valid:"required~NSN is required"`
 	Name       string    `gorm:"type:varchar(150);not null;" json:"name" valid:"required~Name is required"`
 	Grade      int       `gorm:"not null" json:"grade" valid:"required~Grade is required"`
 	GradeLabel string    `gorm:"type:varchar(5);not null;" json:"grade_label"`
@@ -30,12 +28,12 @@ type Student struct {
 
 type TestScore struct {
 	TestScoreID int        `gorm:"primaryKey;autoIncrement" json:"test_score_id"`
-	StudentID   int        `json:"student_id"`
-	Student     Student    `gorm:"references:StudentID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"student"`
-	SubjectID   int        `json:"subject_id"`
-	Subject     Subject    `gorm:"references:SubjectID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"subject"`
-	UserID      int        `json:"user_ids"`
-	User        User       `gorm:"references:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL" json:"user"`
+	StudentNSN  string     `gorm:"not null" json:"student_nsn"`
+	Student     Student    `gorm:"foreignKey:StudentNSN;references:StudentNSN;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"student"`
+	SubjectCode string     `gorm:"not null" json:"subject_code"`
+	Subject     Subject    `gorm:"foreignKey:SubjectCode;references:SubjectCode;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"subject"`
+	UserID      int        `gorm:"not null" json:"user_id"`
+	User        User       `gorm:"foreignKey:UserID;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL" json:"user"`
 	Score       *float64   `json:"score" valid:"required~Score is required"`
 	CreatedAt   time.Time  `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt   time.Time  `gorm:"autoUpdateTime" json:"updated_at"`

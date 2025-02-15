@@ -29,12 +29,12 @@ type StuAndPar struct {
 }
 
 type StudentBase struct {
-	StudentID int    `gorm:"primaryKey;autoIncrement" json:"student_id"`
-	Name      string `gorm:"type:varchar(150);not null;" json:"name" valid:"required~Name is required"`
-	Class     string `gorm:"type:varchar(3);not null" json:"class" valid:"required~Class is required"`
-	Gender    string `gorm:"type:gender_enum;not null" json:"gender" valid:"required~Gender is required"`
-	Telephone string `gorm:"type:varchar(13);not null" json:"telephone" valid:"required~Telephone is required"`
-	ParentID  int    `gorm:"not null" json:"parent_id"`
+	StudentNSN string `gorm:"type:varchar(10);not null;" json:"student_nsn" valid:"required~NSN is required"`
+	Name       string `gorm:"type:varchar(150);not null;" json:"name" valid:"required~Name is required"`
+	Class      string `gorm:"type:varchar(3);not null" json:"class" valid:"required~Class is required"`
+	Gender     string `gorm:"type:gender_enum;not null" json:"gender" valid:"required~Gender is required"`
+	Telephone  string `gorm:"type:varchar(13);not null" json:"telephone" valid:"required~Telephone is required"`
+	ParentID   int    `gorm:"not null" json:"parent_id"`
 }
 
 type ParentBase struct {
@@ -49,16 +49,16 @@ type ParentBase struct {
 }
 
 type StudentAndParentBase struct {
-	StudentID int        `json:"student_id" valid:"required~Student ID is required"`
-	Name      string     `json:"name" valid:"required~Name is required"`
-	Class     string     `json:"class" valid:"required~Class is required"`
-	Gender    string     `json:"gender" valid:"required~Gender is required,in(male|female)~Invalid gender"`
-	Telephone string     `json:"telephone" valid:"required~Telephone is required"`
-	ParentID  int        `json:"parent_id"`
-	Parent    ParentBase `json:"parent" valid:"required~Parent details are required"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
-	DeletedAt *time.Time `json:"deleted_at,omitempty"`
+	StudentNSN string     `json:"student_nsn" valid:"required~NSN is required"`
+	Name       string     `json:"name" valid:"required~Name is required"`
+	Class      string     `json:"class" valid:"required~Class is required"`
+	Gender     string     `json:"gender" valid:"required~Gender is required,in(male|female)~Invalid gender"`
+	Telephone  string     `json:"telephone" valid:"required~Telephone is required"`
+	ParentID   int        `json:"parent_id"`
+	Parent     ParentBase `json:"parent" valid:"required~Parent details are required"`
+	CreatedAt  time.Time  `json:"created_at"`
+	UpdatedAt  time.Time  `json:"updated_at"`
+	DeletedAt  *time.Time `json:"deleted_at,omitempty"`
 }
 
 type StudentPayload struct {
@@ -83,7 +83,7 @@ type ParentNoGorm struct {
 
 type StudentNoGorm struct {
 	StudentID int        `json:"student_id"`
-	NSN       string     `gorm:"type:varchar(10);not null;" json:"nsn" valid:"required~NSN is required"`
+	NSN       string     `gorm:"type:varchar(10);not null;" json:"student_nsn" valid:"required~NSN is required"`
 	Name      string     `json:"name" valid:"required~Name is required"`
 	Class     string     `json:"class" valid:"required~Class is required"`
 	Gender    string     `json:"gender" valid:"required~Gender is required,in(male|female)~Invalid gender"`
@@ -116,23 +116,23 @@ type AttendanceNotificationHistoryResponse struct {
 }
 
 type StudentTestScore struct {
-	StudentID int      `json:"student_id"`
-	TestScore *float64 `json:"test_score"`
+	StudentNSN string   `json:"student_nsn"`
+	TestScore  *float64 `json:"test_score"`
 }
 
 type InputTestScorePayload struct {
 	StudentTestScore []StudentTestScore `json:"students_test_score"`
-	SubjectID        int                `json:"subject_id"`
+	SubjectCode      string             `json:"subject_code"`
 }
 
 type SubjectAndScoreResult struct {
-	SubjectID int      `json:"subject_id"`
-	Subject   Subject  `json:"subject"`
-	Score     *float64 `json:"score"`
+	SubjectCode string   `json:"subject_code"`
+	Subject     Subject  `json:"subject"`
+	Score       *float64 `json:"score"`
 }
 
 type IndividualExamScore struct {
-	StudentID             int                     `json:"student_id"`
+	StudentNSN            string                  `json:"student_nsn"`
 	Student               Student                 `json:"student"`
 	SubjectAndScoreResult []SubjectAndScoreResult `json:"subject_and_score_result"`
 }
