@@ -77,35 +77,30 @@ func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[stri
 	// Compare dcr and parent fields to populate comparedData
 	if dcr.NewParentName != nil && *dcr.NewParentName != Parent.Name {
 		comparedData.Name = *dcr.NewParentName
-	} else {
-		comparedData.Name = Parent.Name
 	}
 
 	if dcr.NewParentGender != nil && *dcr.NewParentGender != Parent.Gender {
 		comparedData.Gender = *dcr.NewParentGender
-	} else {
-		comparedData.Gender = Parent.Gender
 	}
 
 	if dcr.NewParentTelephone != nil && *dcr.NewParentTelephone != Parent.Telephone {
 		comparedData.Telephone = *dcr.NewParentTelephone
-	} else {
-		comparedData.Telephone = Parent.Telephone
 	}
 
-	if dcr.NewParentEmail != nil && *dcr.NewParentEmail != *Parent.Email {
-		comparedData.Email = dcr.NewParentEmail
-	} else {
-		comparedData.Email = Parent.Email
+	if dcr.NewParentEmail != nil {
+		if Parent.Email == nil || *dcr.NewParentEmail != *Parent.Email {
+			comparedData.Email = dcr.NewParentEmail
+		}
 	}
 
 	// Always update the timestamp
 	comparedData.UpdatedAt = tNow
 
+	fmt.Println("compared data")
 	config.PrintStruct(comparedData)
 
 	// Check if parent is associated with any students
-	err = tx.Where("parent_id = ? AND deleted_at IS NULL", Parent.ParentID).Find(&AssociatedStudent).Error
+	err = tx.Where("parent_id = ?", Parent.ParentID).Find(&AssociatedStudent).Error
 	if err != nil {
 		tx.Rollback()
 		return nil, fmt.Errorf("parent doesn't associate with any student, error: %v", err)
@@ -123,7 +118,7 @@ func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[stri
 
 	// Check for an existing parent record with the same details
 	var ExistingParent domain.Parent
-	err = tx.Where("(name = ? OR telephone = ? OR email = ?) AND deleted_at IS NULL", req["name"], req["telephone"], req["email"]).First(&ExistingParent).Error
+	err = tx.Where("(name = ? OR telephone = ? OR email = ?) AND parent_id != ? AND deleted_at IS NULL", req["name"], req["telephone"], req["email"], Parent.ParentID).First(&ExistingParent).Error
 	if err == gorm.ErrRecordNotFound {
 		// If no existing parent found, update the current parent
 		err = tx.Model(&domain.Parent{}).Where("parent_id = ? AND deleted_at IS NULL", Parent.ParentID).Updates(&comparedData).Error
@@ -172,8 +167,6 @@ func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[stri
 	}
 
 	if counter == 0 {
-		fmt.Println("masuk counter 0")
-		fmt.Println(counter)
 		result := tx.WithContext(ctx).Model(&domain.Parent{}).
 			Where("parent_id = ? AND deleted_at IS NULL", Parent.ParentID).
 			Update("deleted_at", &tNow)
@@ -245,9 +238,9 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 	var studentCountNSN int64
 	err = spr.db.WithContext(ctx).Model(&domain.Student{}).Where("student_nsn = ?", req.Student.StudentNSN).Count(&studentCountNSN).Error
 	if err != nil {
-		errList = append(errList, fmt.Sprintf("Error checking for student student_nsn: %v", err))
+		errList = append(errList, fmt.Sprintf("Error checking for student student nsn: %v", err))
 	} else if studentCountNSN > 0 {
-		errList = append(errList, fmt.Sprintf("Student with student_nsn %s already exists", req.Student.StudentNSN))
+		errList = append(errList, fmt.Sprintf("Student with nsn %s already exists", req.Student.StudentNSN))
 	}
 
 	// Check for duplicate student name
@@ -304,7 +297,7 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 	// Find existing parent with matching attributes
 	var existingParent domain.Parent
 	err = spr.db.WithContext(ctx).Where(
-		"(name = ? OR telephone = ? OR email = ?)",
+		"(name = ? OR telephone = ? OR email = ?) AND deleted_at IS NULL",
 		req.Parent.Name, req.Parent.Telephone, func() string {
 			if req.Parent.Email != nil {
 				return *req.Parent.Email
@@ -375,11 +368,13 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 	}
 
 	if msgs != nil {
+		fmt.Println("masuk allocated parent")
 		tx.Commit()
 		return msgs, nil
 	}
 
 	if err := tx.Commit().Error; err != nil {
+		fmt.Println("masuk biase")
 		return nil, &[]string{fmt.Sprintf("Could not commit transaction: %v", err)}
 	}
 
@@ -403,7 +398,7 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 		if err == nil {
 			if studentNsnExistsCount > 0 {
 				isDuplicate = true
-				duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student student_nsn %s already exists", index+2, record.Student.StudentNSN))
+				duplicateMessages = append(duplicateMessages, fmt.Sprintf("row %d: student student nsn %s already exists", index+2, record.Student.StudentNSN))
 			}
 		}
 
@@ -480,7 +475,7 @@ func (spr *studentParentRepository) ImportCSV(ctx context.Context, payload *[]do
 			var parentExist domain.Parent
 
 			// Check if parent already exists
-			err := tx.Where("(name = ? OR telephone = ? OR email = ?)",
+			err := tx.Where("(name = ? OR telephone = ? OR email = ?) AND deleted_at IS NULL",
 				record.Parent.Name,
 				record.Parent.Telephone,
 				func() string {
@@ -606,9 +601,9 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 	var studentCountNSN int64
 	err := spr.db.WithContext(ctx).Model(&domain.Student{}).Where("student_nsn = ? AND student_nsn != ?", req.Student.StudentNSN, studentNSN).Count(&studentCountNSN).Error
 	if err != nil {
-		errList = append(errList, fmt.Sprintf("Error checking for student student_nsn: %v", err))
+		errList = append(errList, fmt.Sprintf("Error checking for student student nsn: %v", err))
 	} else if studentCountNSN > 0 {
-		errList = append(errList, fmt.Sprintf("Student with student_nsn %s already exists", req.Student.StudentNSN))
+		errList = append(errList, fmt.Sprintf("Student with nsn %s already exists", req.Student.StudentNSN))
 	}
 
 	if req.Student.Name != "" {
@@ -756,8 +751,6 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 	}
 
 	if counter == 0 {
-		fmt.Println("masuk counter 0")
-		fmt.Println(counter)
 		result := tx.WithContext(ctx).Model(&domain.Parent{}).
 			Where("parent_id = ? AND deleted_at IS NULL", student.ParentID).
 			Update("deleted_at", &now)
@@ -1069,6 +1062,30 @@ func (spr *studentParentRepository) DataChangeRequest(ctx context.Context, datas
 
 	if countVariable > 0 {
 		return fmt.Errorf("data change request with old telephone parent: %s already exists and has not been reviewed yet. If this is urgent, please contact the school directly", datas.OldParentTelephone)
+	}
+
+	if datas.NewParentTelephone != nil {
+		parentNameDigit := containsDigit(*datas.NewParentName)
+		if parentNameDigit {
+			return fmt.Errorf("parent name should not contain numbers")
+		}
+	}
+
+	// Convert empty string email to nil
+	if datas.NewParentEmail != nil && *datas.NewParentEmail == "" {
+		datas.NewParentEmail = nil
+	}
+
+	if datas.NewParentEmail != nil {
+		emailLowered := strings.ToLower(strings.TrimSpace(*datas.NewParentEmail))
+		datas.NewParentEmail = &emailLowered
+
+		// Validate email format
+		emailRegex := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
+		match, _ := regexp.MatchString(emailRegex, *datas.NewParentEmail)
+		if !match {
+			return fmt.Errorf("invalid email format for parent: %s", *datas.NewParentEmail)
+		}
 	}
 
 	err = spr.db.WithContext(ctx).Create(&datas).Error

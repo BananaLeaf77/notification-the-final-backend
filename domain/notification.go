@@ -10,7 +10,7 @@ type AttendanceNotificationHistory struct {
 	SubjectCode           string    `gorm:"not null" json:"subject_code"`
 	Subject               Subject   `gorm:"foreignKey:SubjectCode;references:SubjectCode;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"subject"`
 	StudentNSN            string    `gorm:"not null" json:"student_nsn"`
-	Student               Student   `gorm:"foreignKey:StudentNSN;references:StudentNSN;constraint:OnUpdate:CASCADE,OnDelete:SET NULL" json:"student"`
+	Student               Student   `gorm:"foreignKey:StudentNSN;references:StudentNSN;constraint:OnUpdate:CASCADE,OnDelete:SET NULL" json:"student"` // ✅ Ensures StudentNSN updates
 	ParentID              int       `gorm:"not null;index" json:"parent_id"`
 	Parent                Parent    `gorm:"foreignKey:ParentID;references:ParentID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL" json:"parent"`
 	UserID                int       `gorm:"not null" json:"user_id"`

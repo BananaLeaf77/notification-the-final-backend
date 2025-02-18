@@ -258,32 +258,12 @@ func (sph *studentParentHandler) CreateStudentAndParent(c *fiber.Ctx) error {
 		})
 	}
 
-	_, err := govalidator.ValidateStruct(req.Student)
-	if err != nil {
-		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "CreateStudentAndParent")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"success": false,
-			"error":   []string{"Invalid request body: %v", err.Error()},
-			"message": "Invalid Student request body",
-		})
-	}
-
 	if req.Student.GradeLabel == "" {
 		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "CreateStudentAndParent")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"error":   []string{"Invalid Grade Label: Grade Label is required"},
 			"message": "Invalid Student request body",
-		})
-	}
-
-	_, err = govalidator.ValidateStruct(req.Parent)
-	if err != nil {
-		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "CreateStudentAndParent")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"success": false,
-			"error":   []string{"Invalid request body: %v", err.Error()},
-			"message": "Invalid Parent request body",
 		})
 	}
 
@@ -391,13 +371,14 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to open CSV file: %v", err)
 	}
-	defer file.Close()
 
 	defer func() {
 		if err := os.Remove(filePath); err != nil {
 			log.Printf("Failed to delete file: %v", err)
 		}
 	}()
+
+	defer file.Close()
 
 	reader := csv.NewReader(file)
 	records, err := reader.ReadAll()
@@ -406,7 +387,6 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 	}
 
 	// Precompile regular expressions
-	gradeLabelRegex := regexp.MustCompile("^[A-Za-z]+$")
 	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 
 	// Skip the header row
@@ -429,7 +409,7 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 		trimmedStudentTelephone := strings.TrimSpace(row[5])
 		row[5] = trimmedStudentTelephone
 
-		studentErrors := validateStudent(row[:6], i+2, gradeLabelRegex)
+		studentErrors := validateStudent(row[:6], i+2)
 		if len(studentErrors) > 0 {
 			errList = append(errList, studentErrors...)
 		}
@@ -494,7 +474,7 @@ func (sph *studentParentHandler) processCSVFile(c context.Context, filePath stri
 }
 
 // Helper function to validate student data
-func validateStudent(row []string, rowNum int, gradeLabelRegex *regexp.Regexp) []string {
+func validateStudent(row []string, rowNum int) []string {
 	var errList []string
 
 	// Validate NSN
@@ -525,12 +505,9 @@ func validateStudent(row []string, rowNum int, gradeLabelRegex *regexp.Regexp) [
 	// Validate Grade Label
 	if row[3] == "" {
 		errList = append(errList, fmt.Sprintf("row %d: Student grade label cannot be empty", rowNum))
-	} else if len(row[3]) > 3 {
+	} else if len(row[3]) > 5 {
 		errList = append(errList, fmt.Sprintf("row %d: Student grade label cannot be more than 3 characters", rowNum))
-	} else if !gradeLabelRegex.MatchString(row[3]) {
-		errList = append(errList, fmt.Sprintf("row %d: Student grade label must contain only letters", rowNum))
 	}
-
 	// Validate Gender
 	if row[4] == "" {
 		errList = append(errList, fmt.Sprintf("row %d: Student gender cannot be empty", rowNum))

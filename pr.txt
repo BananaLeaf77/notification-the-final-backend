@@ -47,4 +47,4 @@ subject insert misi kode subject
 ==================================================DEMO 2==========================================================
 DFD PROSES 4
 
--Argumen mengenai user dengan 2 role yaitu admin dan guru dalam perancangan
+penambahan modal di create stud dan subject

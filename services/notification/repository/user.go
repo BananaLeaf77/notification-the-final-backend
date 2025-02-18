@@ -381,34 +381,28 @@ func (ur *userRepository) UpdateStaff(ctx context.Context, id int, payload *doma
 		return fmt.Errorf("could not update staff: %v", err)
 	}
 
-	if len(subjectCodes) > 0 {
-		var user domain.User
-		if err := ur.db.WithContext(ctx).First(&user, id).Error; err != nil {
-			return fmt.Errorf("could not find user: %v", err)
-		}
+	var user domain.User
+	if err := ur.db.WithContext(ctx).First(&user, id).Error; err != nil {
+		return fmt.Errorf("could not find user: %v", err)
+	}
 
-		if err := ur.db.WithContext(ctx).Model(&user).Association("Teaching").Clear(); err != nil {
-			return fmt.Errorf("could not clear existing subjects: %v", err)
-		}
+	if err := ur.db.WithContext(ctx).Model(&user).Association("Teaching").Clear(); err != nil {
+		return fmt.Errorf("could not clear existing subjects: %v", err)
+	}
 
-		var subjects []domain.Subject
+	var subjects []domain.Subject
 
-		if err := ur.db.WithContext(ctx).Where("subject_code IN ?", subjectCodes).Find(&subjects).Error; err != nil {
-			return fmt.Errorf("could not find new subjects: %v", err)
-		}
+	if err := ur.db.WithContext(ctx).Where("subject_code IN ?", subjectCodes).Find(&subjects).Error; err != nil {
+		return fmt.Errorf("could not find new subjects: %v", err)
+	}
 
-		if len(subjects) == 0 {
-			return fmt.Errorf("no subjects found for the given IDs")
-		}
+	subjectPointers := make([]*domain.Subject, len(subjects))
+	for i := range subjects {
+		subjectPointers[i] = &subjects[i]
+	}
 
-		subjectPointers := make([]*domain.Subject, len(subjects))
-		for i := range subjects {
-			subjectPointers[i] = &subjects[i]
-		}
-
-		if err := ur.db.WithContext(ctx).Model(&user).Association("Teaching").Replace(subjectPointers); err != nil {
-			return fmt.Errorf("could not update subjects: %v", err)
-		}
+	if err := ur.db.WithContext(ctx).Model(&user).Association("Teaching").Replace(subjectPointers); err != nil {
+		return fmt.Errorf("could not update subjects: %v", err)
 	}
 
 	return nil

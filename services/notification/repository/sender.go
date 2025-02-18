@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/smtp"
 	"notification/domain"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -44,7 +45,7 @@ func (m *senderRepository) createTestScoreEmail(individual domain.IndividualExam
 
 Dear Mrs. %s,
 We would like to inform you about the %s results for the following student:
-StudentNSN: %s,
+NSN: %s,
 Name: %s,
 Class: %s.
 Below are the details of the test results for several subjects:
@@ -77,7 +78,7 @@ SINOAN Team`, m.schoolPhone)
 
 Dear Mr. %s,
 We would like to inform you about the %s results for the following student:
-StudentNSN: %s,
+NSN: %s,
 Name: %s,
 Class: %s.
 Below are the details of the test results for several subjects:
@@ -109,13 +110,87 @@ SINOAN Team`, m.schoolPhone)
 
 }
 
+func (m *senderRepository) buatNilaiTesEmail(individual domain.IndividualExamScore, examType string) string {
+	// Mulai dengan pengantar umum
+	if individual.Student.Parent.Gender != "male" {
+		body := fmt.Sprintf(`Layanan SINOAN 🔔
+
+Yth. Ibu %s,
+Kami ingin memberitahukan tentang hasil %s untuk siswa berikut:
+NSN: %s,
+Nama: %s,
+Kelas: %s.
+Berikut adalah detail hasil ujian untuk beberapa mata pelajaran:
+`, individual.Student.Parent.Name, examType, individual.Student.StudentNSN, individual.Student.Name, fmt.Sprintf("%d %s", individual.Student.Grade, individual.Student.GradeLabel))
+
+		// Tambahkan detail mata pelajaran dan nilai
+		for _, result := range individual.SubjectAndScoreResult {
+			subjectName := result.Subject.Name
+			score := "Belum Ada Nilai | 0"
+			if result.Score != nil {
+				score = fmt.Sprintf("%.1f", *result.Score)
+			}
+
+			body += fmt.Sprintf("- Kode (%s) | Mata Pelajaran: %s | Nilai: %s\n", result.Subject.SubjectCode, subjectName, score)
+		}
+
+		// Tutup email dengan detail kontak
+		body += fmt.Sprintf(`
+Jika ibu memiliki pertanyaan atau membutuhkan informasi lebih lanjut, ibu dapat menghubungi kami di %s.
+
+Terima kasih atas perhatian dan kerjasamanya.
+
+Hormat kami,
+Tim SINOAN`, m.schoolPhone)
+
+		bodyTestScore := body
+		return bodyTestScore
+	} else {
+		body := fmt.Sprintf(`Layanan SINOAN 🔔
+
+Yth. Bapak %s,
+Kami ingin memberitahukan tentang hasil %s untuk siswa berikut:
+NSN: %s,
+Nama: %s,
+Kelas: %s.
+Berikut adalah detail hasil ujian untuk beberapa mata pelajaran:
+`, individual.Student.Parent.Name, examType, individual.Student.StudentNSN, individual.Student.Name, fmt.Sprintf("%d %s", individual.Student.Grade, individual.Student.GradeLabel))
+
+		// Tambahkan detail mata pelajaran dan nilai
+		for _, result := range individual.SubjectAndScoreResult {
+			subjectName := result.Subject.Name
+			score := "Belum Ada Nilai | 0"
+			if result.Score != nil {
+				score = fmt.Sprintf("%.1f", *result.Score)
+			}
+
+			body += fmt.Sprintf("- Kode (%s) | Mata Pelajaran: %s | Nilai: %s\n", result.Subject.SubjectCode, subjectName, score)
+		}
+
+		// Tutup email dengan detail kontak
+		body += fmt.Sprintf(`
+Jika bapak memiliki pertanyaan atau membutuhkan informasi lebih lanjut, bapak dapat menghubungi kami di %s.
+
+Terima kasih atas perhatian dan kerjasamanya.
+
+Hormat kami,
+Tim SINOAN`, m.schoolPhone)
+
+		bodyTestScore := body
+		return bodyTestScore
+	}
+}
+
 func (m *senderRepository) SendTestScores(ctx context.Context, examType string) error {
 	var testScores []domain.TestScore
 	var students []domain.Student
 	var results []domain.IndividualExamScore
+	langValue := os.Getenv("MESSENGER_LANGUAGE")
+	langValueLowered := strings.ToLower(langValue)
+	var messageString string
+
 	studentMap := make(map[string]domain.Student)
 	tNow := time.Now()
-
 	// Fetch all test scores with related data
 	err := m.db.WithContext(ctx).
 		Preload("Student").
@@ -191,13 +266,17 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 	// Process results concurrently
 	for _, idv := range results {
 		wg.Add(2) // Two goroutines: one for email, one for WhatsApp
-		strBody := m.createTestScoreEmail(idv, examType)
+		if langValueLowered == "ind" {
+			messageString = m.buatNilaiTesEmail(idv, examType)
+		} else {
+			messageString = m.createTestScoreEmail(idv, examType)
+		}
 
 		// Send email
 		go func(idv domain.IndividualExamScore) {
 			defer wg.Done()
 			if idv.Student.Parent.Email != nil && *idv.Student.Parent.Email != "" {
-				if err := m.sendEmailTestScore(&idv, strBody); err != nil {
+				if err := m.sendEmailTestScore(&idv, messageString); err != nil {
 					errorChan <- fmt.Errorf("failed to send email to: %s, error: %w", *idv.Student.Parent.Email, err)
 				}
 			}
@@ -206,7 +285,7 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 		// Send WhatsApp
 		go func(idv domain.IndividualExamScore) {
 			defer wg.Done()
-			if err := m.sendWATestScore(ctx, &idv, strBody); err != nil {
+			if err := m.sendWATestScore(ctx, &idv, messageString); err != nil {
 				errorChan <- fmt.Errorf("failed to send WhatsApp for student StudentNSN: %s, error: %w", idv.StudentNSN, err)
 			}
 		}(idv)
@@ -237,6 +316,8 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 
 func (m *senderRepository) SendMass(ctx context.Context, nsnList *[]string, userID *int, subjectCode string) error {
 	// Fetch the subject details
+	langValue := os.Getenv("MESSENGER_LANGUAGE")
+	langValueLowered := strings.ToLower(langValue)
 	var subject domain.Subject
 	err := m.db.WithContext(ctx).Where("subject_code = ?", subjectCode).First(&subject).Error
 	if err != nil {
@@ -253,10 +334,20 @@ func (m *senderRepository) SendMass(ctx context.Context, nsnList *[]string, user
 			continue // Skip the current student if details cannot be fetched
 		}
 
-		// Initialize notification text with subject name
-		subjectForEmailSender, body, err := m.initTextWithSubject(student, subject.Name)
-		if err != nil {
-			return err
+		var subjectForEmailSender *string
+		var body *string
+		if langValueLowered == "ind" {
+			// Initialize notification text with subject name
+			subjectForEmailSender, body, err = m.inisialisasiTeksDenganSubjek(student, subject.Name)
+			if err != nil {
+				return err
+			}
+		} else {
+			// Initialize notification text with subject name
+			subjectForEmailSender, body, err = m.initTextWithSubject(student, subject.Name)
+			if err != nil {
+				return err
+			}
 		}
 
 		// Attempt to send an email notification
@@ -423,7 +514,7 @@ Dear Mr. %s,
 
 We would like to inform you that your child,
 
-StudentNSN: %s,
+NSN: %s,
 Name: %s, 
 Class: %d %s.
 
@@ -444,7 +535,7 @@ Dear Mrs. %s,
 
 We would like to inform you that your child, 
 
-StudentNSN: %s,
+NSN: %s,
 Name: %s, 
 Class: %d %s.
 
@@ -455,6 +546,70 @@ We have not yet received any reason for the absence. We kindly ask you to provid
 If you have any questions or require further assistance, please feel free to contact us at %s.
 
 Thank you for your attention and cooperation.`, payload.Parent.Name, payload.Student.StudentNSN, payload.Student.Name, payload.Student.Grade, payload.Student.GradeLabel, strings.ToUpper(subjectName), formattedDate, hourAndMinute, isAM, m.schoolPhone)
+		return &subject, &bodyFemale, nil
+	}
+}
+
+func (m *senderRepository) inisialisasiTeksDenganSubjek(payload *domain.StudentAndParent, subjectName string) (*string, *string, error) {
+	tNow := time.Now()
+
+	// Format tanggal dan waktu
+	formattedDate := tNow.Format("02/01/2006") // Format DD/MM/YYYY
+	hourOnly := tNow.Format("15")              // Format 24 jam
+	hourAndMinute := tNow.Format("15:04")      // Format HH:MM
+
+	intHourOnly, err := strconv.Atoi(hourOnly)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	isAM := "AM"
+	if intHourOnly >= 12 {
+		isAM = "PM"
+	}
+
+	subject := fmt.Sprintf("Pemberitahuan Ketidakhadiran untuk %s pada %s %s tanggal %s", payload.Student.Name, hourAndMinute, isAM, formattedDate)
+
+	if payload.Parent.Gender == "male" {
+		bodyMale := fmt.Sprintf(`
+Layanan SINOAN 🔔
+
+Yth. Bapak %s,
+
+Kami ingin memberitahukan bahwa anak bapak,
+
+NSN: %s,
+Nama: %s, 
+Kelas: %d %s.
+
+tidak hadir pada pelajaran "%s" tanggal %s pukul %s %s.
+
+Kami belum menerima alasan ketidakhadiran tersebut. Kami mohon bapak dapat memberikan konfirmasi atau informasi lebih lanjut mengenai kondisi anak bapak.
+
+Jika bapak memiliki pertanyaan atau membutuhkan bantuan lebih lanjut, jangan ragu untuk menghubungi kami di %s.
+
+Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Student.StudentNSN, payload.Student.Name, payload.Student.Grade, payload.Student.GradeLabel, strings.ToUpper(subjectName), formattedDate, hourAndMinute, isAM, m.schoolPhone)
+
+		return &subject, &bodyMale, nil
+	} else {
+		bodyFemale := fmt.Sprintf(`
+Layanan SINOAN 🔔
+
+Yth. Ibu %s,
+
+Kami ingin memberitahukan bahwa anak ibu, 
+
+NSN: %s,
+Nama: %s, 
+Kelas: %d %s.
+
+tidak hadir pada pelajaran "%s" tanggal %s pukul %s %s.
+
+Kami belum menerima alasan ketidakhadiran tersebut. Kami mohon ibu dapat memberikan konfirmasi atau informasi lebih lanjut mengenai kondisi anak ibu.
+
+Jika ibu memiliki pertanyaan atau membutuhkan bantuan lebih lanjut, jangan ragu untuk menghubungi kami di %s.
+
+Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Student.StudentNSN, payload.Student.Name, payload.Student.Grade, payload.Student.GradeLabel, strings.ToUpper(subjectName), formattedDate, hourAndMinute, isAM, m.schoolPhone)
 		return &subject, &bodyFemale, nil
 	}
 }

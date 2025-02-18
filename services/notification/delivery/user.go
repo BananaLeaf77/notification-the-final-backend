@@ -27,13 +27,13 @@ func NewUserHandlerDeploy(app *fiber.App, useCase domain.UserUseCase) {
 	group.Post("/add-subject", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.CreateSubject)
 	group.Post("/add-subject-bulk", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.CreateSubjectBulk)
 	group.Get("/subject/all", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetAllSubject)
-	group.Put("/subject/modify/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.UpdateSubject)
+	group.Put("/subject/modify/:subject_code", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.UpdateSubject)
 	// group.Delete("/subject/rm/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteSubject)
 	group.Get("/show-user-assigned-subject", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetSubjectsForTeacher)
 	group.Post("/input-test-scores", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.InputTestScores)
 	group.Get("/profile-dashboard", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.ShowProfile)
 	group.Post("/rm/users", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteStaffMass)
-	group.Get("/subject/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.GetSubjectDetail)
+	group.Get("/subject/:subject_code", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.GetSubjectDetail)
 	// group.Post("/rm/subjects", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteSubjectMass)
 	group.Get("/get-all/test-scores", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetAllTestScores)
 	group.Get("/get/test-scores/:subject_code", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetAllTestScoresBySubjectID)
@@ -582,6 +582,8 @@ func (uh *uHandler) ModifyStaff(c *fiber.Ctx) error {
 			"message": "Invalid input",
 		})
 	}
+
+	config.PrintStruct(payload)
 
 	err = uh.uc.UpdateStaff(c.Context(), id, &payload.User, payload.SubjectCode)
 	if err != nil {
