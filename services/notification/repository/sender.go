@@ -9,7 +9,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"go.mau.fi/whatsmeow"
@@ -278,13 +277,8 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 
 	config.PrintStruct(results)
 
-	// Use WaitGroup to manage Go routines
-	var wg sync.WaitGroup
-	errorChan := make(chan error, len(results)*2) // Buffer size for errors
-
-	// Process results concurrently
+	// Process results sequentially (no goroutines)
 	for _, idv := range results {
-		wg.Add(2)
 		if langValueLowered == "ind" {
 			messageString = m.buatNilaiTesEmail(idv, examTypeProcessed)
 		} else {
@@ -292,31 +286,16 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 		}
 
 		// Send email
-		go func(idv domain.IndividualExamScore) {
-			defer wg.Done()
-			if idv.Student.Parent.Email != nil && *idv.Student.Parent.Email != "" {
-				if err := m.sendEmailTestScore(&idv, messageString); err != nil {
-					errorChan <- fmt.Errorf("failed to send email to: %s, error: %w", *idv.Student.Parent.Email, err)
-				}
+		if idv.Student.Parent.Email != nil && *idv.Student.Parent.Email != "" {
+			if err := m.sendEmailTestScore(&idv, messageString); err != nil {
+				fmt.Printf("Failed to send email to %s: %v\n", *idv.Student.Parent.Email, err)
 			}
-		}(idv)
+		}
 
 		// Send WhatsApp
-		go func(idv domain.IndividualExamScore) {
-			defer wg.Done()
-			if err := m.sendWATestScore(ctx, &idv, messageString); err != nil {
-				errorChan <- fmt.Errorf("failed to send WhatsApp for student StudentNSN: %s, error: %w", idv.StudentNSN, err)
-			}
-		}(idv)
-	}
-
-	// Wait for all Go routines to complete
-	wg.Wait()
-	close(errorChan)
-
-	// Collect and log errors
-	for err := range errorChan {
-		fmt.Println("Error:", err)
+		if err := m.sendWATestScore(ctx, &idv, messageString); err != nil {
+			fmt.Printf("Failed to send WhatsApp for student %s: %v\n", idv.StudentNSN, err)
+		}
 	}
 
 	// Mark test scores as deleted
