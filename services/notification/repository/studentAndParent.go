@@ -1055,7 +1055,7 @@ func (spr *studentParentRepository) DataChangeRequest(ctx context.Context, datas
 		return fmt.Errorf("parent with telephone %s does not exist or registered", datas.OldParentTelephone)
 	}
 
-	err = spr.db.WithContext(ctx).Model(&domain.ParentDataChangeRequest{}).Where("old_parent_telephone = ? AND is_reviewed IS FALSE", datas.OldParentTelephone).Count(&countVariable).Error
+	err = spr.db.WithContext(ctx).Model(&domain.ParentDataChangeRequest{}).Where("old_parent_telephone = ? AND is_reviewed IS FALSE AND deleted_at IS NULL", datas.OldParentTelephone).Count(&countVariable).Error
 	if err != nil {
 		return err
 	}
