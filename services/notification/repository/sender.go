@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/smtp"
+	"notification/config"
 	"notification/domain"
 	"os"
 	"strconv"
@@ -184,13 +185,22 @@ Tim SINOAN`, m.schoolPhone)
 func (m *senderRepository) SendTestScores(ctx context.Context, examType string) error {
 	var testScores []domain.TestScore
 	var students []domain.Student
-	var results []domain.IndividualExamScore
+	var resultsMap = make(map[string]domain.IndividualExamScore)
 	langValue := os.Getenv("MESSENGER_LANGUAGE")
 	langValueLowered := strings.ToLower(langValue)
 	var messageString string
+	var examTypeProcessed string
+	if langValueLowered == "ind" {
+		if examType == "Midterm Tests" {
+			examTypeProcessed = "Ulangan Tengah Semester (UTS)"
+		} else if examType == "End of Semester Tests" {
+			examTypeProcessed = "Ulangan Akhir Semester (UAS)"
+		}
+	} else {
+		examTypeProcessed = examType
+	}
 
 	studentMap := make(map[string]domain.Student)
-	tNow := time.Now()
 	// Fetch all test scores with related data
 	err := m.db.WithContext(ctx).
 		Preload("Student").
@@ -205,7 +215,7 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 	}
 
 	// Extract student IDs from test scores
-	studentIDs := make([]string, 0, len(testScores))
+	studentIDs := make([]string, 0)
 	for _, score := range testScores {
 		studentIDs = append(studentIDs, score.StudentNSN)
 	}
@@ -224,40 +234,49 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 		studentMap[student.StudentNSN] = student
 	}
 
-	// Build results for each test score
-	for _, ts := range testScores {
-		student, exists := studentMap[ts.StudentNSN]
+	for _, score := range testScores {
+		student, exists := studentMap[score.StudentNSN]
 		if !exists {
-			continue // Skip if student not found
+			continue
 		}
 
-		// Find or create an individual exam score entry for the student
-		var individual *domain.IndividualExamScore
-		for i := range results {
-			if results[i].StudentNSN == ts.StudentNSN {
-				individual = &results[i]
-				break
-			}
-		}
-
-		// Create a new entry if one doesn't exist
-		if individual == nil {
-			newEntry := domain.IndividualExamScore{
-				StudentNSN:            ts.StudentNSN,
+		// Get or initialize the IndividualExamScore object
+		individual, found := resultsMap[student.StudentNSN]
+		if !found {
+			individual = domain.IndividualExamScore{
+				StudentNSN:            student.StudentNSN,
 				Student:               student,
 				SubjectAndScoreResult: []domain.SubjectAndScoreResult{},
 			}
-			results = append(results, newEntry)
-			individual = &results[len(results)-1]
 		}
 
-		// Add the subject and score to the student's results
-		individual.SubjectAndScoreResult = append(individual.SubjectAndScoreResult, domain.SubjectAndScoreResult{
-			SubjectCode: ts.SubjectCode,
-			Subject:     ts.Subject,
-			Score:       ts.Score,
-		})
+		// Prevent duplicate subjects from being added
+		duplicate := false
+		for _, subject := range individual.SubjectAndScoreResult {
+			if subject.SubjectCode == score.SubjectCode {
+				duplicate = true
+				break
+			}
+		}
+		if !duplicate {
+			individual.SubjectAndScoreResult = append(individual.SubjectAndScoreResult, domain.SubjectAndScoreResult{
+				SubjectCode: score.SubjectCode,
+				Subject:     score.Subject,
+				Score:       score.Score,
+			})
+		}
+
+		// Store the updated IndividualExamScore back in the map
+		resultsMap[student.StudentNSN] = individual
 	}
+
+	// Convert the resultsMap to a slice
+	results := make([]domain.IndividualExamScore, 0, len(resultsMap))
+	for _, result := range resultsMap {
+		results = append(results, result)
+	}
+
+	config.PrintStruct(results)
 
 	// Use WaitGroup to manage Go routines
 	var wg sync.WaitGroup
@@ -265,11 +284,11 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 
 	// Process results concurrently
 	for _, idv := range results {
-		wg.Add(2) // Two goroutines: one for email, one for WhatsApp
+		wg.Add(2)
 		if langValueLowered == "ind" {
-			messageString = m.buatNilaiTesEmail(idv, examType)
+			messageString = m.buatNilaiTesEmail(idv, examTypeProcessed)
 		} else {
-			messageString = m.createTestScoreEmail(idv, examType)
+			messageString = m.createTestScoreEmail(idv, examTypeProcessed)
 		}
 
 		// Send email
@@ -301,14 +320,15 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 	}
 
 	// Mark test scores as deleted
-	for i := range testScores {
-		testScores[i].DeletedAt = &tNow
-	}
+	err = m.db.WithContext(ctx).
+		Model(&domain.TestScore{}).
+		Where("deleted_at IS NULL").
+		Updates(map[string]interface{}{
+			"deleted_at": time.Now(),
+		}).Error
 
-	// Batch update in the database
-	err = m.db.WithContext(ctx).Save(&testScores).Error
 	if err != nil {
-		return fmt.Errorf("failed to soft delete test scores: %w", err)
+		return fmt.Errorf("failed to soft delete all test scores: %w", err)
 	}
 
 	return nil
