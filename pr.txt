@@ -48,3 +48,8 @@ subject insert misi kode subject
 DFD PROSES 4
 
 penambahan modal di create stud dan subject
+
+
+
+=====================================KARTU KUNING==============================================
+

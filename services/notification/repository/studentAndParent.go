@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"notification/config"
 	"notification/domain"
 	"regexp"
 	"strings"
@@ -96,9 +95,6 @@ func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[stri
 	// Always update the timestamp
 	comparedData.UpdatedAt = tNow
 
-	fmt.Println("compared data")
-	config.PrintStruct(comparedData)
-
 	// Check if parent is associated with any students
 	err = tx.Where("parent_id = ?", Parent.ParentID).Find(&AssociatedStudent).Error
 	if err != nil {
@@ -147,7 +143,16 @@ func (spr *studentParentRepository) ApproveDCR(ctx context.Context, req map[stri
 			tx.Rollback()
 			return nil, fmt.Errorf("failed to assign student to existing parent, error: %v", err)
 		}
-		message := fmt.Sprintf("Parent data already exists, allocating %d students to the existing parent name: %s, telephone: %s, email: %s", len(AssociatedStudent), ExistingParent.Name, ExistingParent.Telephone, *ExistingParent.Email)
+		message := fmt.Sprintf(`Parent data already exists, allocating %d students to the existing Parent:
+
+- name: %s
+- telephone: %s
+- email: %s`, len(AssociatedStudent), ExistingParent.Name, ExistingParent.Telephone, func() string {
+			if ExistingParent.Email == nil {
+				return "N/A"
+			}
+			return *ExistingParent.Email
+		}())
 		msgs = &message
 	}
 
@@ -334,7 +339,11 @@ func (spr *studentParentRepository) CreateStudentAndParent(ctx context.Context, 
 		}
 
 		message := fmt.Sprintf(
-			"Parent data already exists, allocating the student to the existing parent name: %s, telephone: %s, email: %s",
+			`Parent data already exists, allocating the student to the existing Parent:
+
+			- name: %s 
+			- telephone: %s 
+			- email: %s`,
 			existingParent.Name,
 			existingParent.Telephone,
 			func() string {
@@ -714,7 +723,16 @@ func (spr *studentParentRepository) UpdateStudentAndParent(ctx context.Context, 
 		if err == nil {
 			// Update parent_id to the existing parent's ID
 			updatedStudentFields["ParentID"] = existingParent.ParentID
-			message := fmt.Sprintf("Parent data already exists, allocating the student to the existing parent named: %s", existingParent.Name)
+			message := fmt.Sprintf(`Parent data already exists, allocating the student to the existing Parent: 
+			
+			- named: %s
+			- telephone: %s
+			- email: %s`, existingParent.Name, existingParent.Telephone, func() string {
+				if existingParent.Email == nil {
+					return "N/A"
+				}
+				return *existingParent.Email
+			}())
 			msgs = &message
 
 		} else if errors.Is(err, gorm.ErrRecordNotFound) {
