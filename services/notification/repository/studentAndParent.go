@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"notification/domain"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -1079,7 +1080,9 @@ func (spr *studentParentRepository) DataChangeRequest(ctx context.Context, datas
 	}
 
 	if countVariable > 0 {
-		return fmt.Errorf("data change request with old telephone parent: %s already exists and has not been reviewed yet. If this is urgent, please contact the school directly", datas.OldParentTelephone)
+		return fmt.Errorf(`data change request with old telephone parent: %s already exists and has not been reviewed yet. If this is urgent, please contact the school directly from this number below
+		
+		- School Telephone: %s`, datas.OldParentTelephone, os.Getenv("SCHOOL_PHONE"))
 	}
 
 	if datas.NewParentTelephone != nil {
