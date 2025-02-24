@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/smtp"
-	"notification/config"
 	"notification/domain"
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"go.mau.fi/whatsmeow"
@@ -187,19 +187,22 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 	var resultsMap = make(map[string]domain.IndividualExamScore)
 	langValue := os.Getenv("MESSENGER_LANGUAGE")
 	langValueLowered := strings.ToLower(langValue)
-	var messageString string
 	var examTypeProcessed string
+
+	// Process exam type based on language
 	if langValueLowered == "ind" {
-		if examType == "Midterm Tests" {
+		switch examType {
+		case "Midterm Tests":
 			examTypeProcessed = "Ulangan Tengah Semester (UTS)"
-		} else if examType == "End of Semester Tests" {
+		case "End of Semester Tests":
 			examTypeProcessed = "Ulangan Akhir Semester (UAS)"
+		default:
+			examTypeProcessed = examType
 		}
 	} else {
 		examTypeProcessed = examType
 	}
 
-	studentMap := make(map[string]domain.Student)
 	// Fetch all test scores with related data
 	err := m.db.WithContext(ctx).
 		Preload("Student").
@@ -214,7 +217,7 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 	}
 
 	// Extract student IDs from test scores
-	studentIDs := make([]string, 0)
+	studentIDs := make([]string, 0, len(testScores))
 	for _, score := range testScores {
 		studentIDs = append(studentIDs, score.StudentNSN)
 	}
@@ -229,17 +232,18 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 	}
 
 	// Build a map of students for quick lookup
+	studentMap := make(map[string]domain.Student, len(students))
 	for _, student := range students {
 		studentMap[student.StudentNSN] = student
 	}
 
+	// Build results map
 	for _, score := range testScores {
 		student, exists := studentMap[score.StudentNSN]
 		if !exists {
 			continue
 		}
 
-		// Get or initialize the IndividualExamScore object
 		individual, found := resultsMap[student.StudentNSN]
 		if !found {
 			individual = domain.IndividualExamScore{
@@ -249,7 +253,7 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 			}
 		}
 
-		// Prevent duplicate subjects from being added
+		// Prevent duplicate subjects
 		duplicate := false
 		for _, subject := range individual.SubjectAndScoreResult {
 			if subject.SubjectCode == score.SubjectCode {
@@ -265,7 +269,6 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 			})
 		}
 
-		// Store the updated IndividualExamScore back in the map
 		resultsMap[student.StudentNSN] = individual
 	}
 
@@ -275,27 +278,60 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 		results = append(results, result)
 	}
 
-	config.PrintStruct(results)
+	// Worker pool to limit concurrency
+	const maxWorkers = 10 // Adjust based on system capacity
+	var wg sync.WaitGroup
+	workerPool := make(chan struct{}, maxWorkers)
+	errChan := make(chan error, len(results)) // Channel to collect errors
 
-	// Process results sequentially (no goroutines)
+	// Process results concurrently
 	for _, idv := range results {
-		if langValueLowered == "ind" {
-			messageString = m.buatNilaiTesEmail(idv, examTypeProcessed)
-		} else {
-			messageString = m.createTestScoreEmail(idv, examTypeProcessed)
-		}
+		wg.Add(1)
+		workerPool <- struct{}{} // Acquire a worker slot
 
-		// Send email
-		if idv.Student.Parent.Email != nil && *idv.Student.Parent.Email != "" {
-			if err := m.sendEmailTestScore(&idv, messageString); err != nil {
-				fmt.Printf("Failed to send email to %s: %v\n", *idv.Student.Parent.Email, err)
+		go func(idv domain.IndividualExamScore) {
+			defer wg.Done()
+			defer func() { <-workerPool }() // Release the worker slot
+
+			var messageString string
+			if langValueLowered == "ind" {
+				messageString = m.buatNilaiTesEmail(idv, examTypeProcessed)
+			} else {
+				messageString = m.createTestScoreEmail(idv, examTypeProcessed)
 			}
-		}
 
-		// Send WhatsApp
-		if err := m.sendWATestScore(ctx, &idv, messageString); err != nil {
-			fmt.Printf("Failed to send WhatsApp for student %s: %v\n", idv.StudentNSN, err)
+			// Send email
+			if idv.Student.Parent.Email != nil && *idv.Student.Parent.Email != "" {
+				if err := m.sendEmailTestScore(&idv, messageString); err != nil {
+					errChan <- fmt.Errorf("failed to send email to %s: %w", *idv.Student.Parent.Email, err)
+					return
+				}
+			}
+
+			// Send WhatsApp
+			if err := m.sendWATestScore(ctx, &idv, messageString); err != nil {
+				errChan <- fmt.Errorf("failed to send WhatsApp for student %s: %w", idv.StudentNSN, err)
+				return
+			}
+		}(idv)
+	}
+
+	// Wait for all goroutines to finish
+	wg.Wait()
+	close(errChan) // Close the error channel
+
+	// Collect errors from the error channel
+	var errors []error
+	for err := range errChan {
+		errors = append(errors, err)
+	}
+
+	// Log all errors
+	if len(errors) > 0 {
+		for _, err := range errors {
+			fmt.Println("Error:", err)
 		}
+		return fmt.Errorf("encountered %d errors while sending test scores", len(errors))
 	}
 
 	// Mark test scores as deleted
@@ -506,8 +542,7 @@ func (m *senderRepository) initTextWithSubject(payload *domain.StudentAndParent,
 	subject := fmt.Sprintf("Notification of Absence for %s at %s %s on %s", payload.Student.Name, hourAndMinute, isAM, formattedDate)
 
 	if payload.Parent.Gender == "male" {
-		bodyMale := fmt.Sprintf(`
-SINOAN Service 🔔
+		bodyMale := fmt.Sprintf(`SINOAN Service 🔔
 
 Dear Mr. %s,
 
@@ -527,8 +562,7 @@ Thank you for your attention and cooperation.`, payload.Parent.Name, payload.Stu
 
 		return &subject, &bodyMale, nil
 	} else {
-		bodyFemale := fmt.Sprintf(`
-SINOAN Service 🔔
+		bodyFemale := fmt.Sprintf(`SINOAN Service 🔔
 
 Dear Mrs. %s,
 
@@ -570,8 +604,7 @@ func (m *senderRepository) inisialisasiTeksDenganSubjek(payload *domain.StudentA
 	subject := fmt.Sprintf("Pemberitahuan Ketidakhadiran untuk %s pada %s %s tanggal %s", payload.Student.Name, hourAndMinute, isAM, formattedDate)
 
 	if payload.Parent.Gender == "male" {
-		bodyMale := fmt.Sprintf(`
-Layanan SINOAN 🔔
+		bodyMale := fmt.Sprintf(`Layanan SINOAN 🔔
 
 Yth. Bapak %s,
 
@@ -591,8 +624,7 @@ Terima kasih atas perhatian dan kerjasamanya.`, payload.Parent.Name, payload.Stu
 
 		return &subject, &bodyMale, nil
 	} else {
-		bodyFemale := fmt.Sprintf(`
-Layanan SINOAN 🔔
+		bodyFemale := fmt.Sprintf(`Layanan SINOAN 🔔
 
 Yth. Ibu %s,
 

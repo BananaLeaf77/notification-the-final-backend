@@ -583,7 +583,6 @@ func (uh *uHandler) ModifyStaff(c *fiber.Ctx) error {
 		})
 	}
 
-	config.PrintStruct(payload)
 
 	err = uh.uc.UpdateStaff(c.Context(), id, &payload.User, payload.SubjectCode)
 	if err != nil {

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"notification/config"
 	"notification/domain"
 	"strings"
 	"time"
@@ -119,7 +118,6 @@ func (ur *userRepository) FindUserByUsername(ctx context.Context, username strin
 
 func (r *userRepository) InputTestScores(ctx context.Context, teacherID int, testScores *domain.InputTestScorePayload) error {
 	tx := r.db.WithContext(ctx).Begin()
-
 	var userDetail domain.User
 	err := r.db.WithContext(ctx).Where("user_id = ? AND deleted_at is NULL", teacherID).First(&userDetail).Error
 	if err != nil {
@@ -154,7 +152,7 @@ func (r *userRepository) InputTestScores(ctx context.Context, teacherID int, tes
 
 		// Check if a test individual already exists for this student and subject (ignore teacher)
 		var existingScore domain.TestScore
-		err := tx.Where("student_nsn = ? AND subject_code = ?", individual.StudentNSN, testScores.SubjectCode).
+		err := tx.Where("student_nsn = ? AND subject_code = ? AND deleted_at IS NULL", individual.StudentNSN, testScores.SubjectCode).
 			First(&existingScore).Error
 
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -178,7 +176,6 @@ func (r *userRepository) InputTestScores(ctx context.Context, teacherID int, tes
 				UserID:      teacherID,
 				Score:       individual.TestScore,
 			}
-			config.PrintStruct(newScore)
 			if err := tx.Create(&newScore).Error; err != nil {
 				tx.Rollback()
 				return err
