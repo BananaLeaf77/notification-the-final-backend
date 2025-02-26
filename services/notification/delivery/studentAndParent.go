@@ -577,7 +577,7 @@ func checkDuplicates(list []domain.StudentAndParent) []string {
 	for i, item := range list {
 		// Check for duplicate NSNs
 		if j, exists := seenNSNs[item.Student.StudentNSN]; exists {
-			duplicateErrList = append(duplicateErrList, fmt.Sprintf("duplicate Student NSN: %s found in rows %d and %d", item.Student.StudentNSN, j+2, i+2))
+			duplicateErrList = append(duplicateErrList, fmt.Sprintf("duplicate student NSN: %s found in rows %d and %d", item.Student.StudentNSN, j+2, i+2))
 		} else {
 			seenNSNs[item.Student.StudentNSN] = i
 		}

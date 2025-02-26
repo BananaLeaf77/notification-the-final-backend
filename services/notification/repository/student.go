@@ -58,7 +58,6 @@ func (spr *studentRepository) GetStudentByParentTelephone(ctx context.Context, p
 }
 
 func (sp *studentRepository) GetAllStudent(ctx context.Context, userID int) (*[]domain.Student, error) {
-	// Check if the user exists
 	var existingUser domain.User
 	err := sp.db.WithContext(ctx).Where("user_id = ?", userID).Preload("Teaching").First(&existingUser).Error
 	if err != nil {
@@ -68,27 +67,22 @@ func (sp *studentRepository) GetAllStudent(ctx context.Context, userID int) (*[]
 	var students []domain.Student
 
 	if existingUser.Role == "admin" {
-		// Admin gets all students
 		err = sp.db.WithContext(ctx).Preload("Parent").Find(&students).Error
 		if err != nil {
 			return nil, fmt.Errorf("failed to retrieve all students: %w", err)
 		}
 	} else {
-		// Non-admin gets students in grades they are assigned to teach
 		if len(existingUser.Teaching) == 0 {
-			return &students, nil // Return empty list if no teaching subjects are found
+			return &students, nil 
 		}
 
-		// Extract grades from the Teaching association
 		var grades []int
 		for _, subject := range existingUser.Teaching {
 			grades = append(grades, subject.Grade)
 		}
 
-		// Remove duplicates from grades
 		grades = uniqueIntSlice(grades)
 
-		// Fetch students whose grade matches the grades the user teaches
 		err = sp.db.WithContext(ctx).
 			Where("grade IN ?", grades).
 			Preload("Parent").
