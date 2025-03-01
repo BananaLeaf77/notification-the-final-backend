@@ -216,6 +216,10 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 		return fmt.Errorf("failed to fetch test scores: %w", err)
 	}
 
+	if len(testScores) == 0 {
+		return fmt.Errorf("theres no any test scores to be sent")
+	}
+
 	// Extract student IDs from test scores
 	studentIDs := make([]string, 0, len(testScores))
 	for _, score := range testScores {
@@ -447,6 +451,7 @@ func (m *senderRepository) sendEmail(payload *domain.StudentAndParent, subjectEm
 		body
 
 	err := smtp.SendMail(m.smtpAdress, m.client, m.emailSender, []string{*payload.Parent.Email}, []byte(msg))
+
 	if err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}

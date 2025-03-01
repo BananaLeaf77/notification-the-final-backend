@@ -506,7 +506,7 @@ func validateStudent(row []string, rowNum int) []string {
 	if row[3] == "" {
 		errList = append(errList, fmt.Sprintf("row %d: Student grade label cannot be empty", rowNum))
 	} else if len(row[3]) > 5 {
-		errList = append(errList, fmt.Sprintf("row %d: Student grade label cannot be more than 3 characters", rowNum))
+		errList = append(errList, fmt.Sprintf("row %d: Student grade label cannot be more than 5 characters", rowNum))
 	}
 	// Validate Gender
 	if row[4] == "" {

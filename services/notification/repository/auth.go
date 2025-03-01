@@ -28,7 +28,7 @@ func (ar *authRepository) Login(ctx context.Context, data *domain.LoginRequest) 
 	if err != nil {
 		return nil, fmt.Errorf("invalid username or password")
 	}
-
+	
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(data.Password))
 	if err != nil {
 		return nil, fmt.Errorf("invalid username or password")
