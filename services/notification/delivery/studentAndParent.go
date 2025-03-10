@@ -110,9 +110,9 @@ func (sph *studentParentHandler) ApproveDCR(c *fiber.Ctx) error {
 func (sph *studentParentHandler) DownloadTemplate(c *fiber.Ctx) error {
 	userToken := c.Locals("user").(*domain.Claims)
 
-	filePath := "./template/up2.csv"
+	filePath := "./template/sinoan_template.csv"
 
-	c.Set(fiber.HeaderContentDisposition, `attachment; filename="up2.csv"`)
+	c.Set(fiber.HeaderContentDisposition, `attachment; filename="sinoan_template.csv"`)
 	c.Set(fiber.HeaderContentType, "text/csv")
 
 	err := c.SendFile(filePath, true)

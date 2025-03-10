@@ -24,11 +24,11 @@ func (ar *authRepository) Login(ctx context.Context, data *domain.LoginRequest) 
 	var user domain.User
 	var dataList []string
 
-	err := ar.db.Where("username = ?", data.Username).First(&user).Error
+	err := ar.db.Where("username = ? AND deleted_at IS NULL", data.Username).First(&user).Error
 	if err != nil {
 		return nil, fmt.Errorf("invalid username or password")
 	}
-	
+
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(data.Password))
 	if err != nil {
 		return nil, fmt.Errorf("invalid username or password")
