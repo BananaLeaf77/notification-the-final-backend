@@ -50,6 +50,7 @@ type UserRepo interface {
 	InputTestScores(ctx context.Context, teacherID int, testScores *InputTestScorePayload) error
 	GetAllTestScores(ctx context.Context) (*[]TestScore, error)
 	GetAllTestScoresBySubjectID(ctx context.Context, subjectCode string) (*[]TestScore, error)
+	GetAllTestScoreHistory(ctx context.Context) (*[]TestScore, error)
 }
 
 type UserUseCase interface {
@@ -79,4 +80,5 @@ type UserUseCase interface {
 	InputTestScores(ctx context.Context, teacherID int, testScores *InputTestScorePayload) error
 	GetAllTestScores(ctx context.Context) (*[]TestScore, error)
 	GetAllTestScoresBySubjectID(ctx context.Context, subjectCode string) (*[]TestScore, error)
+	GetAllTestScoreHistory(ctx context.Context) (*[]TestScore, error)
 }

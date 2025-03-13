@@ -12,6 +12,8 @@ type StudentAndParent struct {
 
 type ParentDataChangeRequest struct {
 	RequestID          int        `gorm:"primaryKey;autoIncrement" json:"request_id"`
+	UserID             int        `json:"user_id"`
+	User               User       `gorm:"foreignKey:UserID;references:UserID" json:"user"`
 	OldParentTelephone string     `json:"old_parent_telephone,omitempty"`
 	NewParentName      *string    `json:"new_parent_name,omitempty"`
 	NewParentTelephone *string    `json:"new_parent_telephone,omitempty"`
@@ -33,7 +35,7 @@ type StudentParentRepo interface {
 	ImportCSV(ctx context.Context, payload *[]StudentAndParent) (*[]string, error)
 	GetAllDataChangeRequestByID(ctx context.Context, dcrID int) (*ParentDataChangeRequest, error)
 	GetAllDataChangeRequest(ctx context.Context) (*[]ParentDataChangeRequest, error)
-	DataChangeRequest(ctx context.Context, datas ParentDataChangeRequest) error
+	DataChangeRequest(ctx context.Context, datas ParentDataChangeRequest, userID int) error
 	ApproveDCR(ctx context.Context, req map[string]interface{}) (*string, error)
 	DeleteDCR(ctx context.Context, dcrID int) error
 }
@@ -49,7 +51,7 @@ type StudentParentUseCase interface {
 	ImportCSV(ctx context.Context, payload *[]StudentAndParent) (*[]string, error)
 	GetAllDataChangeRequestByID(ctx context.Context, dcrID int) (*ParentDataChangeRequest, error)
 	GetAllDataChangeRequest(ctx context.Context) (*[]ParentDataChangeRequest, error)
-	DataChangeRequest(ctx context.Context, datas ParentDataChangeRequest) error
+	DataChangeRequest(ctx context.Context, datas ParentDataChangeRequest, userID int) error
 	ApproveDCR(ctx context.Context, req map[string]interface{}) (*string, error)
 	DeleteDCR(ctx context.Context, dcrID int) error
 }

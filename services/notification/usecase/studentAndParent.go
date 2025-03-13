@@ -76,12 +76,12 @@ func (spu *studentParentUseCase) GetStudentDetailsByID(ctx context.Context, stud
 // 	return nil
 // }
 
-func (spu *studentParentUseCase) DataChangeRequest(ctx context.Context, datas domain.ParentDataChangeRequest) error {
+func (spu *studentParentUseCase) DataChangeRequest(ctx context.Context, datas domain.ParentDataChangeRequest, userID int) error {
 
 	// ctx, cancel := context.WithTimeout(ctx, spu.TimeOut)
 	// defer cancel()
 
-	err := spu.repo.DataChangeRequest(ctx, datas)
+	err := spu.repo.DataChangeRequest(ctx, datas, userID)
 	if err != nil {
 		return err
 	}

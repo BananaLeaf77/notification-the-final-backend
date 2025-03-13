@@ -188,6 +188,7 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 	langValue := os.Getenv("MESSENGER_LANGUAGE")
 	langValueLowered := strings.ToLower(langValue)
 	var examTypeProcessed string
+	fmt.Println(examType)
 
 	// Process exam type based on language
 	if langValueLowered == "ind" {
@@ -203,6 +204,8 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 		examTypeProcessed = examType
 	}
 
+	fmt.Println(examTypeProcessed)
+
 	// Fetch all test scores with related data
 	err := m.db.WithContext(ctx).
 		Preload("Student").
@@ -210,7 +213,7 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 		Preload("User", func(db *gorm.DB) *gorm.DB {
 			return db.Select("user_id", "username", "name", "role", "created_at", "updated_at", "deleted_at")
 		}).
-		Where("deleted_at IS NULL").
+		Where("sent_at IS NULL").
 		Find(&testScores).Error
 	if err != nil {
 		return fmt.Errorf("failed to fetch test scores: %w", err)
@@ -341,9 +344,10 @@ func (m *senderRepository) SendTestScores(ctx context.Context, examType string) 
 	// Mark test scores as deleted
 	err = m.db.WithContext(ctx).
 		Model(&domain.TestScore{}).
-		Where("deleted_at IS NULL").
+		Where("sent_at IS NULL").
 		Updates(map[string]interface{}{
-			"deleted_at": time.Now(),
+			"sent_at": time.Now(),
+			"type":    examTypeProcessed,
 		}).Error
 
 	if err != nil {

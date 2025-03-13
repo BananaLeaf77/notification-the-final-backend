@@ -1049,7 +1049,9 @@ func (spr *studentParentRepository) GetStudentDetailsByID(ctx context.Context, s
 func (spr *studentParentRepository) GetAllDataChangeRequestByID(ctx context.Context, dcrID int) (*domain.ParentDataChangeRequest, error) {
 	var result domain.ParentDataChangeRequest
 
-	err := spr.db.WithContext(ctx).
+	err := spr.db.WithContext(ctx).Model(&domain.ParentDataChangeRequest{}).Preload("User", func(db *gorm.DB) *gorm.DB {
+		return db.Select("user_id", "username", "name", "role", "created_at", "updated_at", "deleted_at")
+	}).
 		Where("request_id = ? AND is_reviewed IS FALSE", dcrID).
 		First(&result).Error
 
@@ -1063,10 +1065,17 @@ func (spr *studentParentRepository) GetAllDataChangeRequestByID(ctx context.Cont
 	return &result, nil
 }
 
-func (spr *studentParentRepository) DataChangeRequest(ctx context.Context, datas domain.ParentDataChangeRequest) error {
+func (spr *studentParentRepository) DataChangeRequest(ctx context.Context, datas domain.ParentDataChangeRequest, userID int) error {
 	var countVariable int64
 	var parentCount int64
-	err := spr.db.WithContext(ctx).Model(&domain.Parent{}).Where("telephone = ? AND deleted_at IS NULL", datas.OldParentTelephone).Count(&parentCount).Error
+	var requester domain.User
+	err := spr.db.WithContext(ctx).Model(&domain.User{}).Where("user_id = ?", userID).Find(&requester).Error
+	if err != nil {
+		return err
+	}
+	datas.UserID = requester.UserID
+
+	err = spr.db.WithContext(ctx).Model(&domain.Parent{}).Where("telephone = ? AND deleted_at IS NULL", datas.OldParentTelephone).Count(&parentCount).Error
 	if err != nil {
 		return err
 	}
@@ -1137,8 +1146,12 @@ func (spr *studentParentRepository) DeleteDCR(ctx context.Context, dcrID int) er
 func (spr *studentParentRepository) GetAllDataChangeRequest(ctx context.Context) (*[]domain.ParentDataChangeRequest, error) {
 	var req []domain.ParentDataChangeRequest
 
-	if err := spr.db.WithContext(ctx).Where("is_reviewed IS FALSE AND deleted_at IS NULL").Find(&req).Error; err != nil {
-		return nil, fmt.Errorf("could not get all data change request : %v", err)
+	err := spr.db.WithContext(ctx).Model(&domain.ParentDataChangeRequest{}).Preload("User", func(db *gorm.DB) *gorm.DB {
+		return db.Select("user_id", "username", "name", "role", "created_at", "updated_at", "deleted_at")
+	}).Where("is_reviewed IS FALSE AND deleted_at IS NULL").Find(&req).Error
+
+	if err != nil {
+		return nil, err
 	}
 
 	return &req, nil

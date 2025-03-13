@@ -38,7 +38,30 @@ func NewUserHandlerDeploy(app *fiber.App, useCase domain.UserUseCase) {
 	group.Get("/get-all/test-scores", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetAllTestScores)
 	group.Get("/get/test-scores/:subject_code", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetAllTestScoresBySubjectID)
 	// group.Get("/reset/test-scores", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.ResetTestScore)
+	group.Get("/get-all/test-scores-history", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetAllTestScoreHistory)
 }
+
+func (h *uHandler) GetAllTestScoreHistory(c *fiber.Ctx) error {
+	userToken := c.Locals("user").(*domain.Claims)
+
+	data, err := h.uc.GetAllTestScoreHistory(c.Context())
+	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "GetAllTestScoreHistory")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   err.Error(),
+			"message": "Failed to get all test score history",
+			"success": false,
+		})
+	}
+
+	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "GetAllTestScoreHistory")
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data":    data,
+		"success": true,
+		"message": "Test score history retrieved successfully",
+	})
+}
+
 
 func (h *uHandler) GetAllTestScoresBySubjectID(c *fiber.Ctx) error {
 	userToken := c.Locals("user").(*domain.Claims)
@@ -582,7 +605,6 @@ func (uh *uHandler) ModifyStaff(c *fiber.Ctx) error {
 			"message": "Invalid input",
 		})
 	}
-
 
 	err = uh.uc.UpdateStaff(c.Context(), id, &payload.User, payload.SubjectCode)
 	if err != nil {

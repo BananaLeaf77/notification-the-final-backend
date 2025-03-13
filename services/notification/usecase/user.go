@@ -69,6 +69,15 @@ func (u *userUC) UpdateStaff(ctx context.Context, id int, payload *domain.User, 
 	return nil
 }
 
+func (u *userUC) GetAllTestScoreHistory(ctx context.Context) (*[]domain.TestScore, error) {
+	v, err := u.userRepo.GetAllTestScoreHistory(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
 func (u *userUC) GetStaffDetail(ctx context.Context, id int) (*domain.SafeStaffData, error) {
 	v, err := u.userRepo.GetStaffDetail(ctx, id)
 	if err != nil {

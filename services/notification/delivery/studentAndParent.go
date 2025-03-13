@@ -36,7 +36,7 @@ func NewStudentParentHandlerDeploy(app *fiber.App, useCase domain.StudentParentU
 	route.Put("/modify/:student_nsn", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.UpdateStudentAndParent)
 	// route.Delete("/rm/:id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.DeleteStudentAndParent)
 	route.Get("/student/:student_nsn", middleware.AuthRequired(), middleware.RoleRequired("admin", "staff"), handler.GetStudentDetailsByID)
-	route.Post("/req/data-change-request", handler.DataChangeRequest)
+	route.Post("/req/data-change-request", middleware.AuthRequired(), middleware.RoleRequired("staff"), handler.DataChangeRequest)
 	route.Get("/get-all-data-change-request", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.GetAllDataChangeRequest)
 	route.Get("/get-all-data-change-request/:request_id", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.GetAllDataChangeRequestByID)
 	// route.Post("/rms", middleware.AuthRequired(), middleware.RoleRequired("admin"), handler.SPMassDelete)
@@ -784,12 +784,11 @@ func ValidateDataChangeRequest(data *domain.ParentDataChangeRequest) error {
 }
 
 func (sph *studentParentHandler) DataChangeRequest(c *fiber.Ctx) error {
-	guess := "Guest"
 	var datas domain.ParentDataChangeRequest
-
+	userToken, _ := c.Locals("user").(*domain.Claims)
 	err := c.BodyParser(&datas)
 	if err != nil {
-		config.PrintLogInfo(&guess, fiber.StatusBadRequest, "DataChangeRequest")
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "DataChangeRequest")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"message": "Invalid Request",
@@ -798,6 +797,7 @@ func (sph *studentParentHandler) DataChangeRequest(c *fiber.Ctx) error {
 	}
 
 	if datas.NewParentTelephone != nil && *datas.NewParentTelephone == datas.OldParentTelephone {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "DataChangeRequest")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"message": "Invalid Request",
@@ -807,6 +807,7 @@ func (sph *studentParentHandler) DataChangeRequest(c *fiber.Ctx) error {
 
 	err = ValidateDataChangeRequest(&datas)
 	if err != nil {
+		config.PrintLogInfo(&userToken.Username, fiber.StatusBadRequest, "DataChangeRequest")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"message": "Invalid Request",
@@ -814,9 +815,9 @@ func (sph *studentParentHandler) DataChangeRequest(c *fiber.Ctx) error {
 		})
 	}
 
-	err = sph.uc.DataChangeRequest(c.Context(), datas)
+	err = sph.uc.DataChangeRequest(c.Context(), datas, userToken.UserID)
 	if err != nil {
-		config.PrintLogInfo(&guess, fiber.StatusInternalServerError, "DataChangeRequest")
+		config.PrintLogInfo(&userToken.Username, fiber.StatusInternalServerError, "DataChangeRequest")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"message": "Failed to send data change request",
@@ -824,7 +825,7 @@ func (sph *studentParentHandler) DataChangeRequest(c *fiber.Ctx) error {
 		})
 	}
 
-	config.PrintLogInfo(&guess, fiber.StatusOK, "DataChangeRequest")
+	config.PrintLogInfo(&userToken.Username, fiber.StatusOK, "DataChangeRequest")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
 		"message": "Successfully sent data changes request",

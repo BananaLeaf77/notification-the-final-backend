@@ -48,7 +48,7 @@ func (ur *userRepository) GetAllTestScoresBySubjectID(ctx context.Context, subje
 		Preload("User", func(db *gorm.DB) *gorm.DB {
 			return db.Select("user_id", "username", "name", "role", "created_at", "updated_at", "deleted_at")
 		}).
-		Where("subject_code = ? AND deleted_at IS NULL", subjectCode).
+		Where("subject_code = ? AND sent_at IS NULL", subjectCode).
 		Find(&testScores).Error
 	if err != nil {
 		return nil, err
@@ -96,6 +96,18 @@ func floatPointer(f float64) *float64 {
 func (ur *userRepository) GetAllTestScores(ctx context.Context) (*[]domain.TestScore, error) {
 	var testScores []domain.TestScore
 	err := ur.db.WithContext(ctx).Preload("Student").Preload("User").Preload("Subject").Where("deleted_at IS NULL").Find(&testScores).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &testScores, nil
+}
+
+func (ur *userRepository) GetAllTestScoreHistory(ctx context.Context) (*[]domain.TestScore, error) {
+	var testScores []domain.TestScore
+	err := ur.db.WithContext(ctx).Model(&domain.TestScore{}).Preload("Student").Preload("User", func(db *gorm.DB) *gorm.DB {
+		return db.Select("user_id", "username", "name", "role", "created_at", "updated_at", "deleted_at")
+	}).Preload("Subject").Where("sent_at IS NOT NULL").Find(&testScores).Error
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +164,7 @@ func (r *userRepository) InputTestScores(ctx context.Context, teacherID int, tes
 
 		// Check if a test individual already exists for this student and subject (ignore teacher)
 		var existingScore domain.TestScore
-		err := tx.Where("student_nsn = ? AND subject_code = ? AND deleted_at IS NULL", individual.StudentNSN, testScores.SubjectCode).
+		err := tx.Where("student_nsn = ? AND subject_code = ? AND sent_at IS NULL", individual.StudentNSN, testScores.SubjectCode).
 			First(&existingScore).Error
 
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -175,6 +187,7 @@ func (r *userRepository) InputTestScores(ctx context.Context, teacherID int, tes
 				SubjectCode: testScores.SubjectCode,
 				UserID:      teacherID,
 				Score:       individual.TestScore,
+				Type:        nil,
 			}
 			if err := tx.Create(&newScore).Error; err != nil {
 				tx.Rollback()
