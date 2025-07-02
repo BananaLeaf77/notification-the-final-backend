@@ -14,6 +14,7 @@ import (
 
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/store/sqlstore"
+	waLog "go.mau.fi/whatsmeow/util/log"
 )
 
 var (
@@ -53,8 +54,6 @@ func InitSender() (*whatsmeow.Client, smtp.Auth, *string, *string, *string, erro
 
 	smtpAddr := fmt.Sprintf("%s:%s", *smtpHost, *smtpPort)
 
-	fmt.Println("SMTP initialized")
-
 	//Meow
 	dbms, err := getDBMS()
 	if err != nil {
@@ -76,22 +75,31 @@ func InitSender() (*whatsmeow.Client, smtp.Auth, *string, *string, *string, erro
 		return nil, nil, nil, nil, nil, err
 	}
 
-	meowAddress := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable", *user, *pass, *dbname)
+	dbPort, err := getDBPort()
+	if err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
 
-	container, err := sqlstore.New(*dbms, meowAddress, nil)
+	ctx := context.Background()
+
+	dbLog := waLog.Stdout("Database", "ERROR", true)
+
+	container, err := sqlstore.New(ctx, *dbms, fmt.Sprintf("%s://%s:%s@localhost:%s/%s?sslmode=disable", *dbms, *user, *pass, *dbPort, *dbname), dbLog)
 	if err != nil {
 		panic(err)
 	}
 
-	deviceStore, err := container.GetFirstDevice()
+	deviceStore, err := container.GetFirstDevice(ctx)
 	if err != nil {
 		panic(err)
 	}
-	mClient := whatsmeow.NewClient(deviceStore, nil)
+
+	clientLog := waLog.Stdout("Client", "ERROR", true)
+	mClient := whatsmeow.NewClient(deviceStore, clientLog)
 	meowWhatsapp = mClient
 
 	if meowWhatsapp.Store.ID == nil {
-		qrChan, _ := meowWhatsapp.GetQRChannel(context.Background())
+		qrChan, _ := meowWhatsapp.GetQRChannel(ctx)
 		err = meowWhatsapp.Connect()
 		if err != nil {
 			panic(err)
@@ -106,13 +114,21 @@ func InitSender() (*whatsmeow.Client, smtp.Auth, *string, *string, *string, erro
 					fmt.Println("IMPORTANT no WhatsApp session was found !!")
 					fmt.Println("Need admin to scan the QR code for the server to run properly!")
 					// fmt.Println("==============   QR CODE   ==============")
-					// fmt.Println(evt.Code)
 					fmt.Println("Loading...")
 
 					err := generateQRCode(evt.Code, "qrcode.png")
 					if err != nil {
 						panic(err)
 					}
+
+					qr, err := qrcode.New(evt.Code, qrcode.Medium)
+					if err != nil {
+						panic(err)
+					}
+
+					fmt.Println(qr.ToSmallString(false)) // false means no border
+
+					fmt.Println("Loading...")
 
 					err = SendQRtoEmail(smtpAddr, &smtpAuth, *emailSender, "qrcode.png")
 					if err != nil {
@@ -174,6 +190,14 @@ func getSMTPPort() (*string, error) {
 	port := os.Getenv("SMTP_PORT")
 	if port == "" {
 		return nil, fmt.Errorf("smtp port invalid, value : %s", port)
+	}
+	return &port, nil
+}
+
+func getDBPort() (*string, error) {
+	port := os.Getenv("DB_PORT")
+	if port == "" {
+		return nil, fmt.Errorf("DB port invalid, value : %s", port)
 	}
 	return &port, nil
 }

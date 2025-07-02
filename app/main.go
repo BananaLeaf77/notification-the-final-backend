@@ -25,7 +25,7 @@ func main() {
 	log = config.GetLogrusInstance()
 
 	if err := godotenv.Load(); err != nil {
-		log.Fatalf("Error loading .env file")
+		log.Fatalf("Error loading .env file : %v", err)
 	}
 
 	startHTTP()
